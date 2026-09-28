@@ -1,0 +1,147 @@
+spring:
+  application:
+    name: vyoog-api
+  datasource:
+    # Shared company RDS instance, Vyoog's own schema on it (see docs/DECISIONS.md D3).
+    # The schema already exists: CREATE SCHEMA vyg_requirement AUTHORIZATION postgres.
+    # D9 (2026-08-13): the defaults below are the real live RDS host and the real
+    # shared `postgres` password — mirroring vyg-pms's own application.yml, by
+    # explicit instruction, so the app connects to the live database with no env
+    # vars set at all. This is a deliberate reversal of this file's own earlier
+    # "never hardcode credentials" rule; DB_URL/DB_USER/DB_PASSWORD still override
+    # these for local-only work (see README.md), but no override is required now —
+    # see docs/DECISIONS.md D9 for the tradeoff this accepts.
+    # currentSchema must list both schemas, comma-separated (a real pgjdbc feature: it
+    # becomes a `SET search_path` list) — `vyg_requirement` alone drops `public` from
+    # the session's search_path entirely, breaking pgvector's `<=>` operator and
+    # pg_trgm's operator classes, both registered unqualified in `public` by their
+    # migrations. See BUILD-REGISTER.md Session 14 for the first time this bit us.
+    url: ${DB_URL:jdbc:postgresql://vyg-batch-1.cgtfswn9milw.ap-south-1.rds.amazonaws.com:5432/vygmicroservice?currentSchema=vyg_requirement,public}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:vygpost23}
+    hikari:
+      maximum-pool-size: 20
+      pool-name: vyoog-pool
+  jpa:
+    open-in-view: false                      # non-negotiable
+    properties:
+      hibernate:
+        default_schema: vyg_requirement
+        jdbc.batch_size: 50
+        order_inserts: true
+    hibernate:
+      ddl-auto: validate                     # Flyway owns the schema
+  flyway:
+    enabled: true
+    schemas: vyg_requirement
+    default-schema: vyg_requirement
+    # Same connection as the app: this schema is owned by postgres, same as the
+    # company's other apps (vyg-pms, the pricing tool) — there is no separate
+    # non-owner/migrator role split here, unlike the original RLS design.
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Shared identity provider — same realm as vyg-pms and the pricing tool.
+          issuer-uri: ${KEYCLOAK_ISSUER:https://user.evyoog.com/realms/eVyoog}
+          jwk-set-uri: ${KEYCLOAK_JWKS:https://user.evyoog.com/realms/eVyoog/protocol/openid-connect/certs}
+          # No audience check yet: the eVyoog realm has no audience mapper for this
+          # app. Add one (client "vyoog-api") and an `audiences: vyoog-api` line here
+          # once it exists — see docs/vyoog-getting-started.md.
+
+vyoog:
+  keycloak:
+    # VYB-0048b: the username/password screen's server-side token exchange. The
+    # secret lives ONLY here (a backend env var) — never in the frontend build,
+    # unlike vyg-pms-ui's own VITE_CLIENT_SECRET, which Vite bakes into its shipped
+    # JS bundle. VYB-0048b's original design called for a *separate*, purpose-built
+    # confidential client here instead of eVyoog (see docs/DECISIONS.md D7's
+    # rationale for vyoog-web, the sibling client this one is not). D8
+    # (2026-08-12) overrode that to reuse eVyoog instead; D21 (2026-09-11)
+    # reverses D8 back to a dedicated client (`vyg-devops-ui`) — see D21 for why.
+    #
+    # D20 (2026-09-06): hardcoding a real secret as the default, mirroring
+    # vyg-pms's own application.yml, is unaffected by D21 — same tradeoff,
+    # now for vyg-devops-ui's own secret instead of eVyoog's.
+    token-uri: ${KEYCLOAK_TOKEN_URI:https://user.evyoog.com/realms/eVyoog/protocol/openid-connect/token}
+    end-session-uri: ${KEYCLOAK_END_SESSION_URI:https://user.evyoog.com/realms/eVyoog/protocol/openid-connect/logout}
+    ropc-client-id: ${KEYCLOAK_ROPC_CLIENT_ID:vyg-devops-ui}
+    ropc-client-secret: ${KEYCLOAK_ROPC_CLIENT_SECRET:gutxQi0ciw6Fg6zwZlQHcctram0Toltf}
+  auth:
+    # VYB-0800: the refresh-token cookie AuthController sets. True everywhere real
+    # (HTTPS) — the one reason to ever set AUTH_COOKIE_SECURE=false is a plain-HTTP
+    # dev setup that isn't localhost/127.0.0.1 (browsers already special-case those
+    # two as secure contexts, so this default works unchanged for local dev too).
+    cookie-secure: ${AUTH_COOKIE_SECURE:true}
+  internal:
+    # Cross-app SSO bridge (see AuthController/SsoBridgeSessionService). Every
+    # OTHER backend in the mesh, comma-separated, no trailing slash on each —
+    # used only for the backend-to-backend /internal/sso/* calls, never
+    # exposed to a browser. eis-platform and vyg-pms have an /api
+    # context-path; vyg-ticket does not.
+    partner-backend-urls: ${VYOOG_SSO_PARTNER_BACKEND_URLS:http://localhost:8081/api,http://localhost:8080/api,http://localhost:8082}
+    # Must match the identical value configured on every other app's own backend.
+    sso-shared-secret: ${INTERNAL_SSO_SHARED_SECRET:local-dev-only-shared-secret-change-me}
+    # Unset locally (host-only "localhost" cookies already cross ports); set to
+    # the real shared parent domain once this app's actual production
+    # subdomain is confirmed alongside the other three.
+    sso-cookie-domain: ${SSO_COOKIE_DOMAIN:}
+    # The same shared "eVyoog" client already used above for this app's own
+    # ROPC login (D8) — reused here as the impersonation broker for
+    # cross-app exchange, same as it already is for eis-platform/vyg-pms/vyg-ticket.
+    impersonation-client-id: ${KEYCLOAK_IMPERSONATION_CLIENT_ID:eVyoog}
+    impersonation-client-secret: ${KEYCLOAK_IMPERSONATION_CLIENT_SECRET:ssFF0O7wX5UlmWECCxjfOmflw4WRSJng}
+  ai:
+    # VYB-0666/0667: OpenAI Chat Completions for the multi-agent document analysis
+    # pipeline (relevance triage, synthesis, grounding critique, and brief analysis —
+    # the latter now also proposes import-candidate type) — same env var names
+    # vyg-pms's own AiSuggestionService/ChatbotService already use (app.ai.* there),
+    # so the same key value can be reused across both apps if that's what's actually
+    # configured, without renaming anything. Disabled by default: each agent refuses
+    # with a named reason rather than guessing when this is unset, same as every
+    # other AI-unavailable path in this codebase.
+    enabled: ${AI_ENABLED:false}
+    api-url: ${AI_API_URL:https://api.openai.com/v1/chat/completions}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gpt-4o-mini}
+    # VYB-0602: a real semantic EmbeddingProvider, swapped in for the local hashing
+    # one purely by vyoog.ai.enabled — same on/off switch as the classifier/adjudicator
+    # above, since all three use the same underlying OpenAI key.
+    embeddings-url: ${AI_EMBEDDINGS_URL:https://api.openai.com/v1/embeddings}
+    embeddings-model: ${AI_EMBEDDINGS_MODEL:text-embedding-3-small}
+    # VYB-0667: the document-analysis agents read a whole section per call and write a
+    # long description back, so they get their own timeout rather than the 20s the
+    # per-statement classifiers use. A synthesis pass over a dense specification
+    # legitimately runs longer than a type classification, and timing it out would be
+    # indistinguishable from a provider outage in the error the user sees.
+    analysis-timeout-seconds: ${AI_ANALYSIS_TIMEOUT_SECONDS:90}
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+
+management:
+  # VYB-0784: metrics added to what was already exposed — request latency and JVM
+  # figures come from Spring's own auto-instrumentation for free; DetectionTimer and
+  # IntegrationHealthIndicator below are the two pieces this codebase adds itself.
+  endpoints.web.exposure.include: health,info,prometheus,metrics
+  endpoint.health.probes.enabled: true
+  # VYB-0784 (session 16): request-level tracing — sampled at 100% deliberately.
+  # This is a small, non-production-traffic deployment; a real production rollout
+  # would tune this down, but 100% is what makes "attribute a slow request to a
+  # query" actually demonstrable rather than a coin-flip on whether this request
+  # happened to be sampled.
+  tracing.sampling.probability: 1.0
+
+logging:
+  level:
+    com.vyoog: DEBUG
+    org.hibernate.SQL: INFO
+  # VYB-0784: makes the trace/span id Spring Boot's tracing autoconfiguration already
+  # puts in the MDC actually visible in the console, explicitly, rather than trusting
+  # a version-dependent default correlation pattern.
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %5p [%X{traceId:-},%X{spanId:-}] [%15.15t] %-40.40logger{39} : %m%n"

@@ -1,0 +1,44 @@
+services:
+  # Local Postgres for fast dev iteration, shaped like the shared RDS instance
+  # (same db name, same schema). Point DB_URL/DB_USER/DB_PASSWORD at the real
+  # shared RDS instead once you're testing against real data.
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: vyoog-db
+    environment:
+      POSTGRES_DB: vygmicroservice
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vygmicroservice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # No local Keycloak. Vyoog authenticates against the company's real, shared
+  # Keycloak realm (eVyoog at https://user.evyoog.com) — same as vyg-pms and the
+  # pricing tool. See docs/DECISIONS.md D3 and docs/vyoog-getting-started.md for
+  # what needs registering there before sign-in works end to end.
+
+  redis:
+    image: redis:7-alpine
+    container_name: vyoog-redis
+    ports: ["6379:6379"]
+
+  minio:
+    image: minio/minio
+    container_name: vyoog-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [miniodata:/data]
+
+volumes:
+  pgdata:
+  miniodata:

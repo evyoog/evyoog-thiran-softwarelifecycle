@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>com.vyoog</groupId><artifactId>vyoog</artifactId><version>0.1.0-SNAPSHOT</version></parent>
+  <artifactId>vyoog-domain</artifactId>
+  <dependencies>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+    <!-- For AuditEvent's before/after jsonb columns. Not a web dependency: does not
+         pull in org.springframework.web or jakarta.servlet, so ArchitectureTest's
+         domainHasNoWebDependency rule is unaffected. -->
+    <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId></dependency>
+    <!-- VYB-0784: pure metrics API, no web/servlet transitive dependency — safe for
+         the domain layer under ArchitectureTest's own rule. Registration of the
+         actual MeterRegistry backend (Prometheus, etc.) still lives in vyoog-api. -->
+    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
+    <!-- VYB-0212: a genuine .docx export (Document Word export) — confirmed cached
+         locally already; no XML/servlet dependency, safe for the domain layer. -->
+    <dependency><groupId>org.apache.poi</groupId><artifactId>poi-ooxml</artifactId><version>5.2.5</version></dependency>
+    <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId></dependency>
+    <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>s3</artifactId></dependency>
+    <dependency><groupId>com.vyoog</groupId><artifactId>vyoog-testkit</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>com.tngtech.archunit</groupId><artifactId>archunit-junit5</artifactId><scope>test</scope></dependency>
+  </dependencies>
+</project>

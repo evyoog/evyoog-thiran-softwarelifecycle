@@ -1,0 +1,76 @@
+/*
+ * Tailwind v4, utilities and theme only — Preflight is deliberately not imported.
+ *
+ * Preflight is a global reset: it strips margins from headings and paragraphs, unstyles
+ * buttons and inputs, and sets `border-style: solid` on every element. Every screen in
+ * this app except RequirementDetail is styled by `tokens.css`, which was written against
+ * the browser defaults Preflight removes — importing it would restyle the whole product
+ * to fix one file.
+ *
+ * Explicit `@layer` order is what makes that possible: Tailwind's utilities land in the
+ * utilities layer, and `tokens.css` is unlayered, so unlayered rules win any collision by
+ * the cascade's layer precedence regardless of import order. That is the right way round
+ * here — the design system stays authoritative, and Tailwind only paints elements that
+ * carry no design-system class.
+ */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * The product's palette, exposed as Tailwind colours.
+ *
+ * These map to the CSS variables in `tokens.css` rather than to fixed hex values, which
+ * is the whole point: those variables are redefined under `[data-theme="light"]`, so
+ * `bg-panel` and `text-tx` follow the user's theme for free. Hardcoding Tailwind's own
+ * `gray-50`/`blue-600` scale — as the first pass at this file did — pins one screen to a
+ * light palette while every other screen switches, and puts a blue accent next to a
+ * product whose accent is teal.
+ *
+ * `ai` is present but is for model output only. It is never a status colour (rule 5) —
+ * a warning that is not AI-generated uses `high`, and a failure uses `crit`.
+ */
+@theme {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-line-3: var(--line-3);
+
+  --color-tx: var(--tx);
+  --color-tx-2: var(--tx-2);
+  --color-tx-3: var(--tx-3);
+
+  --color-brand: var(--brand);
+  --color-brand-dim: var(--brand-dim);
+  --color-brand-bd: var(--brand-bd);
+  --color-brand-hi: var(--brand-hi);
+  --color-on-brand: var(--on-brand);
+
+  --color-ai: var(--ai);
+  --color-ai-dim: var(--ai-dim);
+  --color-ai-bd: var(--ai-bd);
+
+  --color-crit: var(--crit);
+  --color-crit-dim: var(--crit-dim);
+  --color-crit-bd: var(--crit-bd);
+
+  --color-high: var(--high);
+  --color-high-dim: var(--high-dim);
+  --color-high-bd: var(--high-bd);
+
+  --color-ok: var(--ok);
+  --color-ok-dim: var(--ok-dim);
+  --color-ok-bd: var(--ok-bd);
+
+  --color-info: var(--info);
+  --color-info-dim: var(--info-dim);
+  --color-info-bd: var(--info-bd);
+
+  --font-sans: var(--f-ui);
+  --font-mono: var(--f-mono);
+}
