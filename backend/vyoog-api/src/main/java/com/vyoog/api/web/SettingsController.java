@@ -1,6 +1,7 @@
 package com.vyoog.api.web;
 
 import com.vyoog.api.config.PrincipalGuard;
+import com.vyoog.identity.BootstrapRefusedException;
 import com.vyoog.identity.TenantBootstrapService;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.platform.audit.AuditRetentionService;
@@ -30,6 +31,10 @@ public class SettingsController {
     private final com.vyoog.platform.reset.TenantHardResetService hardReset;
     private final AuditRetentionService retention;
 
+    /** VYB-0901: one-time token from the environment. Empty (the default) means bootstrap is switched off. */
+    @org.springframework.beans.factory.annotation.Value("${vyoog.bootstrap.token:}")
+    private String bootstrapToken;
+
     public SettingsController(AppConfigService config, TaskService tasks, TenantExportService export,
                                UserProvisioningService provisioning, AuditService audit, PrincipalGuard guard,
                                TenantBootstrapService bootstrap, com.vyoog.platform.reset.TenantHardResetService hardReset,
@@ -55,9 +60,33 @@ public class SettingsController {
 
     public record BootstrapRequest(UUID firstAdministratorUserId) {}
 
+    /**
+     * VYB-0901 (F04): this endpoint has no role guard, because before it runs nobody holds
+     * one — which used to make it "first authenticated caller becomes administrator". It now
+     * needs, all of: a person; a matching {@code X-Bootstrap-Token} header; a configured
+     * {@code BOOTSTRAP_TOKEN} (unset = disabled); no administrator already existing; and the
+     * deployment not already bootstrapped. Every refusal is a 403 and none says which check failed
+     * beyond "already done" versus "not authorised".
+     */
     @PostMapping("/bootstrap")
-    public void bootstrapTenant(@RequestBody BootstrapRequest body, @AuthenticationPrincipal Jwt jwt) {
+    public void bootstrapTenant(@RequestBody BootstrapRequest body,
+                                @RequestHeader(value = "X-Bootstrap-Token", required = false) String token,
+                                @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
+        requireBootstrapToken(token);
         bootstrap.bootstrap(body.firstAdministratorUserId(), currentUserId(jwt));
+    }
+
+    private void requireBootstrapToken(String presented) {
+        if (bootstrapToken == null || bootstrapToken.isBlank()) {
+            throw new BootstrapRefusedException("Bootstrap is not enabled on this deployment");
+        }
+        boolean ok = presented != null && java.security.MessageDigest.isEqual(
+            presented.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            bootstrapToken.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (!ok) {
+            throw new BootstrapRefusedException("Bootstrap is not authorised for this caller");
+        }
     }
 
     @GetMapping

@@ -44,16 +44,20 @@ public class PrincipalGuard {
         this.grantResolver = grantResolver;
     }
 
-    /** VYB-0305: approval, sign-off and administration are refused to a service account. */
+    /**
+     * VYB-0305: approval, sign-off and administration are refused to a service account.
+     * VYB-0901: and to any token that is neither a registered service account nor a person
+     * (no {@code email} claim) — such a token has no user to attribute the action to.
+     */
     public void requireHuman(Jwt jwt) {
-        if (serviceAccounts.isServiceAccount(jwt.getClaimAsString("azp"), jwt.getClaimAsString("email"))) {
+        if (!serviceAccounts.isPerson(jwt.getClaimAsString("azp"), jwt.getClaimAsString("email"))) {
             throw new ServiceAccountRefusedException("A service account cannot do this — sign in as a person");
         }
     }
 
-    /** VYB-0311: CI ingestion accepts only a service account. */
+    /** VYB-0311: CI ingestion accepts only a registered service account (VYB-0901: never just "no email"). */
     public void requireServiceAccount(Jwt jwt) {
-        if (!serviceAccounts.isServiceAccount(jwt.getClaimAsString("azp"), jwt.getClaimAsString("email"))) {
+        if (!serviceAccounts.isServiceAccount(jwt.getClaimAsString("azp"))) {
             throw new ServiceAccountRequiredException("This endpoint is for CI/service-account callers only");
         }
     }

@@ -31,12 +31,15 @@ public class AttachmentService {
     private final AttachmentVersionRepository versions;
     private final S3Client s3;
     private final String bucket;
+    private final AttachmentPolicy policy;
 
     public AttachmentService(AttachmentRepository attachments, AttachmentVersionRepository versions, S3Client s3,
+                              AttachmentPolicy policy,
                               @Value("${vyoog.storage.bucket:vyoog-attachments}") String bucket) {
         this.attachments = attachments;
         this.versions = versions;
         this.s3 = s3;
+        this.policy = policy;
         this.bucket = bucket;
         // docs/running-minio-locally.md's own stated contract: "If MinIO is down, the app
         // starts and everything works except uploading, downloading and tenant-export
@@ -65,7 +68,10 @@ public class AttachmentService {
     public record UploadResult(Attachment attachment, AttachmentVersion version) {}
 
     @Transactional
-    public UploadResult upload(UUID requirementId, String filename, String contentType, byte[] bytes, UUID actor) {
+    public UploadResult upload(UUID requirementId, String rawFilename, String contentType, byte[] bytes, UUID actor) {
+        // VYB-0901: size, type and name are checked here, and it is the sanitised name that
+        // reaches both the database and the object-store key.
+        String filename = policy.check(rawFilename, contentType, bytes.length);
         Attachment attachment = attachments.findByRequirementIdAndFilename(requirementId, filename)
             .map(a -> { a.bumpVersion(); return a; })
             .orElseGet(() -> new Attachment(requirementId, filename));
@@ -86,15 +92,27 @@ public class AttachmentService {
         return attachments.findAllByRequirementId(requirementId);
     }
 
-    public List<AttachmentVersion> versionsOf(UUID attachmentId) {
+    /**
+     * VYB-0901 (F05): the attachment must belong to the requirement in the path. Without
+     * this a caller could put any requirement id in the URL and read any attachment id —
+     * a 404 for a mismatch, indistinguishable from an attachment that does not exist.
+     */
+    private Attachment requireOwned(UUID requirementId, UUID attachmentId) {
+        return attachments.findById(attachmentId)
+            .filter(a -> a.getRequirementId().equals(requirementId))
+            .orElseThrow(NoSuchElementException::new);
+    }
+
+    public List<AttachmentVersion> versionsOf(UUID requirementId, UUID attachmentId) {
+        requireOwned(requirementId, attachmentId);
         return versions.findAllByAttachmentIdOrderByVersionAsc(attachmentId);
     }
 
     public record Downloaded(byte[] bytes, String contentType, String filename) {}
 
     /** VYB-0195 AC1: earlier versions stay downloadable, not just the current one. */
-    public Downloaded download(UUID attachmentId, short version) {
-        Attachment attachment = attachments.findById(attachmentId).orElseThrow(NoSuchElementException::new);
+    public Downloaded download(UUID requirementId, UUID attachmentId, short version) {
+        Attachment attachment = requireOwned(requirementId, attachmentId);
         AttachmentVersion v = versions.findByAttachmentIdAndVersion(attachmentId, version)
             .orElseThrow(NoSuchElementException::new);
         var object = s3.getObject(GetObjectRequest.builder().bucket(bucket).key(v.getStorageKey()).build());
@@ -105,9 +123,9 @@ public class AttachmentService {
         }
     }
 
-    public Downloaded downloadCurrent(UUID attachmentId) {
-        Attachment attachment = attachments.findById(attachmentId).orElseThrow(NoSuchElementException::new);
-        return download(attachmentId, attachment.getCurrentVersion());
+    public Downloaded downloadCurrent(UUID requirementId, UUID attachmentId) {
+        Attachment attachment = requireOwned(requirementId, attachmentId);
+        return download(requirementId, attachmentId, attachment.getCurrentVersion());
     }
 
     /**

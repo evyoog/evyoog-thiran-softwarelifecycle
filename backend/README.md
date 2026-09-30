@@ -59,6 +59,16 @@ CORS is an explicit allowlist: `CORS_ALLOWED_ORIGINS` (exact, default
 default; `.env.example` sets localhost). A bare `*` is refused at startup. For rotating the
 secrets and scrubbing git history, see `../docs/SECRETS-ROTATION.md`.
 
+**Optional, deliberately off by default:** `BOOTSTRAP_TOKEN`. `POST /api/v1/settings/bootstrap`
+(the one-time "make this person the first administrator" call) is refused unless this is set,
+the request carries it as an `X-Bootstrap-Token` header, the caller is a person, no
+administrator exists and the deployment has not been bootstrapped. Set it only while
+bootstrapping a new deployment, then unset it. `ATTACHMENT_MAX_BYTES` (default 10 MiB) caps a
+single upload; attachments are limited to a fixed list of document, image and text types.
+
+CI ingestion (`/api/v1/ci/*`) needs a **registered** service account that holds the `ci:ingest`
+scope. A token is no longer treated as a service account just because it has no email claim.
+
 The `*VerificationRunner` classes start the full application, so they need the same six
 variables and must only be pointed at a local database.
 

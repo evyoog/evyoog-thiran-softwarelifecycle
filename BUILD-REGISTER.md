@@ -304,7 +304,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0784 | 5 | Performance | Observability: metrics, health, integration status, request tracing | DONE | 12,16 |
 | VYB-0785 | 5 | Performance | Backup and restore rehearsed and documented | DONE | 15 |
 | VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | PARTIAL: code done, rotation and history scrub are human steps (docs/SECRETS-ROTATION.md) | S1 |
-| VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | TODO | S1 |
+| VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | DONE on dev (commit only; no PR yet). CORS default was closed in VYB-0900 | S1 |
 | VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | TODO | S1 |
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | TODO | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | TODO | S1 |
@@ -4603,6 +4603,28 @@ Phase 6 Sprint 1, session 1. Worked on branch `dev` (the environment's branch ru
 - The `*VerificationRunner` classes start the full application, so they now need all six variables. They were not run (they need a live database); making them safe is row VYB-0903. They previously fell through to the live RDS database by default, so this change also removes that path.
 - The "fails before, passes after" check could not be run literally for the startup tests, because they reference the new classes; the CORS default test asserts the old `:*` default is gone.
 - Object-store keys still default to the local MinIO pair in `StorageConfig` (fake, local); not in this row's list.
+
+
+## Session 59 — VYB-0901 (F04/F05/F06): close the open doors
+
+Phase 6 Sprint 1, session 2. Branch `dev`. The CORS wildcard default (F03, named in the row) was already closed in session 58.
+
+**Bootstrap (F04).** `POST /settings/bootstrap` had no guard, so on a fresh deployment the first authenticated caller could make anyone the administrator. It now needs all of: a person (`requireHuman`); a configured `BOOTSTRAP_TOKEN` (empty = endpoint off) matched in constant time against the `X-Bootstrap-Token` header; no live ADMINISTRATOR grant anywhere (`TenantBootstrapService.administratorExists`); and `bootstrapped_at` unset. Refusals are `BootstrapRefusedException` → 403 (previously "already bootstrapped" was a 409 `IllegalStateException`; the frontend has a client method but no screen that calls it).
+
+**Service accounts (F04).** `ServiceAccountChecker.isServiceAccount(azp)` is now registered accounts only; a blank `email` no longer counts. New `isPerson(azp, email)`; `requireHuman` uses it, so a token that is neither a registered account nor a person is refused by both guards. The three CI ingest endpoints (`/ci/test-runs`, `/ci/commits`, `/ci/deployments`) now call `requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST)`. `CI_INGEST` already existed in `KnownServiceScopes`; no new scope names were needed.
+
+**Attachments (F05/F06).** `AttachmentService.download/downloadCurrent/versionsOf` take the requirement id from the path and return 404 unless the attachment belongs to it. The controller's list, versions, download and upload endpoints call `requireHuman`. New `AttachmentPolicy`: size cap (`vyoog.attachments.max-bytes`, default 10 MiB), extension allowlist and content-type allowlist (no html, svg, js, executables or archives), and filename sanitising (last path segment, `[A-Za-z0-9._ -]` only, no leading dots, 120 chars) — the sanitised name is what reaches the database and the S3 key. Errors map to 413 / 415 / 400. `spring.servlet.multipart.max-file-size: 10MB` and `max-request-size: 12MB` are explicit. Downloads add `X-Content-Type-Options: nosniff`.
+
+**Tests** (`VYB0901_ACn_...`): `ServiceAccountCheckerTest` (5), `TenantBootstrapServiceTest` (3), `AttachmentPolicyTest` (22), `AttachmentServiceAccessTest` (6), `Vyb0901OpenDoorsTest` (14, real `PrincipalGuard` + `ServiceAccountChecker`, mocked repositories). vyoog-domain: 371 run, 1 failure (the pre-existing `RopcConfigurationMessageTest`, see session 58). vyoog-api: 42 run, 0 failures.
+
+**Deploy notes / not done**
+- Existing service accounts must hold the `ci:ingest` scope or their CI calls now get 403. Check the registered accounts before deploying.
+- "The caller may read it" is enforced as "a signed-in person, and the attachment belongs to this requirement". Reads of requirements are not scoped by grant anywhere yet, so attachments are not either; grant-scoped reads are VYB-0908.
+- Content type is the client's claim; nothing sniffs the bytes and nothing scans for malware.
+- The bootstrap-status GET is unchanged (it only reveals a boolean).
+- The attack cases were not run against the old code: the tests use new methods and classes, so they do not compile against it.
+- Upload has no role rule beyond "a person" (writes are VYB-0902 / VYB-0906).
+- Not run: the verification runners and anything needing a live database, MinIO or Keycloak.
 
 ---
 
