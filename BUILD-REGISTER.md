@@ -303,6 +303,66 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0783 | 5 | Performance | Graceful degradation; unavailable is reported, not zero | DONE | 12 |
 | VYB-0784 | 5 | Performance | Observability: metrics, health, integration status, request tracing | DONE | 12,16 |
 | VYB-0785 | 5 | Performance | Backup and restore rehearsed and documented | DONE | 15 |
+| VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | TODO | S1 |
+| VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | TODO | S1 |
+| VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | TODO | S1 |
+| VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | TODO | S1 |
+| VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | TODO | S1 |
+| VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | TODO | S1 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | TODO | S2 |
+| VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
+| VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
+| VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
+| VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
+| VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
+| VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
+| VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
+| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
+| VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
+| VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | TODO | S3 |
+| VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | TODO | S3 |
+| VYB-0918 | 6 | Agile Planner inbound and reconciliation | Process inbound backlog_item.status_changed and write completion signals back to requirements [M; F16] | TODO | S4 |
+| VYB-0919 | 6 | Agile Planner inbound and reconciliation | sprint.reassigned marks affected trace links suspect [S; F16] | TODO | S4 |
+| VYB-0920 | 6 | Agile Planner inbound and reconciliation | Orphan and reconciliation handling, conflict queue where both sides changed a field [M; F40] | TODO | S4 |
+| VYB-0921 | 6 | Agile Planner inbound and reconciliation | Webhook hardening: timestamp window, rate limit, constant-time compare, real payload processing [S; F08] | TODO | S4 |
+| VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
+| VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | TODO | S5 |
+| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | TODO | S5 |
+| VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
+| VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
+| VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
+| VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | TODO | S6 |
+| VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | TODO | S6 |
+| VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | TODO | S6 |
+| VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | TODO | S6 |
+| VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
+| VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | TODO | S7 |
+| VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | TODO | S7 |
+| VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | TODO | S7 |
+| VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | TODO | S8 |
+| VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | TODO | S8 |
+| VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
+| VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
+| VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |
+| VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | TODO | S9 |
+| VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | TODO | S9 |
+| VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | TODO | S9 |
+| VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | TODO | S9 |
+| VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | TODO | S9 |
+| VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | TODO | S9 |
+| VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | TODO | S10 |
+| VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
+| VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
+| VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
+| VYB-0951 | 6 | Configurability and boards | Artifact type registry replacing type lists in checks, enums, detectors and UI [L; F39] | TODO | S11 |
+| VYB-0952 | 6 | Configurability and boards | Custom fields on requirements with revision capture and import mapping [L; F39] | TODO | S11 |
+| VYB-0953 | 6 | Configurability and boards | Kanban board driven from status, with templates per team [M; F42] | TODO | S11 |
+| VYB-0954 | 6 | Configurability and boards | Tenant model spike: what a second customer would need, cost and migration path [S; F39] | TODO | S11 |
+| VYB-0955 | 6 | Reporting, notifications and release to pilot | Notifications: review, approval, release, test failure and mention events; email and chat channels; user preferences [M; F21] | TODO | S12 |
+| VYB-0956 | 6 | Reporting, notifications and release to pilot | Trend dashboards for defects, test pass rate, release readiness; xlsx and PDF export [M; F24] | TODO | S12 |
+| VYB-0957 | 6 | Reporting, notifications and release to pilot | Import: downloadable template, re-enable Word and ReqIF with validation [M; F25] | TODO | S12 |
+| VYB-0958 | 6 | Reporting, notifications and release to pilot | Locale layer and first translated screens; code splitting and accessibility pass [M; F38, F42] | TODO | S12 |
+| VYB-0959 | 6 | Reporting, notifications and release to pilot | Pilot onboarding of one real team, load and recovery rehearsal [S; F11] | TODO | S12 |
 
 ## Session 1 — Phase 0 Foundation
 
@@ -4522,3 +4582,251 @@ raw JSON editor, saved the same way `planning`'s structured fields are — throu
 backend change needed — `setConfig` already accepts arbitrary JSON for any key. Nothing
 reads `git`'s config yet; this is storage only, same disclosed scope as Session 56's
 "registering a connection wires up nothing on its own" note. `tsc -b --noEmit` clean.
+
+---
+
+## Merge note — frontend copy (VYB-0905, Phase 6 Sprint 1)
+
+`backend/BUILD-REGISTER.md` and `frontend/BUILD-REGISTER.md` were merged into this single register. Nothing was dropped. Findings:
+
+- **The frontend copy is an older snapshot of the backend copy.** The table differs in three places and the backend copy is newer in each, so the table above is the backend copy's:
+  - VYB-0360 and VYB-0361 (review rounds screen, signing): frontend says DONE in session 9; backend says SUPERSEDED in session 41.
+  - VYB-0634: frontend session column `11`; backend `11,21`.
+  - VYB-0824 to VYB-0829: present only in the backend copy.
+- **Session logs 1 to 20 are identical in both copies** and appear once, above.
+- **Session numbers 21 and 22 collide.** The frontend copy's "Session 21" (Portfolio dashboard restyle) and "Session 22" (document analysis panel) are different work from the backend copy's "Session 21" (VYB-0634) and "Session 22" (VYB-0667/0668). Both are kept. The frontend copy's two logs are below, headings unchanged, marked "(frontend copy)". Nothing was renumbered, so existing references to session numbers still resolve to the backend copy's logs.
+- Backend-only sessions 23 to 57 had no frontend counterpart.
+
+## Frontend-copy session logs with colliding numbers
+
+## Session 21 — VYB-0788 restyle: the Portfolio dashboard rendered in the prototype's `.pf-*` design (frontend copy)
+
+**The ask**: the `.pf-*` block from `Downloads/vyoog-layout- user-budget-mytask-calender.html`,
+plus a screenshot of that prototype rendered in light theme — "i need this exact style for
+my portfolio cards also."
+
+`tokens.css` already carried the ported `.pf-*` / `.add-card` / `.crumb` rules from the
+earlier pass on this requirement; `Portfolio.tsx` was still drawing the dashboard with
+the generic `.card` grid, so every one of those rules was dead CSS. This session wired
+the markup to them: centred glyph/name/vertical, the purpose, a bordered three-cell stat
+row, the product's apps as rows, a coverage footer, the joined `.pf-sum` platform strip
+in place of six detached stat tiles, the dashed `.add-card`, and the
+`Product Portfolio ▸ <product> ▸ <app>` `.crumb`. Header is the prototype's own eyebrow /
+"Product Portfolio" / subtitle, and `.pf-actions .btn` / `.pf-foot .btn` make those two
+button rows uppercase without touching the app's global `.btn`.
+
+Adaptations, none of them cosmetic accidents:
+
+- **Per-product accent, not one fixed `--prod`.** The prototype hardcodes a single accent
+  for all five sample products. Each card re-binds `--prod`/`--prod-dim`/`--prod-bd` to
+  its own mark's triad from `marks.tsx`, so glyph, vertical, app bullets and hover border
+  all follow the mark the user actually picked — one inline binding instead of a rule per
+  mark, and no new colour that `contrast.test.ts` cannot see.
+- **Nothing hardcoded.** Every figure still comes from `/products/dashboard`; the card
+  gained no data it cannot derive. The eyebrow counts real unarchived products rather
+  than repeating the prototype's "five verticals", so it cannot drift from the grid.
+- **Coverage banding tightened** to the prototype's three-tier `covCol` (green ≥88, amber
+  ≥75, red below) from the single 75% cut — the same 75% the summary strip's "apps below
+  75%" figure already uses.
+- **Gap chips are not suppressed.** The prototype chips an app's gap count only above 5;
+  every non-zero count is chipped here, since hiding a live figure to quieten a card
+  hides real work.
+- **Nothing was dropped.** The prototype's card has no lifecycle badge, owner, edit or
+  archive control; all four survive — lifecycle and owner in one compact centred
+  `.pf-meta` line, edit/archive in a `.pf-acts` cluster revealed on hover/`:focus-within`
+  so the footer is exactly bar + percentage + OPEN as in the screenshot. Absent
+  owner/vertical/purpose render as stated text ("No owner assigned"), never blank —
+  rule 8. App rows became real links that drill to the app, not just to the product.
+- **The crumb needed a home.** This Portfolio is tabbed (Dashboard/Hierarchy/Glossary),
+  not the prototype's three drill-down states, so it renders in Hierarchy once a product
+  is selected, each ancestor a link back up.
+
+`StatTile` and `MiniStat` became unused and were removed rather than left dangling;
+`MarkIcon` is no longer used here (the card draws the glyph through `.pf-glyph`) but is
+still used by `NewProductModal`, so it stays in `marks.tsx`.
+
+`tsc --noEmit` clean, `npm run build` clean, suite **126 passed** with contrast still
+120/120 — the change is markup against already-verified rules, so it added no new pairing.
+
+**Follow-up, same session — "portfolio card sizes are very large"**. Two real defects,
+found by rendering the exact card markup against `tokens.css` in headless Chrome and
+measuring `getBoundingClientRect()` rather than eyeballing it:
+
+- **The `.pf-*` block's own header comment closed itself early.** It described the rule
+  family as `.pf-*` immediately followed by `/.crumb` — and `*/` ends a CSS comment. The
+  parser therefore treated the rest of the comment prose as a selector prelude and ate
+  the entire `.pf-grid` rule that followed it. There was no grid at all: every card laid
+  out as a full-width block, **1641px wide**, one per row. The comment is reworded and
+  now says why the sequence must never appear again. Worth noting the whole suite was
+  green through this, because `contrast.test.ts` reads declarations out of the file, not
+  the cascade a browser actually builds — a green suite is not evidence that a
+  stylesheet parses.
+- **`auto-fit` + `1fr` only works when the row is full.** The prototype always renders
+  five products plus the add-card, so its tracks are always occupied. With two products
+  `auto-fit` collapses the empty tracks and stretches those two cards across the page.
+  Changed to `auto-fill` with `minmax(226px, 300px)`, which pins a card to the width it
+  has in the prototype's own screenshot (~298px at 1920) no matter how few products
+  exist.
+
+Measured after the fix: **300×494** per card (prototype ~298×485), five across in the
+app's content column, and the two-product grid renders identically sized cards instead
+of two page-wide ones. Checked in both themes. `tsc --noEmit` clean; **126 passed**;
+contrast still 120/120 — the corrected comment exposed no new colour pairing, since
+`.pf-grid` declares none.
+
+**Follow-up, same session — "portfolio card sizes are very large", then "there is a lot
+of difference still … smooth lines i need, not it looks like more grid"**. Three real
+defects, all found by rendering the exact card markup against `tokens.css` in headless
+Chrome and measuring `getBoundingClientRect()` instead of eyeballing a diff:
+
+- **The `.pf-` block's own header comment closed itself early.** It described the rule
+  family as `.pf-` plus a star, immediately followed by `/.crumb` — and that sequence
+  ends a CSS comment. The parser treated the remaining prose as a selector prelude and
+  ate the entire `.pf-grid` rule after it. There was no grid at all: every card laid out
+  as a full-width block, **1641px wide**, one per row. The comment now says why that
+  sequence must never reappear. The suite was green throughout, because
+  `contrast.test.ts` reads declarations out of this file rather than the cascade a
+  browser builds — a green suite is not evidence that a stylesheet parses.
+- **`auto-fit` + `1fr` only holds when the row is full.** The prototype always renders
+  five products plus the add-card, so its tracks are always occupied; with two products
+  `auto-fit` collapses the empty tracks and stretches those two across the page. Now
+  `auto-fill` with `minmax(226px, 300px)`, which pins a card to the width it has in the
+  prototype's own screenshot (~298px at 1920) however few products exist. Measured
+  after: **300×493** per card (prototype ~298×485).
+- **Every product on the default mark rendered with no accent at all.** The card re-bound
+  its `--prod*` trio inline from `marks.tsx`, whose values are `var(--prod)` strings — so
+  for `box` (which is `DEFAULT_MARK`) the inline style evaluated to
+  `--prod: var(--prod)`, a self-referential custom property. CSS resolves that to
+  guaranteed-invalid, and the top border, glyph ring, italic vertical and app bullets all
+  silently vanished; the flat grey card the user was comparing against the prototype. The
+  binding is now an `.acc-*` class per accent family, with no class for the marks already
+  on `--prod`. A `var(--acc, var(--prod))` fallback chain would also have worked, but
+  `contrast.test.ts` pairs a rule's background against its border *by token name*, so
+  `--acc-dim` — not a defined colour — would have dropped `.pf-glyph` out of the gate
+  without failing it.
+
+**The "looks like a grid" difference was line weight, not layout.** The prototype's
+hairline is `#DDE2EA` light / `#272E3A` dark; this project's `--line` is `#7990B5` /
+`#586989`, because session 16 raised every boundary token to clear 3:1 for WCAG 1.4.11.
+Drawing a card's internal rulings in it reads as a table. The card's *outline* stays
+`--line` — it is a real boundary and `contrast.test.ts` still asserts it in both themes —
+while the rulings inside (under the description, between stat cells, above the footer,
+between summary cells) are now `--panel-3`, which is within a shade of the prototype's
+own hairline. The `.pf-meta` line lost its rule entirely: the prototype's card has three
+horizontal lines and a fourth is what made this read as a grid; lifecycle and owner now
+sit directly under the vertical, above the description.
+
+Honest note on the gate: contrast went **120 → 118 tests**. Both lost assertions are the
+same pairing — `.pf-foot`'s old `border-top: --line` on its `--panel-2` fill, in each
+theme. That divider now lives on `.pf-apps`, which declares no background, and the
+checker only asserts a border where the same rule declares a background var. So these
+hairlines are outside the automated gate rather than passing it. That is the right
+reading of 1.4.11 for a decorative separator — none of them is the boundary of any
+control — but it is a coverage reduction, not a free win, and it is recorded here rather
+than left for someone to discover in the test count.
+
+`tsc --noEmit` clean, `npm run build` clean, **124 passed**. Verified in both themes at
+1920 and 1280 wide, and with a two-product grid as well as five.
+
+**Follow-up, same session — "after i click open button it opens some page … i need the
+same design which was in html"**. OPEN on a product card jumped to the Hierarchy tab's
+three columns; the prototype's OPEN leads to its own second portfolio state, one product
+and its apps. That state is now built: `portfolio/ProductDetail.tsx`, with the
+prototype's `.pd-*` head (glyph, serif name, italic vertical, purpose, and a bordered
+Reqs/Verified/Gaps box reusing the same `.pf-stat` cells so the two states cannot drift),
+its `Apps in this product` row with the `N apps · N requirements · N open gaps` line, and
+its `.app-grid` of `.app-card`s — dot-pill gap badge, a Requirements row, a Verified row
+banded by the shared `covColor`, and an uppercase footer. Reached by state, not by route:
+the crumb and "All products" return to the grid, and the drill-down replaces the page
+title and tab row exactly as the prototype replaces its own view.
+
+- **`covColor` moved to `portfolio/coverage.ts`** with `verifiedPctOf`, so the card grid
+  and the drill-down band the same percentage identically rather than each holding a copy.
+- **`.app-grid` is capped at 340px**, for the reason `.pf-grid` was: the prototype's
+  `1fr` is only safe because it always has six apps, and a two-app product would
+  otherwise get two half-page cards.
+- **The gap badge keeps all three of the prototype's states** — red above five, grey at
+  one to five, green at none. The prototype's middle state is grey, not amber, so rule 5
+  ("amber means AI") costs nothing here. It is the prototype's own `.bdg` shape (mono,
+  uppercase, 3px corners, leading dot), added as `.app-bdg`, not this app's rounded
+  `.badge`; the token triads are the ones the app's badges already use, and
+  contrast.test.ts now asserts all three in both themes.
+- **The Requirements bar is full width, as in the prototype.** It reports a count, not a
+  share of anything — an earlier pass scaled it against the largest sibling app, which
+  looked like data the payload doesn't contain.
+- **Two of the three footer buttons cannot be scoped yet.** The prototype's per-app
+  "Requirements" and "Gaps" need an application-level filter; the requirements list
+  filters by capability, and the coverage matrix's gaps-only toggle is local state, not a
+  URL parameter. Both buttons open the real views unfiltered and say so on hover, rather
+  than implying a scope they don't apply. An app-scoped requirements filter is the honest
+  follow-up.
+- **"New app" is real.** It posts through the existing `createApplication` endpoint from a
+  dialog rendered by `Modal` (focus trap and restore, VYB-0768) and invalidates both the
+  dashboard and that product's application list. Previously an app could only be created
+  from the Hierarchy tab's inline field.
+- **"Open app"** drills to the app in the Hierarchy tab, which is where capabilities are
+  listed today. The prototype's third state (a full app detail page) is not built.
+
+`tsc --noEmit` clean, `npm run build` clean, **142 passed** — contrast 118 → **136**, the
+18 new assertions being the drill-down's own pairings (`.pd-head`, `.pd-glyph`,
+`.app-card`, and the three `.app-bdg` states across both themes), all clearing AA.
+Verified against the user's screenshot in both themes: `app-card` 322×142 at the app's
+content width (prototype ~305×142), `pd-head` 110px tall.
+
+## Session 22 — VYB-0668: the document analysis panel (frontend copy)
+
+The frontend half of VYB-0667 (see the backend register for the three-agent pipeline
+itself). One panel in the Import Queue's batch view, above the candidate list, because a
+reviewer who understands the document first makes better decisions on the candidates it
+produced — extraction and analysis are independent and neither gates the other.
+
+- **Amber throughout** (`.ai-panel`), because everything in it is AI output and amber is
+  reserved for exactly that. New rules pair `--ai-bd` on `--ai-dim`, the triad the app's
+  AI badges already use.
+- **The panel shows what the run did not do.** Sections read out of sections total,
+  findings kept, noise blocks discarded, quotes rejected for not being in the document,
+  and AI call count. A partial run says the remainder was *not read* rather than letting
+  a shorter description imply the document was thinner than it is.
+- **Unsupported claims render before the description, not after it.** If the verifier
+  could not tie a claim back to the document, that is the first thing a reviewer should
+  see.
+- **Every claim is checkable.** "Show N source findings" lists each finding grouped by
+  category with its verbatim quote and where in the document it came from — the thing
+  that makes a fluent description auditable rather than merely persuasive.
+- **Accept or dismiss, and dismissal takes a reason** in an inline field wired to the
+  same endpoint the backend validates. Nothing about displaying the description applies
+  it.
+
+`contrast.test.ts` caught three of the new rules on the first run: `.ai-stats`,
+`.ai-desc` and `.ai-findings` had been given `--panel-3` hairline borders on a `--panel`
+fill, which is not a perceivable boundary. They are boxes on the amber panel, so their
+outline is a real boundary and now takes `--line`; only the rulings inside them stayed
+hairlines. The gate was right and the fix was the design, not the test.
+
+`tsc --noEmit` clean; suite **154 passed** (contrast 136 → 148 as the panel added 12 real
+pairings, all clearing AA).
+
+**Follow-up, same session — the analysis panel is gone.** `DocumentAnalysisPanel` was
+deleted. It asked the user to run a second, separate AI step and rendered a "Not analysed
+yet" empty state next to a "Not Found" error whenever the running backend predated the
+endpoints — three pieces of ceremony for something that should just be part of pressing
+Extract candidates.
+
+In its place, `DocumentSummary` renders only when a run exists, with no controls and no
+empty state: extraction produces the description, so there is nothing here to start.
+Above the candidate list it shows what the document is about, the themes, and one honest
+coverage line — findings kept, sections read out of sections total, boilerplate blocks
+ignored, claims dropped for not being quotable from the document, and the model. A
+partial run still says the remainder was *not read* rather than letting a shorter
+description imply a thinner document.
+
+Each candidate card gained an amber chip naming what the agents read it to be (a business
+rule, a problem, a constraint), and its existing "Show original text" now reveals the
+verbatim sentence from the document that the candidate was derived from.
+
+Extraction errors all land in the one error line under the header — a failed validation
+rule, a document with no readable text, or the analysis agents being unreachable or
+misconfigured — carrying the backend's own message rather than a generic failure.
+
+`tsc --noEmit` clean; suite **146 passed** (contrast 148 → 140 as the deleted panel's
+rules went with it).
