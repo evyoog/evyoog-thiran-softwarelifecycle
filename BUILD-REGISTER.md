@@ -306,8 +306,8 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | PARTIAL: code done, rotation and history scrub are human steps (docs/SECRETS-ROTATION.md) | S1 |
 | VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | DONE on dev (commit only; no PR yet). CORS default was closed in VYB-0900 | S1 |
 | VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | DONE on dev (commit only; no PR yet) | S1 |
-| VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | TODO | S1 |
-| VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | TODO | S1 |
+| VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
+| VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | TODO | S1 |
 | VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | TODO | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
@@ -4654,6 +4654,28 @@ A grant on a product covers its apps and capabilities (existing `GrantResolver` 
 - PATCH checks the requirement's current placement only; moving a requirement into a capability the caller has no role on is not checked at the target.
 - The UI does not yet hide these actions from users who lack the role, so they will see a 403 message. The existing per-user role lists are the data for that.
 - Users who relied on any-signed-in-user access to these actions need a grant before this ships. Check who holds BUSINESS_ANALYST, ARCHITECT and APPROVER today.
+
+
+## Session 61 — VYB-0903 and VYB-0904 (F10, F11): safe runners and CI
+
+Phase 6 Sprint 1, session 4. Branch `dev`.
+
+**VYB-0903 — runners can only reach a local database.**
+- `vyoog-testkit` `LocalDatabase`: `DB_URL` unset gives a throwaway Testcontainers Postgres (pgvector image, schema `vyg_requirement`, started once per JVM); `DB_URL` set must name only localhost or loopback hosts (every host of a multi-host URL is checked; a host smuggled in through `?host=` or `user@host` is refused; the message names the offending host and what to do instead).
+- `VerificationRunnerBase` (`@SpringBootTest` + `@DynamicPropertySource`) supplies the datasource from `LocalDatabase` and fake values for the three secrets the app now requires (D22) unless the environment sets them. All 16 `*Runner` classes extend it. `RunnersUseLocalDatabaseTest` fails the build if a runner in the package does not.
+- `BriefPushVerificationRunner` no longer touches the shared `integration_connection` "planning" row at all. It used to overwrite its config and secret and restore them in a `finally` (a crash left a fake push URL and secret behind, and a successful push also flipped `connected`). It now replaces `IntegrationService` with an in-memory subclass holding its own "planning" connection, and asserts that the real row is byte-for-byte unchanged afterwards.
+
+**VYB-0904 — CI.** `.github/workflows/ci.yml`, on `pull_request`: `backend` job (Temurin 21, Maven cache, `./mvnw -B -ntp verify`) and `frontend` job (Node 20, npm cache, `npm ci`, `npx tsc -b`, `npm test`). Read-only permissions, concurrency cancels superseded runs, no secrets, no services, no Docker. Timeouts 20 and 15 minutes.
+
+**Also fixed (needed for a green CI):** `RopcConfigurationMessageTest` asserted the message cites "D8"; the service has cited D21 since 2026-09-11, so it had been failing on `main`. The assertion now expects "D21". This is the failure recorded in sessions 58 to 60; `./mvnw -B verify` now passes with nothing ignored.
+
+**Tests** (`VYB0903_AC1_...`): `LocalDatabaseGuardTest` (local URLs accepted; 12 non-local or malformed URLs refused; message content; `resolve` behaviour) and `RunnersUseLocalDatabaseTest` (1). Red check: removing `extends VerificationRunnerBase` from one runner makes the second one fail naming it. Backend: `./mvnw -B verify` green. Frontend `npx tsc -b` clean, `npm test` 616 passed.
+
+**Could not verify**
+- No runner was executed: this environment has no Docker daemon and no pgvector, and no local Postgres was started. `LocalDatabase`'s container path, `VerificationRunnerBase` wiring against a live context, and the new `BriefPushVerificationRunner` are compile-checked only.
+- The workflow has not run on GitHub (no pull request yet). Its two command lines were run locally; the YAML parses. The action versions (`checkout@v4`, `setup-java@v4`, `setup-node@v4`) are unpinned to a sha.
+- The `Requirement:` trailer check the register header mentions ("a commit without a trailer fails CI") is not implemented; it was not in the row.
+- Lint (`npm run lint`) is not in CI: ESLint is not set up yet (VYB-0912).
 
 ---
 

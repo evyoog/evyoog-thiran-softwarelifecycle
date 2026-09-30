@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,8 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Cleans up everything it creates.
  */
-@SpringBootTest
-class ListTestCasesVerificationRunner {
+class ListTestCasesVerificationRunner extends VerificationRunnerBase {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired TestCaseService testCaseService;

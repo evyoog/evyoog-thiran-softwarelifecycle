@@ -5,7 +5,6 @@ import com.vyoog.ai.TestCaseGenerator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,8 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class AiTestCaseSuggestionVerificationRunner {
+class AiTestCaseSuggestionVerificationRunner extends VerificationRunnerBase {
 
     @Autowired TestCaseGenerator generator;
 

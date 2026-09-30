@@ -86,6 +86,43 @@ API). There is no local Keycloak to fall back on.
 | Keycloak (shared, not local) | https://user.evyoog.com |
 | MinIO console | http://localhost:9001 (minio / minio123) |
 
+## Running the integration runners locally
+
+The `*VerificationRunner` / `LoadRehearsalRunner` classes in `vyoog-api/src/test` boot the whole
+application against a real Postgres. They are invisible to `mvn test` / `mvn verify` (and to CI) on
+purpose — run one by name. They only ever use a **local** database:
+
+- **`DB_URL` unset** — a throwaway Testcontainers Postgres (pgvector image) is started for the run and
+  discarded afterwards. Needs Docker.
+- **`DB_URL` set** — it must point at localhost or a loopback address, normally the docker-compose
+  database. Any other host (RDS, a shared server) is refused before anything connects, with a message
+  naming the host.
+
+```bash
+# Option A: throwaway container (Docker running, DB_URL not set)
+cd backend && ./mvnw -B -pl vyoog-api -am test -Dtest=Session14VerificationRunner \
+  -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
+
+# Option B: the docker-compose database
+cd backend && docker compose up -d
+set -a && source .env && set +a          # DB_URL must be jdbc:postgresql://localhost:...
+./mvnw -B -pl vyoog-api -am test -Dtest=Session14VerificationRunner \
+  -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+The three Keycloak/SSO secrets the application requires get fake values in a runner unless you have
+set them (`AuthEndpointVerificationRunner` needs its own, see its class comment). Runners that talk to
+object storage need MinIO from `docker compose up -d`. A runner cleans up the rows it creates, and none
+of them touches the seeded `integration_connection` rows: `BriefPushVerificationRunner` swaps in an
+in-memory integration service with its own "planning" connection. A new `*Runner` class must extend
+`VerificationRunnerBase`; a unit test fails the build otherwise.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request: `cd backend && ./mvnw -B verify` (compile, unit
+tests, ArchUnit) and, in `frontend`, `npm ci`, `npx tsc -b` and `npm test`. It needs no secrets or
+services. Run the same commands locally before you push.
+
 ## Verify Phase 0
 
 ```bash

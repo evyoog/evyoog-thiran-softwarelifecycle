@@ -5,7 +5,6 @@ import com.vyoog.ai.RequirementRewriteAdvisor;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,8 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class RewriteSuggestionVerificationRunner {
+class RewriteSuggestionVerificationRunner extends VerificationRunnerBase {
 
     @Autowired RequirementRewriteAdvisor advisor;
 
