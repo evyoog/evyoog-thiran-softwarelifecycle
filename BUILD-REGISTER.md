@@ -308,7 +308,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | DONE on dev (commit only; no PR yet) | S1 |
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
-| VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | TODO | S1 |
+| VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
 | VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | TODO | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
@@ -4676,6 +4676,25 @@ Phase 6 Sprint 1, session 4. Branch `dev`.
 - The workflow has not run on GitHub (no pull request yet). Its two command lines were run locally; the YAML parses. The action versions (`checkout@v4`, `setup-java@v4`, `setup-node@v4`) are unpinned to a sha.
 - The `Requirement:` trailer check the register header mentions ("a commit without a trailer fails CI") is not implemented; it was not in the row.
 - Lint (`npm run lint`) is not in CI: ESLint is not set up yet (VYB-0912).
+
+
+## Session 62 — VYB-0905 (F37): one README, one register, one CLAUDE.md
+
+Phase 6 Sprint 1, session 5. Branch `dev`. The register merge and the root `CLAUDE.md` were done earlier on `dev` (commit `6b64a7a`); this session did the rest and audited the whole.
+
+**Done**
+1. **Old schema deleted.** `backend/docs/vyoog-schema.sql` (the multi-tenant design-time DDL, with `tenant_id` and row-level security) is removed. Nothing in code, tests, pom files or scripts read it. The three docs that named it as the schema now name the Flyway migrations (`backend/vyoog-domain/src/main/resources/db/migration`) and say the file was removed: the specification (companion-file table, §5 intro, closing line), the kickoff prompts, and the getting-started runbook. Session logs in this register that mention it are history and are unchanged.
+2. **Registers merged** (earlier): one `BUILD-REGISTER.md` at the root, all session logs kept, Phase 6 rows added, conflicts reported in its "Merge note". Nothing more to report: the frontend copy was an older snapshot, and its colliding session 21 and 22 logs are kept and marked.
+3. **One `CLAUDE.md`** (earlier) at the root with the section B edits; the two copies are gone.
+4. **README rewritten.** The root `README.md` was empty. It now describes the current system: what it is, where the plan, rules, decisions, specification and schema live, how to run everything locally (with the real steps: `.env`, docker compose, `run-local.sh`, dev server on 5175 and its proxy target), the six required variables and the optional ones, how to test and build, the layout, and the rules. `backend/README.md` and `frontend/README.md` had been identical 184-line copies of the old Phase 0 README (claiming "Phases 0-2 are built", telling readers to run a `FoundationSmokeIT` that does not exist, and a `frontend/.env.example` that does not exist). They are now short component READMEs that link to the root: modules, integration runners, CI for the backend; configuration and layout for the frontend.
+5. **Sprint 1 rows audited** against what is on `dev`: VYB-0901 to VYB-0905 are DONE on dev; VYB-0900 stays PARTIAL (rotation and the history scrub are human steps, see `docs/SECRETS-ROTATION.md`). None is marked DONE on the strength of a pull request, because none exists yet; "DONE on dev" means the commit and its tests exist, not that it was reviewed or merged.
+
+**Checked:** relative links in the three READMEs resolve; `./mvnw -B verify` green (371 domain, 73 api); `npx tsc -b` clean; `npm test` 616 passed.
+
+**Not done / to know**
+- The `frontend/.env.local` committed in the repo points the dev proxy at `http://localhost:8083` while the API defaults to 8080; the README says so but the file is unchanged (not in scope).
+- `backend/docs/vyoog-build-specification.md` still describes the original multi-tenant design in §3, §4 and §5 in places. Only its schema pointer was corrected. Bringing the spec in line with the code is D23's follow-up and was not attempted.
+- `backend/README.md` and `frontend/README.md` remain as component READMEs rather than being deleted, so a reader can still find module-level notes. Say if you want them removed so only the root README exists.
 
 ---
 

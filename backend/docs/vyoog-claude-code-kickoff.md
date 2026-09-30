@@ -21,7 +21,7 @@ compiles and does nothing. The session protocol exists to prevent exactly that.
 ## What this is
 A requirements management platform. Spring Boot (Java 21) + React 18/TypeScript +
 PostgreSQL 16 + Keycloak 25. The authoritative specification is
-`docs/vyoog-build-specification.md`. The schema is `docs/vyoog-schema.sql`.
+`docs/vyoog-build-specification.md`. The schema is the Flyway migrations in `backend/vyoog-domain/src/main/resources/db/migration`.
 Read the relevant section of the spec before writing code. Do not infer requirements.
 
 ## Hierarchy
@@ -105,7 +105,7 @@ requirement, never guess at a business rule, never add a field the spec does not
 >
 > Read these three files completely before doing anything:
 > - `docs/vyoog-build-specification.md`
-> - `docs/vyoog-schema.sql`
+> - ~~`docs/vyoog-schema.sql`~~ (removed, VYB-0905: the Flyway migrations are the schema)
 > - `CLAUDE.md`
 >
 > **This session's scope is Phase 0 — Foundation, and nothing beyond it.** Do not start
@@ -120,7 +120,7 @@ requirement, never guess at a business rule, never add a field the spec does not
 >    Java 21, and ArchUnit tests enforcing the §2.1 package boundaries.
 > 2. `docker-compose.yml` with Postgres 16 (with `pgvector`), Keycloak 25, Redis and
 >    MinIO, plus a Keycloak realm import for the `vyoog` realm defined in §4.2.
-> 3. Flyway `V001__baseline.sql` taken from `docs/vyoog-schema.sql`, applied by a
+> 3. Flyway `V001__baseline.sql` (originally taken from the now-removed `docs/vyoog-schema.sql`), applied by a
 >    `vyoog_migrator` role that is distinct from the application's `vyoog_app` role.
 > 4. The tenancy layer from §3.3: a `TenantContext`, a `DataSource` decorator that issues
 >    `SELECT set_config('app.tenant_id', ?, true)` at transaction start, and Hibernate
@@ -247,4 +247,4 @@ Tell the agent these directly. Each is a failure mode observed on projects this 
 
 ---
 
-*Companion files: `vyoog-build-specification.md`, `vyoog-schema.sql`.*
+*Companion file: `vyoog-build-specification.md`.*

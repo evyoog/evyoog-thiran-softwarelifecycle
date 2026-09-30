@@ -147,12 +147,12 @@ mkdir -p docs \
 
 # Copy the four planning documents in — Claude Code reads these.
 # cp /path/to/vyoog-build-specification.md   docs/
-# cp /path/to/vyoog-schema.sql               docs/
+# (vyoog-schema.sql, removed in VYB-0905 — the Flyway migrations are now the schema)
 # cp /path/to/vyoog-maven-project-setup.md   docs/
 # cp /path/to/vyoog-claude-code-kickoff.md   docs/
 
-# The schema becomes the Flyway baseline.
-# cp docs/vyoog-schema.sql backend/vyoog-domain/src/main/resources/db/migration/V001__baseline.sql
+# (Historical: the schema became the Flyway baseline, V001__baseline.sql. Read the
+# migrations in backend/vyoog-domain/src/main/resources/db/migration for the real schema.)
 
 cat > .gitignore <<'EOF'
 target/
