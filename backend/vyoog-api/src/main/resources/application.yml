@@ -4,21 +4,21 @@ spring:
   datasource:
     # Shared company RDS instance, Vyoog's own schema on it (see docs/DECISIONS.md D3).
     # The schema already exists: CREATE SCHEMA vyg_requirement AUTHORIZATION postgres.
-    # D9 (2026-08-13): the defaults below are the real live RDS host and the real
-    # shared `postgres` password — mirroring vyg-pms's own application.yml, by
-    # explicit instruction, so the app connects to the live database with no env
-    # vars set at all. This is a deliberate reversal of this file's own earlier
-    # "never hardcode credentials" rule; DB_URL/DB_USER/DB_PASSWORD still override
-    # these for local-only work (see README.md), but no override is required now —
-    # see docs/DECISIONS.md D9 for the tradeoff this accepts.
+    # D22 (proposed, supersedes D9): NO credential has a real default here. DB_URL,
+    # DB_USER and DB_PASSWORD come from the environment (local: .env + docker-compose;
+    # deployed: the secrets manager). The defaults are deliberately empty, and
+    # RequiredSecretsEnvironmentPostProcessor stops startup with a message naming the
+    # missing variable, so an unset variable can never fall through to some database
+    # the developer did not choose.
     # currentSchema must list both schemas, comma-separated (a real pgjdbc feature: it
     # becomes a `SET search_path` list) — `vyg_requirement` alone drops `public` from
     # the session's search_path entirely, breaking pgvector's `<=>` operator and
     # pg_trgm's operator classes, both registered unqualified in `public` by their
     # migrations. See BUILD-REGISTER.md Session 14 for the first time this bit us.
-    url: ${DB_URL:jdbc:postgresql://vyg-batch-1.cgtfswn9milw.ap-south-1.rds.amazonaws.com:5432/vygmicroservice?currentSchema=vyg_requirement,public}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:vygpost23}
+    # Example: jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public
+    url: ${DB_URL:}
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
     hikari:
       maximum-pool-size: 20
       pool-name: vyoog-pool
@@ -52,23 +52,23 @@ spring:
           # once it exists — see docs/vyoog-getting-started.md.
 
 vyoog:
+  # CORS allowlist (comma-separated). No wildcard default: browsers send credentials
+  # (the refresh-token cookie), so an origin is allowed only if it is listed here.
+  # cors-allowed-origins matches exactly; cors-allowed-origin-patterns is for
+  # local-dev hosts on any port (e.g. http://localhost:*) and is empty by default.
+  # A bare `*` in either is refused at startup (see SecurityConfig).
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:https://devops.evyoog.com}
+  cors-allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
   keycloak:
     # VYB-0048b: the username/password screen's server-side token exchange. The
-    # secret lives ONLY here (a backend env var) — never in the frontend build,
-    # unlike vyg-pms-ui's own VITE_CLIENT_SECRET, which Vite bakes into its shipped
-    # JS bundle. VYB-0048b's original design called for a *separate*, purpose-built
-    # confidential client here instead of eVyoog (see docs/DECISIONS.md D7's
-    # rationale for vyoog-web, the sibling client this one is not). D8
-    # (2026-08-12) overrode that to reuse eVyoog instead; D21 (2026-09-11)
-    # reverses D8 back to a dedicated client (`vyg-devops-ui`) — see D21 for why.
-    #
-    # D20 (2026-09-06): hardcoding a real secret as the default, mirroring
-    # vyg-pms's own application.yml, is unaffected by D21 — same tradeoff,
-    # now for vyg-devops-ui's own secret instead of eVyoog's.
+    # secret lives ONLY in a backend env var — never in the frontend build, and (D22,
+    # proposed; supersedes D20) never in this file either: the default is empty and
+    # startup fails, naming KEYCLOAK_ROPC_CLIENT_SECRET, when it is unset. The client
+    # is vyg-devops-ui, a dedicated confidential client (D21).
     token-uri: ${KEYCLOAK_TOKEN_URI:https://user.evyoog.com/realms/eVyoog/protocol/openid-connect/token}
     end-session-uri: ${KEYCLOAK_END_SESSION_URI:https://user.evyoog.com/realms/eVyoog/protocol/openid-connect/logout}
     ropc-client-id: ${KEYCLOAK_ROPC_CLIENT_ID:vyg-devops-ui}
-    ropc-client-secret: ${KEYCLOAK_ROPC_CLIENT_SECRET:gutxQi0ciw6Fg6zwZlQHcctram0Toltf}
+    ropc-client-secret: ${KEYCLOAK_ROPC_CLIENT_SECRET:}
   auth:
     # VYB-0800: the refresh-token cookie AuthController sets. True everywhere real
     # (HTTPS) — the one reason to ever set AUTH_COOKIE_SECURE=false is a plain-HTTP
@@ -83,7 +83,8 @@ vyoog:
     # context-path; vyg-ticket does not.
     partner-backend-urls: ${VYOOG_SSO_PARTNER_BACKEND_URLS:http://localhost:8081/api,http://localhost:8080/api,http://localhost:8082}
     # Must match the identical value configured on every other app's own backend.
-    sso-shared-secret: ${INTERNAL_SSO_SHARED_SECRET:local-dev-only-shared-secret-change-me}
+    # Required (D22): empty default, startup fails if unset.
+    sso-shared-secret: ${INTERNAL_SSO_SHARED_SECRET:}
     # Unset locally (host-only "localhost" cookies already cross ports); set to
     # the real shared parent domain once this app's actual production
     # subdomain is confirmed alongside the other three.
@@ -92,7 +93,7 @@ vyoog:
     # ROPC login (D8) — reused here as the impersonation broker for
     # cross-app exchange, same as it already is for eis-platform/vyg-pms/vyg-ticket.
     impersonation-client-id: ${KEYCLOAK_IMPERSONATION_CLIENT_ID:eVyoog}
-    impersonation-client-secret: ${KEYCLOAK_IMPERSONATION_CLIENT_SECRET:ssFF0O7wX5UlmWECCxjfOmflw4WRSJng}
+    impersonation-client-secret: ${KEYCLOAK_IMPERSONATION_CLIENT_SECRET:}
   ai:
     # VYB-0666/0667: OpenAI Chat Completions for the multi-agent document analysis
     # pipeline (relevance triage, synthesis, grounding critique, and brief analysis —

@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=com.vyoog.api.config.RequiredSecretsEnvironmentPostProcessor
+org.springframework.boot.diagnostics.FailureAnalyzer=com.vyoog.api.config.MissingRequiredSecretsFailureAnalyzer

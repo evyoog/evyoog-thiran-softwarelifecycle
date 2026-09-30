@@ -124,16 +124,17 @@ cd ~/eVyoogEIS/vyg-requirement-ui && npm run dev
 
 Order matters only for MinIO before the backend. Two things worth knowing about step 2:
 
-- `run-local.sh` sources `.env` for the Keycloak client secret and the OpenAI key, then
-  runs `./mvnw -B -pl vyoog-api spring-boot:run`.
+- `run-local.sh` sources `.env` (copy `.env.example`; it lists every required variable),
+  refuses to run unless `DB_URL` points at localhost, then runs
+  `./mvnw -B -pl vyoog-api spring-boot:run`.
 - Because it uses `-pl vyoog-api`, the `vyoog-domain` dependency is resolved from
   `~/.m2`, **not** from its sibling `target/` directory. After changing anything in
   `vyoog-domain`, run `./mvnw -B -DskipTests install` first or the running app silently
   uses stale classes.
 
-⚠️ The backend's default datasource is the **live shared RDS instance**, not local
-Postgres (`docs/DECISIONS.md` D9). Everything you do against a locally-run stack writes to
-real data unless you override `DB_URL` / `DB_USER` / `DB_PASSWORD`.
+The backend has no default datasource (`docs/DECISIONS.md` D22, which supersedes D9): it
+refuses to start unless `DB_URL` / `DB_USER` / `DB_PASSWORD` are set, so a locally-run
+stack only ever touches the database you named — use the docker-compose one.
 
 ## When it goes wrong
 

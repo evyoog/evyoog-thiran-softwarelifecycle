@@ -303,7 +303,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0783 | 5 | Performance | Graceful degradation; unavailable is reported, not zero | DONE | 12 |
 | VYB-0784 | 5 | Performance | Observability: metrics, health, integration status, request tracing | DONE | 12,16 |
 | VYB-0785 | 5 | Performance | Backup and restore rehearsed and documented | DONE | 15 |
-| VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | TODO | S1 |
+| VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | PARTIAL: code done, rotation and history scrub are human steps (docs/SECRETS-ROTATION.md) | S1 |
 | VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | TODO | S1 |
 | VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | TODO | S1 |
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | TODO | S1 |
@@ -4582,6 +4582,27 @@ raw JSON editor, saved the same way `planning`'s structured fields are — throu
 backend change needed — `setConfig` already accepts arbitrary JSON for any key. Nothing
 reads `git`'s config yet; this is storage only, same disclosed scope as Session 56's
 "registering a connection wires up nothing on its own" note. `tsc -b --noEmit` clean.
+
+
+## Session 58 — VYB-0900 (D22, F01/F07/F03): secrets out of the repo
+
+Phase 6 Sprint 1, session 1. Worked on branch `dev` (the environment's branch rule), not `sprint/s1-harden`.
+
+**Done (code)**
+- `application.yml`: every real credential default removed. `DB_URL`, `DB_USER`, `DB_PASSWORD`, `KEYCLOAK_ROPC_CLIENT_SECRET`, `KEYCLOAK_IMPERSONATION_CLIENT_SECRET` and `INTERNAL_SSO_SHARED_SECRET` now default to empty (the live RDS host, the database password and both client secrets are gone from the file; the fake SSO default is gone too).
+- `RequiredSecretsEnvironmentPostProcessor` (registered in `META-INF/spring.factories`) stops startup when any of the six is empty or blank, listing every missing one by environment-variable name and never echoing a value. `MissingRequiredSecretsFailureAnalyzer` prints it as Boot's "APPLICATION FAILED TO START" block.
+- CORS: `vyoog.cors-allowed-origin-patterns` no longer defaults to `*` (empty now). `SecurityConfig` refuses `*`, `https://*` and `http://*:*` in either list at startup. `cors-allowed-origins` keeps its existing explicit default `https://devops.evyoog.com`.
+- `run-local.sh` now exports `.env` (`set -a`; before, plain `source` did not export to the Maven child), requires `.env`, and refuses a non-localhost `DB_URL`. `docker-compose.yml` takes the Postgres password from `DB_PASSWORD`. New `backend/.env.example` (fake values). `backend/README.md` (and its identical copy in `frontend/README.md`), `docs/running-minio-locally.md` and `docs/vyoog-getting-started.md` no longer say the default database is the live one.
+- New `docs/SECRETS-ROTATION.md`: what to rotate, who owns each, order of work, and the `git filter-repo` commands for a person to run. **The history rewrite was not run.**
+
+**Tests** (`VYB0900_ACn_...`): `RequiredSecretsStartupTest` (16: boots a real `SpringApplication` against the real `application.yml`; each of the six missing, blank, all missing, message never echoes a value, yml has no defaults) and `SecurityConfigCorsAllowlistTest` (6: an unlisted origin gets 403 and no `Access-Control-Allow-*` headers, wildcards refused, default is not `*`). The existing `SecurityConfigCorsTest` (6) still passes.
+
+**Not done / could not verify**
+- Rotation and the history scrub: human steps. Until they happen the old values are still valid and still in git history. D22 is still Proposed.
+- `./mvnw -B verify` is **not green** because of `RopcConfigurationMessageTest.VYB0048b_AC1_aMissingSecretNamesTheSecretAndNotTheClient`, which fails identically on untouched HEAD: it expects the message to contain `D8`, and `KeycloakPasswordGrantService` cites D21 since 2026-09-11. Not in this row's scope, so left alone. With that one test ignored: vyoog-domain 335 run, 1 failure (that one); vyoog-api 28 run, 0 failures. Frontend `npm test`: 616 passed.
+- The `*VerificationRunner` classes start the full application, so they now need all six variables. They were not run (they need a live database); making them safe is row VYB-0903. They previously fell through to the live RDS database by default, so this change also removes that path.
+- The "fails before, passes after" check could not be run literally for the startup tests, because they reference the new classes; the CORS default test asserts the old `:*` default is gone.
+- Object-store keys still default to the local MinIO pair in `StorageConfig` (fake, local); not in this row's list.
 
 ---
 

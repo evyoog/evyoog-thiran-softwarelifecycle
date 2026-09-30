@@ -15,12 +15,11 @@
 >
 > 1. **Database.** The schema already exists: `CREATE SCHEMA vyg_requirement
 >    AUTHORIZATION postgres` on the shared RDS instance (same instance vyg-pms and the
->    pricing tool use). `application.yml`'s `DB_URL`/`DB_USER`/`DB_PASSWORD` defaults
->    now point at that real instance directly — see `docs/DECISIONS.md` D9 for why
->    (a deliberate, explicit reversal of this doc's original "never commit the real
->    values" guidance, not an accident). Override those three env vars only if you
->    need to point at something else, e.g. pure local dev against docker-compose's
->    Postgres.
+>    pricing tool use). `application.yml` has no defaults for
+>    `DB_URL`/`DB_USER`/`DB_PASSWORD`: the app will not start until they are set
+>    (`docs/DECISIONS.md` D22 restores this doc's original "never commit the real
+>    values" guidance and supersedes D9). Local dev uses docker-compose's Postgres via
+>    `.env`; deployed environments take them from the secrets manager.
 > 2. **Keycloak — frontend client.** Ask whoever administers `https://user.evyoog.com`
 >    to create a client in the **eVyoog** realm:
 >    ```

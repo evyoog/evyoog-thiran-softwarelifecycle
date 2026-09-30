@@ -20,18 +20,18 @@ as vyg-pms and the pricing tool — not a Vyoog-local realm or database.
 You need Docker, JDK 21 and Node 20+. You do **not** need Maven installed.
 
 ```bash
-# 1. local Postgres, Redis, MinIO (Keycloak is the shared eVyoog realm — no local one)
+# 1. local Postgres, Redis, MinIO (Keycloak is the shared eVyoog realm — no local one).
+#    Needs backend/.env first (step 2); docker compose reads DB_PASSWORD from it.
+cd backend && cp .env.example .env
 docker compose up -d
 docker compose ps                       # wait for healthy
 
 # 2. backend — Flyway applies V001__baseline.sql into the vyg_requirement schema
-#    on first start. Point these at the real shared RDS instance once you're past
-#    pure local iteration; the defaults below only work with docker-compose's
-#    local postgres.
-export DB_URL="jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public"
-export DB_USER=postgres
-export DB_PASSWORD=postgres
-cd backend && ./mvnw -pl vyoog-api -am spring-boot:run
+#    on first start. Configuration comes from backend/.env (gitignored); no secret
+#    has a default, and the app refuses to start naming any that is missing.
+cd backend && cp .env.example .env      # fill in the placeholders; see the table below
+docker compose up -d                    # (reads DB_PASSWORD from .env)
+./run-local.sh                          # loads .env, insists DB_URL is localhost
 
 # 3. frontend, in a second terminal
 cd frontend && cp .env.example .env     # then set VITE_KEYCLOAK_CLIENT_ID, see below
@@ -39,6 +39,28 @@ npm install && npm run dev
 ```
 
 Open `http://localhost:5173`.
+
+### Required configuration (D22)
+
+No real credential is committed anywhere. These six variables have **no default**; the
+API stops at startup and names every one that is empty. Local values live in
+`backend/.env` (see `.env.example`); deployed values come from the secrets manager.
+
+| Variable | What it is |
+|---|---|
+| `DB_URL` | JDBC URL, e.g. `jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public` |
+| `DB_USER`, `DB_PASSWORD` | database login (`DB_PASSWORD` is also the docker-compose Postgres password) |
+| `KEYCLOAK_ROPC_CLIENT_SECRET` | secret of the `vyg-devops-ui` client (username/password sign-in) |
+| `KEYCLOAK_IMPERSONATION_CLIENT_SECRET` | secret of the `eVyoog` client (cross-app SSO) |
+| `INTERNAL_SSO_SHARED_SECRET` | shared with every other app's backend in the SSO mesh |
+
+CORS is an explicit allowlist: `CORS_ALLOWED_ORIGINS` (exact, default
+`https://devops.evyoog.com`) and `CORS_ALLOWED_ORIGIN_PATTERNS` (local-dev hosts, empty by
+default; `.env.example` sets localhost). A bare `*` is refused at startup. For rotating the
+secrets and scrubbing git history, see `../docs/SECRETS-ROTATION.md`.
+
+The `*VerificationRunner` classes start the full application, so they need the same six
+variables and must only be pointed at a local database.
 
 **Before sign-in works**, a Keycloak admin needs to register a client in the real
 `eVyoog` realm — see `docs/vyoog-getting-started.md` for exactly what to create
