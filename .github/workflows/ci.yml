@@ -34,6 +34,17 @@ jobs:
       - name: Build and test
         run: ./mvnw -B -ntp verify
 
+  docs:
+    name: Requirement docs are current
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # docs/02-requirements and test-cases/automated-tests-index.md are generated from
+      # BUILD-REGISTER.md and the tests. Fails if someone changed one without regenerating.
+      - name: Check generated docs
+        run: python3 scripts/generate-requirements-docs.py --check
+
   frontend:
     name: Frontend type check and tests
     runs-on: ubuntu-latest

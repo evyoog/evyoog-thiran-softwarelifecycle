@@ -3,9 +3,29 @@
 ## What this is
 A requirements management platform. Spring Boot (Java 21) + React 18/TypeScript +
 PostgreSQL 16 + Keycloak 25. The authoritative specification is
-`backend/docs/vyoog-build-specification.md`. The schema is the Flyway migrations in
-`backend/vyoog-domain/src/main/resources/db/migration`.
-Read the relevant section of the spec before writing code. Do not infer requirements.
+the build specification, split by topic under `docs/` (`docs/02-requirements/SPECIFICATION-INDEX.md` maps
+every section number to its file). The schema is the Flyway migrations in `database/migrations`.
+Read the relevant requirements under `docs/` before writing code. Do not infer requirements, and do
+not implement anything that is not defined or approved there.
+
+## Where things live (source of truth)
+| What | Where |
+|---|---|
+| Requirements, status and their tests | `docs/02-requirements/` (generated from `BUILD-REGISTER.md`, which is the source) |
+| Business rules, gap detection | `docs/03-business-rules/` |
+| Workflows, requirement state machine | `docs/04-workflows/` |
+| Screens and frontend conventions | `docs/05-ui/`, `docs/02-requirements/FRD/<feature>/ui-requirements.md` |
+| API design | `docs/06-api/` |
+| Data model and database rules | `docs/07-database/`; the schema itself is `database/migrations/` |
+| Architecture, security | `docs/08-architecture/` |
+| Decisions | `docs/DECISIONS.md` |
+| Test cases | automated: next to the code, named `VYBnnnn_ACn_...`; manual and UAT: `test-cases/` |
+| Deployment | `deployment/`; local services `docker-compose.yml` |
+| CI/CD | `.github/workflows/` |
+
+Approved requirements are committed under `docs/`; do not leave them only in a chat or a Claude
+Project. Do not put business requirements inside `frontend/` or `backend/` source folders. A change to
+a rule, state machine, API or data model is a change to `docs/` in the same pull request.
 
 ## Hierarchy
 Platform → Product → App → Capability → Requirement
@@ -13,11 +33,11 @@ Platform → Product → App → Capability → Requirement
 ## Rules that are never negotiable
 
 1. **Schema isolation, not multi-tenancy.** Vyoog is single-tenant by design (see
-   `backend/docs/DECISIONS.md` D3). It lives in its own Postgres schema (`vyg_requirement`) on
+   `docs/DECISIONS.md` D3). It lives in its own Postgres schema (`vyg_requirement`) on
    the same shared RDS instance as the company's other applications — vyg-pms in
    `vyoog_pms`, the pricing tool in its own schema — exactly their pattern. There is no
    `tenant_id` column and no row-level security anywhere in this schema. Do not add
-   either back without a new decision recorded in `backend/docs/DECISIONS.md`; a stray
+   either back without a new decision recorded in `docs/DECISIONS.md`; a stray
    `tenant_id` column here is a mistake, not a convention to follow.
 2. **No passwords.** Keycloak owns authentication (the shared `eVyoog` realm — same as
    vyg-pms and the pricing tool). Never add a password column, a reset flow, or a field
@@ -34,7 +54,7 @@ Platform → Product → App → Capability → Requirement
    `requirement_verification_state.is_verified` is still a live predicate over that
    evidence. None of it may ever again write to `requirement.status`. Do not reintroduce
    a VERIFIED (or renamed-but-equivalent) requirement status without a new decision
-   recorded in `backend/docs/DECISIONS.md`.
+   recorded in `docs/DECISIONS.md`.
 4. **Tasks are derived.** There is no task table and no create-task endpoint. D19
    carves one narrow, explicitly-confirmed exception: `task_completion` (V034) records
    that a person dismissed one derived task, at the object's revision at the time —
@@ -66,7 +86,8 @@ Platform → Product → App → Capability → Requirement
 - [ ] An audit event is emitted for every state change
 - [ ] Commit trailer present: `Requirement: VYB-nnnn`
 - [ ] Test named `VYBnnnn_ACn_shortDescription`
-- [ ] `BUILD-REGISTER.md` row updated
+- [ ] `BUILD-REGISTER.md` row updated, and `python3 scripts/generate-requirements-docs.py` run so `docs/02-requirements/` matches it
+- [ ] Every database structure change is a new forward-only migration in `database/migrations/`
 - [ ] No new `TODO` without a linked issue
 - [ ] Every new or changed write endpoint has an explicit role rule and a test that proves an unauthorised user gets 403
 - [ ] No test or runner can reach a non-local database (tests use Testcontainers or the docker-compose database)
@@ -78,7 +99,7 @@ cd backend && ./mvnw -B verify                 # compile + unit (Surefire) + IT 
 cd backend && ./mvnw -B test                   # unit only, fast loop
 cd backend && ./mvnw -B -pl vyoog-api spring-boot:run
 cd backend && ./mvnw -B -pl vyoog-api spring-boot:build-image
-cd backend && docker compose up -d   # local postgres, redis, minio (Keycloak is the shared eVyoog realm — no local instance)
+docker compose up -d                 # (repository root) local postgres, redis, minio (Keycloak is the shared eVyoog realm — no local instance)
 cd frontend && npm run dev
 cd frontend && npm run test
 # `npm run generate-api` (OpenAPI → TypeScript) does not exist yet; Sprint 2 adds it (VYB-0912).

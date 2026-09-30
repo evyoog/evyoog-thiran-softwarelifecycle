@@ -26,4 +26,16 @@
     <dependency><groupId>com.vyoog</groupId><artifactId>vyoog-testkit</artifactId><scope>test</scope></dependency>
     <dependency><groupId>com.tngtech.archunit</groupId><artifactId>archunit-junit5</artifactId><scope>test</scope></dependency>
   </dependencies>
+  <build>
+    <resources>
+      <resource><directory>src/main/resources</directory></resource>
+      <!-- The Flyway migrations live at the repository root, database/migrations, as the one
+           version-controlled home for schema changes. They are packed into the jar under
+           db/migration, which is where spring.flyway.locations (classpath:db/migration) looks. -->
+      <resource>
+        <directory>${project.basedir}/../../database/migrations</directory>
+        <targetPath>db/migration</targetPath>
+      </resource>
+    </resources>
+  </build>
 </project>

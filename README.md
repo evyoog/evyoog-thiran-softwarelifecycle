@@ -5,42 +5,44 @@ are authored, reviewed, approved and baselined with revisions, and traced to des
 deployments, defects and releases. Spring Boot (Java 21) · React 18 + TypeScript + Vite ·
 PostgreSQL 16 (pgvector) · Keycloak 25.
 
-Vyoog is **single-tenant by design** (`backend/docs/DECISIONS.md` D3). It lives in its own Postgres
+Vyoog is **single-tenant by design** (`docs/DECISIONS.md` D3). It lives in its own Postgres
 schema (`vyg_requirement`) on the company's shared database instance and signs users in through the
 shared `eVyoog` Keycloak realm, the same as vyg-pms and the pricing tool. There is no local Keycloak.
 
 ## Where things are
 
+The repository is the single source of truth: requirements, rules, workflows, code, database changes, tests and deployment files live together, so one feature branch can change all of them.
+
 | | |
 |---|---|
-| **The plan and status** | [`BUILD-REGISTER.md`](BUILD-REGISTER.md): every requirement, one line, with status; session logs below the table. Phases 0 to 5 are built (a few rows are `PARTIAL`, with the gap written in the row's session log). **Phase 6 (VYB-0900 onwards) is the current plan**: Sprint 1 hardens security and the build, later sprints add connectors, manual test execution, AI governance and more. |
-| **Rules for coding agents** | [`CLAUDE.md`](CLAUDE.md): the non-negotiable rules, the Definition of Done and how sprint sessions work. |
-| **Decisions** | [`backend/docs/DECISIONS.md`](backend/docs/DECISIONS.md). D22 to D27 are proposed or open. |
-| **Specification** | [`backend/docs/vyoog-build-specification.md`](backend/docs/vyoog-build-specification.md) |
-| **Database schema** | The Flyway migrations in `backend/vyoog-domain/src/main/resources/db/migration` are the schema. |
-| **Secrets** | [`docs/SECRETS-ROTATION.md`](docs/SECRETS-ROTATION.md): what to rotate, who owns each, and how to scrub git history. |
-| **Backend details** | [`backend/README.md`](backend/README.md): modules, running the integration runners, CI. |
-| **Frontend details** | [`frontend/README.md`](frontend/README.md) |
+| **The requirements** | [`docs/02-requirements/`](docs/02-requirements/README.md): every requirement by feature, with status and its automated tests; [planned Phase 6](docs/02-requirements/functional-requirements/phase-6-planned.md); the [build specification by section](docs/02-requirements/SPECIFICATION-INDEX.md). All of `docs/` is indexed in [`docs/README.md`](docs/README.md). |
+| **The plan and status** | [`BUILD-REGISTER.md`](BUILD-REGISTER.md): the source of every requirement, one line each, with session logs below the table. Phases 0 to 5 are built (a few rows are `PARTIAL`); **Phase 6 (VYB-0900 onwards) is the current plan**. |
+| **Rules for coding agents** | [`CLAUDE.md`](CLAUDE.md): the non-negotiable rules, the Definition of Done, where each kind of thing lives, how sprint sessions work. |
+| **Decisions** | [`docs/DECISIONS.md`](docs/DECISIONS.md). D22 to D27 are proposed or open. |
+| **Database schema** | [`database/migrations/`](database/migrations): Flyway migrations, forward-only. |
+| **Test cases** | Automated: next to the code, indexed by requirement in [`test-cases/automated-tests-index.md`](test-cases/automated-tests-index.md). Manual and UAT: [`test-cases/`](test-cases/README.md). |
+| **Deployment** | [`deployment/`](deployment/README.md) (Dockerfiles, nginx, environments); local services in [`docker-compose.yml`](docker-compose.yml). |
+| **Secrets** | [`docs/SECRETS-ROTATION.md`](docs/SECRETS-ROTATION.md). |
+| **Backend / frontend details** | [`backend/README.md`](backend/README.md), [`frontend/README.md`](frontend/README.md). |
 
 ## Run it locally
 
 You need Docker, JDK 21 and Node 20+. You do not need Maven installed (`./mvnw`).
 
 ```bash
-# 1. Configuration. backend/.env is gitignored; the values in .env.example are fake placeholders.
-cd backend
+# 1. Configuration. .env is gitignored; the values in .env.example are fake placeholders.
 cp .env.example .env            # then edit: see "Required configuration" below
 
 # 2. Local Postgres (pgvector), Redis and MinIO. docker compose reads DB_PASSWORD from .env.
-docker compose up -d
+docker compose up -d            # from the repository root
 docker compose ps               # wait until healthy
 
 # 3. The API. Flyway creates the schema on first start. run-local.sh loads .env and refuses a
 #    DB_URL that is not localhost.
-./run-local.sh                  # http://localhost:8080
+scripts/run-local.sh            # http://localhost:8080
 
 # 4. The web app, in a second terminal
-cd ../frontend
+cd frontend
 npm ci
 npm run dev                     # http://localhost:5175, proxies /api to VITE_API_PROXY_TARGET
 ```
@@ -52,7 +54,7 @@ The dev server proxies `/api` to `VITE_API_PROXY_TARGET` (default `http://localh
 Sign-in uses the shared Keycloak realm. The web app uses the public PKCE client `vyoog-web`; the API's
 username and password screen uses the confidential client `vyg-devops-ui`, whose secret only a Keycloak
 administrator has. Without it everything except that screen still runs. Details of the clients:
-`backend/docs/vyoog-getting-started.md`.
+`docs/archive/vyoog-getting-started.md`.
 
 | Service | URL |
 |---|---|
@@ -60,12 +62,12 @@ administrator has. Without it everything except that screen still runs. Details 
 | API | http://localhost:8080 |
 | API health | http://localhost:8080/actuator/health |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
-| MinIO console | http://localhost:9001 (local credentials in `backend/docker-compose.yml`) |
+| MinIO console | http://localhost:9001 (local credentials in `docker-compose.yml`) |
 
 ## Required configuration
 
 No real credential is committed anywhere (D22). These six variables have **no default**; the API stops
-at startup and names every one that is empty. Locally they live in `backend/.env`; deployed, they come
+at startup and names every one that is empty. Locally they live in `.env` at the repository root; deployed, they come
 from the secrets manager.
 
 | Variable | What it is |
@@ -87,16 +89,17 @@ Optional:
 | `AI_ENABLED`, `AI_API_KEY` | off | OpenAI-backed advisory features; each reports itself unconfigured without a key |
 | `AUTH_COOKIE_SECURE` | `true` | set `false` only for plain-HTTP development on a non-localhost host |
 
-The full list, with comments, is `backend/.env.example`.
+The full list, with comments, is `.env.example`.
 
 ## Test and build
 
 ```bash
-cd backend  && ./mvnw -B verify           # compile, unit tests, ArchUnit
-cd frontend && npx tsc -b && npm test     # type check and unit tests
+cd backend  && ./mvnw -B verify                          # compile, unit tests, ArchUnit
+cd frontend && npx tsc -b && npm test                    # type check and unit tests
+python3 scripts/generate-requirements-docs.py --check    # docs/02-requirements matches the register
 ```
 
-The same two commands run in CI on every pull request (`.github/workflows/ci.yml`); CI needs no secrets or
+The same three commands run in CI on every pull request (`.github/workflows/ci.yml`); CI needs no secrets or
 services. There are no integration tests (`*IT`) yet: Sprint 2 adds them (VYB-0907). The manual
 `*VerificationRunner` classes that boot the full application against a real Postgres, and how to run
 them safely against a local database only, are in `backend/README.md`.
@@ -104,20 +107,24 @@ them safely against a local database only, are in `backend/README.md`.
 ## Layout
 
 ```
-backend/
-  pom.xml                 parent reactor
-  vyoog-domain/           entities, repositories, services, detectors, Flyway migrations
-  vyoog-api/              controllers, security, the Spring Boot application
-  vyoog-worker/           reserved for the detection sweep and outbox relay (currently empty)
-  vyoog-testkit/          Testcontainers fixture and the local-database guard for runners
-  docs/                   decisions, specification, runbooks
-  docker-compose.yml      local Postgres, Redis, MinIO
-  .env.example            every environment variable, fake values
-frontend/                 React + TypeScript + Vite single-page app
-docs/                     SECRETS-ROTATION.md
-.github/workflows/        CI
-BUILD-REGISTER.md         the plan and its history
-CLAUDE.md                 working rules for coding agents
+frontend/            React + TypeScript + Vite single-page app
+backend/             Spring Boot multi-module build
+  vyoog-domain/        entities, repositories, services, detectors
+  vyoog-api/           controllers, security, the Boot application
+  vyoog-worker/        reserved (empty)
+  vyoog-testkit/       Testcontainers fixture, local-database guard for runners
+ai-service/          reserved for a separate AI service (none today; AI runs in the backend)
+docs/                product documentation: requirements, rules, workflows, UI, API, database, architecture, integrations
+test-cases/          manual and UAT cases; index of the automated tests by requirement
+database/            migrations (the schema), local init, seed/views/functions/procedures
+deployment/          Dockerfiles, nginx, aws/ecs, per-environment notes
+scripts/             run-local.sh, generate-requirements-docs.py, approve-requirements.sh
+.devcontainer/       Codespaces / dev container
+.github/             CI workflow, issue and pull request templates
+BUILD-REGISTER.md    the requirement register and its history
+CLAUDE.md            working rules for coding agents
+docker-compose.yml   local Postgres, Redis, MinIO
+.env.example         every environment variable, fake values
 ```
 
 ## Rules that are not negotiable

@@ -2,7 +2,7 @@
 
 **Status: the code no longer contains these secrets, but they are still valid and still in git history.** Removing them from `application.yml` does not make them safe. Treat every value below as public until it has been rotated. Rotation is done by a person with the right access, outside the code. This document is the checklist.
 
-D22 (`backend/docs/DECISIONS.md`) is still *Proposed*. Get the product owner's yes before rotating, because it reverses D9 and D20.
+D22 (`docs/DECISIONS.md`) is still *Proposed*. Get the product owner's yes before rotating, because it reverses D9 and D20.
 
 ## 1. What to rotate
 
@@ -64,4 +64,4 @@ If you skip the history rewrite, the secrets stay recoverable from any old clone
 
 ## 4. Local development after this change
 
-Nobody needs a real secret to develop locally. `cp backend/.env.example backend/.env`, keep the fake placeholders, and use the docker-compose database. Sign-in against the shared Keycloak realm needs the real `vyg-devops-ui` secret from a Keycloak administrator; without it everything except username/password sign-in still runs.
+Nobody needs a real secret to develop locally. `cp .env.example .env`, keep the fake placeholders, and use the docker-compose database. Sign-in against the shared Keycloak realm needs the real `vyg-devops-ui` secret from a Keycloak administrator; without it everything except username/password sign-in still runs.
