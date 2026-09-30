@@ -14,10 +14,11 @@ import java.util.List;
  * under Administration. REVIEWER/APPROVER's real teeth today ("sign a review round")
  * come from a *different* column — {@code review_participant.role}, a free-text field
  * set per review round, unrelated to this grant model — noted explicitly below rather
- * than conflated with it. The other six roles (VIEWER, BUSINESS_ANALYST, DEVELOPER,
- * TESTER, COMPLIANCE_LEAD, ARCHITECT) exist in the schema and can be granted, but no
- * endpoint anywhere restricts anything by holding them — they're informational only
- * until a real use for them is built.
+ * than conflated with it. VYB-0902 added the first checks on BUSINESS_ANALYST, ARCHITECT
+ * and APPROVER grants (seven write endpoints only; the rest is VYB-0906). VIEWER, DEVELOPER,
+ * TESTER and COMPLIANCE_LEAD exist in the schema and can be granted, but no endpoint
+ * restricts anything by holding them — they're informational only until a real use for
+ * them is built.
  */
 public final class RoleCapabilityRegistry {
 
@@ -34,12 +35,16 @@ public final class RoleCapabilityRegistry {
             "ReviewService#sign, gated on review_participant.role='APPROVER' — a separate field from this grant, see class Javadoc"),
         new Capability(AccessRole.REVIEWER, "Comment and sign a review round as reviewer", true,
             "ReviewService#sign, gated on review_participant.role='REVIEWER' — same caveat as APPROVER above"),
+        new Capability(AccessRole.APPROVER, "Push a delivery brief to the planning tool (VYB-0902)", true,
+            "PrincipalGuard.requireAnyRoleOrAdmin — BriefController#push, APPROVER on the brief's application"),
+        new Capability(AccessRole.BUSINESS_ANALYST, "Edit or delete a requirement; commit or delete an import batch (VYB-0902)", true,
+            "PrincipalGuard.requireAnyRoleOrAdmin — RequirementController#update/delete, ImportController#commit/deleteBatch"),
+        new Capability(AccessRole.ARCHITECT, "Edit or delete a requirement; commit or delete an import batch (VYB-0902)", true,
+            "PrincipalGuard.requireAnyRoleOrAdmin — same endpoints as BUSINESS_ANALYST"),
         new Capability(AccessRole.VIEWER, "—", false, "No endpoint checks this role yet"),
-        new Capability(AccessRole.BUSINESS_ANALYST, "—", false, "No endpoint checks this role yet"),
         new Capability(AccessRole.DEVELOPER, "—", false, "No endpoint checks this role yet"),
         new Capability(AccessRole.TESTER, "—", false, "No endpoint checks this role yet"),
-        new Capability(AccessRole.COMPLIANCE_LEAD, "—", false, "No endpoint checks this role yet"),
-        new Capability(AccessRole.ARCHITECT, "—", false, "No endpoint checks this role yet"));
+        new Capability(AccessRole.COMPLIANCE_LEAD, "—", false, "No endpoint checks this role yet"));
 
     private RoleCapabilityRegistry() {}
 }

@@ -305,7 +305,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0785 | 5 | Performance | Backup and restore rehearsed and documented | DONE | 15 |
 | VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | PARTIAL: code done, rotation and history scrub are human steps (docs/SECRETS-ROTATION.md) | S1 |
 | VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | DONE on dev (commit only; no PR yet). CORS default was closed in VYB-0900 | S1 |
-| VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | TODO | S1 |
+| VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | DONE on dev (commit only; no PR yet) | S1 |
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | TODO | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | TODO | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | TODO | S1 |
@@ -4625,6 +4625,35 @@ Phase 6 Sprint 1, session 2. Branch `dev`. The CORS wildcard default (F03, named
 - The attack cases were not run against the old code: the tests use new methods and classes, so they do not compile against it.
 - Upload has no role rule beyond "a person" (writes are VYB-0902 / VYB-0906).
 - Not run: the verification runners and anything needing a live database, MinIO or Keycloak.
+
+
+## Session 60 — VYB-0902 (F02): guard the riskiest writes
+
+Phase 6 Sprint 1, session 3. Branch `dev`. Only the seven endpoints named in the row; no other controller was touched.
+
+**Minimum role per endpoint** (from the spec's §4.4 matrix; a platform ADMINISTRATOR passes every one, following the precedent in `RequirementTransitionAuthorizer`; a service account or email-less token passes none):
+
+| Endpoint | Minimum | Scope checked | Why |
+|---|---|---|---|
+| `PATCH /requirements/{id}` | BUSINESS_ANALYST or ARCHITECT | the requirement's capability, else app, else product | matrix "Edit req" |
+| `DELETE /requirements/{id}` | same as PATCH | same | the matrix has no delete column; closest is "Edit req". It is soft and audited. **Product owner: say if delete should be narrower** |
+| `POST /import/batches/{id}/commit` | BUSINESS_ANALYST or ARCHITECT | the batch's application | writes requirements into the register: matrix "Create req" |
+| `DELETE /import/batches/{id}` | same as commit | same | a real (hard) delete of an upload |
+| `PUT /teams/{t}/members/{u}/role` | ADMINISTRATOR, or a LEAD of that team | the team | decides who may assign the team's work (D11); a team with no lead is administrator-only |
+| `DELETE /teams/{t}/members/{u}` | same as role change | the team | |
+| `POST /briefs/{id}/push` | APPROVER | the brief's application | sends content to an external system and cannot be recalled; nearest matrix column is "Baseline" (Approver / Product Owner) |
+
+A grant on a product covers its apps and capabilities (existing `GrantResolver` chain). A refusal is a 403 naming the roles needed.
+
+**Code.** `PrincipalGuard.requireAnyRoleOrAdmin(jwt, roles, scopeType, scopeId, action)` and `requireAdministratorOr(jwt, predicate, message)` (both call `requireHuman` first). `RoleCapabilityRegistry` (the Roles screen) now lists BUSINESS_ANALYST, ARCHITECT and APPROVER as enforced for these endpoints.
+
+**Tests** (`Vyb0902WriteGuardsTest`, 9): MockMvc through the real `ApiExceptionHandler` and a real `PrincipalGuard`. Per endpoint: an ordinary signed-in user, a viewer, the wrong role, the right role at the wrong scope, and a registered service account all get 403 and the service is never called; the permitted role and an administrator succeed. **Red/green checked**: run against the pre-change controllers, all 9 fail; with the guards, all 9 pass. vyoog-api 51 run, 0 failures. vyoog-domain 371 run, 1 failure (the pre-existing `RopcConfigurationMessageTest`, see session 58). Frontend 616 passed.
+
+**Not done / to know**
+- Other endpoints on the same controllers stay open (for example team `create` and `addMember`, requirement `transition`, every other import step). That is VYB-0906.
+- PATCH checks the requirement's current placement only; moving a requirement into a capability the caller has no role on is not checked at the target.
+- The UI does not yet hide these actions from users who lack the role, so they will see a 403 message. The existing per-user role lists are the data for that.
+- Users who relied on any-signed-in-user access to these actions need a grant before this ships. Check who holds BUSINESS_ANALYST, ARCHITECT and APPROVER today.
 
 ---
 

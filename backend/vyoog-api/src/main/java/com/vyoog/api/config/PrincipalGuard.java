@@ -9,6 +9,7 @@ import com.vyoog.identity.ServiceAccountRefusedException;
 import com.vyoog.identity.ServiceAccountRequiredException;
 import com.vyoog.identity.StepUpChecker;
 import com.vyoog.identity.UserProvisioningService;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -92,6 +93,35 @@ public class PrincipalGuard {
                 "This action needs %s at %s%s".formatted(role, scopeType, scopeId == null ? "" : " " + scopeId),
                 role);
         }
+    }
+
+    /**
+     * VYB-0902: a person who holds <em>any one</em> of {@code roles} at (or above) the target
+     * scope, or is a platform ADMINISTRATOR — the same "administrator is never blocked by the
+     * role machinery" rule {@code RequirementTransitionAuthorizer} applies (VYB-0815). Service
+     * accounts and email-less tokens are refused first. Resolved live on every call.
+     */
+    public void requireAnyRoleOrAdmin(Jwt jwt, List<AccessRole> roles, ScopeType scopeType, UUID scopeId,
+                                       String action) {
+        requireHuman(jwt);
+        UUID userId = resolveUserId(jwt);
+        if (grantResolver.isPlatformAdministrator(userId)) return;
+        for (AccessRole role : roles) {
+            if (grantResolver.hasEffectiveRole(userId, role, scopeType, scopeId)) return;
+        }
+        String needs = roles.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(", "));
+        throw new GrantRequiredException(
+            "To %s you need one of: %s (at %s%s) or ADMINISTRATOR".formatted(
+                action, needs, scopeType, scopeId == null ? "" : " " + scopeId),
+            roles.get(0));
+    }
+
+    /** VYB-0902: a platform ADMINISTRATOR, or a person for whom {@code otherwise} holds (e.g. leads this team). */
+    public void requireAdministratorOr(Jwt jwt, java.util.function.Predicate<UUID> otherwise, String message) {
+        requireHuman(jwt);
+        UUID userId = resolveUserId(jwt);
+        if (grantResolver.isPlatformAdministrator(userId) || otherwise.test(userId)) return;
+        throw new GrantRequiredException(message, AccessRole.ADMINISTRATOR);
     }
 
     /** The common case: platform-wide ADMINISTRATOR. */
