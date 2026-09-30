@@ -97,7 +97,7 @@ public final class LocalDatabase {
         return new IllegalStateException(
             "Refusing to run an integration runner against '" + url + "': " + why + ". Runners may only use a "
                 + "local database. Unset DB_URL to use a throwaway Testcontainers Postgres (needs Docker), or point "
-                + "DB_URL at the docker-compose database on localhost (cd backend && docker compose up -d). "
+                + "DB_URL at the docker-compose database on localhost (docker compose up -d, from the repository root). "
                 + "See README, 'Running the integration runners locally'.");
     }
 
@@ -113,7 +113,7 @@ public final class LocalDatabase {
             } catch (Exception e) {
                 throw new IllegalStateException(
                     "DB_URL is not set, so a throwaway Testcontainers Postgres was needed, but it could not be "
-                        + "started (" + e.getMessage() + "). Start Docker, or run `cd backend && docker compose up -d` "
+                        + "started (" + e.getMessage() + "). Start Docker, or run `docker compose up -d` from the repository root "
                         + "and set DB_URL, DB_USER and DB_PASSWORD to the local database.", e);
             }
             container = c;

@@ -8,7 +8,7 @@ backend-only detail.
 
 | Module | What is in it |
 |---|---|
-| `vyoog-domain` | entities, repositories, services, detectors, and the Flyway migrations (`src/main/resources/db/migration`), which are the database schema |
+| `vyoog-domain` | entities, repositories, services, detectors. Its Maven build packs the Flyway migrations from `../database/migrations` (the database schema) into the jar as `db/migration` |
 | `vyoog-api` | REST controllers, security (`SecurityConfig`, `PrincipalGuard`), startup checks, the Boot application |
 | `vyoog-worker` | reserved; empty today |
 | `vyoog-testkit` | `PostgresFixture` (Testcontainers) and `LocalDatabase`, the guard that keeps integration runners on a local database |
@@ -18,12 +18,11 @@ Modules may not import each other's `internal` packages (see `CLAUDE.md`).
 
 ## Other docs
 
-- `docs/DECISIONS.md`: decision log
-- `docs/vyoog-build-specification.md`: specification
-- `docs/running-minio-locally.md`: object storage for attachments
-- `docs/backup-restore-rehearsal.md`, `docs/load-test-rehearsal.md`: rehearsals
-- `docs/vyoog-getting-started.md`, `docs/vyoog-maven-project-setup.md`, `docs/vyoog-claude-code-kickoff.md`:
-  the original Phase 0 bootstrap notes, kept for history (see the banners at their tops)
+- [`docs/DECISIONS.md`](../docs/DECISIONS.md): decision log
+- [`docs/02-requirements/`](../docs/02-requirements/README.md): requirements and the build specification
+- [`docs/08-architecture/`](../docs/08-architecture/README.md): architecture, security, runbooks (MinIO, backup and restore, load test)
+- [`docs/archive/`](../docs/archive/): the original Phase 0 bootstrap notes, kept for history (see the banners at their tops)
+- [`database/`](../database/README.md): the migrations
 
 ## Running the integration runners locally
 
@@ -43,8 +42,9 @@ cd backend && ./mvnw -B -pl vyoog-api -am test -Dtest=Session14VerificationRunne
   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
 
 # Option B: the docker-compose database
-cd backend && docker compose up -d
+docker compose up -d                     # from the repository root
 set -a && source .env && set +a          # DB_URL must be jdbc:postgresql://localhost:...
+cd backend
 ./mvnw -B -pl vyoog-api -am test -Dtest=Session14VerificationRunner \
   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
 ```

@@ -4696,6 +4696,34 @@ Phase 6 Sprint 1, session 5. Branch `dev`. The register merge and the root `CLAU
 - `backend/docs/vyoog-build-specification.md` still describes the original multi-tenant design in §3, §4 and §5 in places. Only its schema pointer was corrected. Bringing the spec in line with the code is D23's follow-up and was not attempted.
 - `backend/README.md` and `frontend/README.md` remain as component READMEs rather than being deleted, so a reader can still find module-level notes. Say if you want them removed so only the root README exists.
 
+
+## Session 63 — repository restructure to the monorepo layout (D28)
+
+Not a register row: an instruction from the product owner to lay the repository out per the "GitHub Monorepo Structure, Team Reference" and to capture the full SWLCA requirements in it. Recorded as decision D28. Branch `dev`.
+
+**Moved (history kept with `git mv`)**
+- Flyway migrations: `backend/vyoog-domain/src/main/resources/db/migration` to `database/migrations`. `vyoog-domain/pom.xml` packs them into the jar as `db/migration`, so `spring.flyway.locations` is unchanged. Verified with a clean build: 34 migrations in the domain jar and in the API boot jar, and in a simulated `/app/backend` + `/app/database` layout like the new image.
+- `backend/docker-compose.yml` to `docker-compose.yml`; `backend/.env.example` to `.env.example` (so `.env` is at the root); `backend/.gitignore` to `.gitignore`; `backend/infra/db/init` to `database/init`.
+- `backend/run-local.sh` and `backend/approve-requirements.sh` to `scripts/`. `run-local.sh` now finds the root `.env` from any directory (checked).
+- `backend/Dockerfile` and `frontend/Dockerfile` to `deployment/docker/*.Dockerfile`, now with the repository root as build context; `frontend/nginx.conf` to `deployment/nginx/frontend.conf`. New root `.dockerignore`.
+- `backend/docs/*`: `DECISIONS.md` to `docs/DECISIONS.md` (so the many existing "docs/DECISIONS.md" code comments are now literally correct); the three runbooks to `docs/08-architecture/deployment/`; the three Phase 0 bootstrap notes to `docs/archive/`.
+
+**Split.** `vyoog-build-specification.md` (1,654 lines) is split, verbatim, across the numbered `docs/` folders (vision, scope, phases, principles, gap detection, state machine, SDLC, API design, frontend, data model, architecture, security, and a screen specification per feature). Every line was checked to land in exactly one file; `docs/02-requirements/SPECIFICATION-INDEX.md` maps every section number to its file. The monolith is deleted (it is in git history).
+
+**Generated.** `scripts/generate-requirements-docs.py` builds, from `BUILD-REGISTER.md` and the test names: a `requirement.md` per feature (15 feature folders; 298 built requirements, each with a count of its automated tests), the two non-functional pages, the Phase 6 planned-requirements page (60 rows), a requirements index, and `test-cases/automated-tests-index.md` (353 tests across the requirements they name). It fails on a capability it does not know; `--check` mode runs in CI as a new `docs` job so the pages cannot drift from the register.
+
+**Added** (mostly READMEs stating plainly what exists): `docs/README.md` and an index for every numbered section; `test-cases/` with the seven subfolders and a case template; `ai-service/` (reserved; there is no separate AI service); `database/{seed,views,functions,procedures}`; `deployment/{aws,ecs,environments/{dev,uat,prod}}`; `.devcontainer/devcontainer.json`; `.github/pull_request_template.md` and issue templates. `CLAUDE.md`, the root README and the component READMEs are updated to the new paths and now say where each kind of thing lives.
+
+**Checked:** `./mvnw -B clean verify` green (371 domain, 73 api tests); `npx tsc -b` clean and 616 frontend tests pass; `docker compose config` valid; the generated docs are current; all 232 relative links in the Markdown files resolve.
+
+**Not verified / to know**
+- **Docker images were not built** (no Docker daemon here). The Dockerfiles were rewritten for the root context and the layout was proven with Maven only. **Any external job that ran `docker build` inside `backend/` or `frontend/` must change to `docker build -f deployment/docker/<x>.Dockerfile .` from the root.**
+- The dev container has not been opened, and the new CI `docs` job has not run on GitHub.
+- Not invented: no BRD, wireframes, ERD, user manual, release notes, manual test cases, AWS/ECS definitions or environment values exist in the source material, so those folders say so instead of containing made-up content. The per-feature `business-rules.md`, `workflow.md`, `api-requirements.md` and `acceptance-criteria.md` from the reference are not created per feature; the specification text for those topics is in `03-business-rules`, `04-workflows` and `06-api`.
+- The SWLCA gap-analysis findings F01 to F42 are referenced by id in the Phase 6 rows but their source document is not in the repository. If you want it kept here, add it under `docs/01-business/`.
+- The historical session logs above this one still cite the old paths; they are history and are unchanged. `database/migrations/V001__baseline.sql` still mentions the old spec file in a comment; a merged migration must not be edited (Flyway checksum).
+- The `Requirement:` trailer and branch naming (`feature/VYB-nnnn-name`) in `docs/README.md` are conventions, not enforced by CI.
+
 ---
 
 ## Merge note — frontend copy (VYB-0905, Phase 6 Sprint 1)

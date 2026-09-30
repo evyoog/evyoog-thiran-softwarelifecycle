@@ -1,0 +1,22 @@
+{
+  "name": "Vyoog",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
+  },
+  "forwardPorts": [5175, 8080, 5432, 9000, 9001],
+  "portsAttributes": {
+    "5175": { "label": "Web (Vite dev server)" },
+    "8080": { "label": "API" },
+    "5432": { "label": "Postgres (docker compose)" },
+    "9001": { "label": "MinIO console" }
+  },
+  "postCreateCommand": "cp -n .env.example .env && cd frontend && npm ci",
+  "customizations": {
+    "vscode": {
+      "extensions": ["vscjava.vscode-java-pack", "vmware.vscode-boot-dev-pack", "dbaeumer.vscode-eslint"]
+    }
+  }
+}
