@@ -6,7 +6,6 @@ import com.vyoog.identity.KeycloakPasswordGrantService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,8 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class AuthEndpointVerificationRunner {
+class AuthEndpointVerificationRunner extends VerificationRunnerBase {
 
     @Autowired KeycloakPasswordGrantService grants;
     @Autowired AuthController controller;

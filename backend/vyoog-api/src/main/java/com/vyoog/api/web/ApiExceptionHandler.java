@@ -49,6 +49,39 @@ public class ApiExceptionHandler {
         return pd;
     }
 
+    /** VYB-0901: an upload the attachment policy refuses — 413 too large, 415 wrong type, 400 unusable name or empty. */
+    @ExceptionHandler(com.vyoog.attachments.AttachmentRejectedException.class)
+    public ProblemDetail onAttachmentRejected(com.vyoog.attachments.AttachmentRejectedException e) {
+        HttpStatus status = switch (e.reason()) {
+            case TOO_LARGE -> HttpStatus.PAYLOAD_TOO_LARGE;
+            case TYPE_NOT_ALLOWED -> HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+            case BAD_FILENAME, EMPTY -> HttpStatus.BAD_REQUEST;
+        };
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, e.getMessage());
+        pd.setType(URI.create("https://vyoog.dev/problems/attachment-rejected"));
+        pd.setTitle("This file cannot be attached");
+        return pd;
+    }
+
+    /** VYB-0901: the multipart limit in application.yml tripped before the request was even buffered. */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ProblemDetail onUploadTooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
+            "The upload exceeds the maximum allowed size");
+        pd.setType(URI.create("https://vyoog.dev/problems/attachment-rejected"));
+        pd.setTitle("This file cannot be attached");
+        return pd;
+    }
+
+    /** VYB-0901: bootstrap refused (already done, an administrator exists, or not authorised). */
+    @ExceptionHandler(com.vyoog.identity.BootstrapRefusedException.class)
+    public ProblemDetail onBootstrapRefused(com.vyoog.identity.BootstrapRefusedException e) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
+        pd.setType(URI.create("https://vyoog.dev/problems/bootstrap-refused"));
+        pd.setTitle("Bootstrap refused");
+        return pd;
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ProblemDetail onIllegalState(IllegalStateException e) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());

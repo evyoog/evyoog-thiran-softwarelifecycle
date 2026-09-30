@@ -29,7 +29,7 @@ class RopcConfigurationMessageTest {
         assertThatThrownBy(() -> serviceWith("eVyoog", "").login("a", "b"))
             .hasMessageContaining("KEYCLOAK_ROPC_CLIENT_SECRET is empty")
             .hasMessageContaining("eVyoog")           // says which client is configured
-            .hasMessageContaining("D8")
+            .hasMessageContaining("D21")
             .hasMessageNotContainingAny("D7", "no ROPC client is registered");
     }
 

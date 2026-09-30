@@ -4,6 +4,9 @@ import com.vyoog.ai.AiProviderUnavailableException;
 import com.vyoog.ai.RequirementRewriteAdvisor;
 import com.vyoog.changerequest.ChangeRequestService;
 import com.vyoog.evidence.TestCaseSuggestionService;
+import com.vyoog.api.config.PrincipalGuard;
+import com.vyoog.identity.AccessRole;
+import com.vyoog.identity.ScopeType;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.platform.IdempotencyService;
 import com.vyoog.requirements.AcceptanceCriterion;
@@ -57,6 +60,10 @@ public class RequirementController {
     private final GapPreviewService gapPreview;
     private final RequirementRewriteAdvisor rewriteAdvisor;
     private final TestCaseSuggestionService testCaseSuggestions;
+    private final PrincipalGuard guard;
+
+    /** VYB-0902: the matrix's "Edit req" column (Business Analyst, Architect); an administrator is never blocked. */
+    private static final List<AccessRole> EDIT_ROLES = List.of(AccessRole.BUSINESS_ANALYST, AccessRole.ARCHITECT);
 
     public RequirementController(RequirementRepository requirements, RequirementService service,
                                   AcceptanceCriterionService acceptanceCriteria,
@@ -64,7 +71,8 @@ public class RequirementController {
                                   RequirementSimilarityService similarity, IdempotencyService idempotency,
                                   ChangeRequestService changeRequests, LifecycleHistoryService lifecycleHistory,
                                   QualityScoreService qualityScore, GapPreviewService gapPreview,
-                                  RequirementRewriteAdvisor rewriteAdvisor, TestCaseSuggestionService testCaseSuggestions) {
+                                  RequirementRewriteAdvisor rewriteAdvisor, TestCaseSuggestionService testCaseSuggestions,
+                                  PrincipalGuard guard) {
         this.requirements = requirements;
         this.service = service;
         this.acceptanceCriteria = acceptanceCriteria;
@@ -78,6 +86,7 @@ public class RequirementController {
         this.gapPreview = gapPreview;
         this.rewriteAdvisor = rewriteAdvisor;
         this.testCaseSuggestions = testCaseSuggestions;
+        this.guard = guard;
     }
 
     public record RequirementView(
@@ -199,6 +208,22 @@ public class RequirementController {
             acceptanceCriteria.countsFor(List.of(id)).getOrDefault(id, 0));
     }
 
+    /**
+     * VYB-0902 (F02): PATCH and DELETE used to need only a valid login. The role is checked at
+     * the requirement's own scope (capability, else app, else product, else platform), so a
+     * grant on the product above it counts.
+     */
+    private void requireEditRole(Jwt jwt, UUID requirementId, String action) {
+        Requirement r = requirements.findById(requirementId).orElseThrow(NoSuchElementException::new);
+        ScopeType type;
+        UUID scopeId;
+        if (r.getCapabilityId() != null) { type = ScopeType.CAPABILITY; scopeId = r.getCapabilityId(); }
+        else if (r.getApplicationId() != null) { type = ScopeType.APP; scopeId = r.getApplicationId(); }
+        else if (r.getProductId() != null) { type = ScopeType.PRODUCT; scopeId = r.getProductId(); }
+        else { type = ScopeType.PLATFORM; scopeId = null; }
+        guard.requireAnyRoleOrAdmin(jwt, EDIT_ROLES, type, scopeId, action);
+    }
+
     private static final String CREATE_ENDPOINT = "POST /requirements";
 
     @PostMapping
@@ -242,6 +267,7 @@ public class RequirementController {
     public RequirementView update(@PathVariable UUID id, @RequestBody UpdateRequirement body,
                                    @RequestParam(required = false) UUID changeRequestId,
                                    @AuthenticationPrincipal Jwt jwt) {
+        requireEditRole(jwt, id, "edit requirement");
         UUID capabilityId = body.capabilityId() == null ? null : UUID.fromString(body.capabilityId());
         Requirement r;
         if (changeRequestId != null) {
@@ -268,6 +294,7 @@ public class RequirementController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id, @RequestParam(required = false) String reason,
                         @AuthenticationPrincipal Jwt jwt) {
+        requireEditRole(jwt, id, "delete a requirement");
         service.delete(id, reason, currentUserId(jwt));
     }
 

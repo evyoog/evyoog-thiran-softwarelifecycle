@@ -9,6 +9,8 @@ import com.vyoog.brief.BriefService;
 import com.vyoog.brief.BriefTarget;
 import com.vyoog.evidence.TestCase;
 import com.vyoog.evidence.TestCaseService;
+import com.vyoog.integration.IntegrationConnection;
+import com.vyoog.integration.IntegrationService;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +19,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -25,35 +29,71 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * selection, and {@link BriefPushService} reads it back and sends the right
  * level/capabilityName/productName/appName plus the markdown as a real multipart file
  * part — all against real Postgres, with a real (local, ephemeral) HTTP server
- * standing in for the planning tool. Temporarily overwrites the seeded "planning"
- * {@code integration_connection} row's config/secret and restores them afterward,
- * since that row is fixed (no create/delete) and a real destination may already be
- * configured there. Same explicit-name-only convention as every other
- * {@code *VerificationRunner} — invisible to {@code mvn test}/{@code mvn verify}.
+ * standing in for the planning tool.
+ *
+ * <p>VYB-0903: this used to overwrite the seeded "planning" {@code integration_connection}
+ * row (the one real deployments configure) and put it back afterwards, so a crash mid-run
+ * left a fake push URL and secret in place. It now replaces {@link IntegrationService} with
+ * an in-memory one holding its own "planning" connection, so the database row is never read
+ * or written. Same explicit-name-only convention as every other {@code *VerificationRunner}
+ * — invisible to {@code mvn test}/{@code mvn verify} — and, like them, it only ever runs
+ * against a local database ({@link VerificationRunnerBase}).
  *
  * <pre>
- * source .env && mvn -pl vyoog-api -am test -Dtest=BriefPushVerificationRunner \
+ * mvn -pl vyoog-api -am test -Dtest=BriefPushVerificationRunner \
  *   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class BriefPushVerificationRunner {
+class BriefPushVerificationRunner extends VerificationRunnerBase {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired BriefService briefService;
     @Autowired BriefPushService briefPushService;
     @Autowired TestCaseService testCaseService;
+    @Autowired InMemoryIntegrations integrations;
+
+    /** VYB-0903: a stand-in for IntegrationService that owns its own "planning" connection and never touches the table. */
+    static class InMemoryIntegrations extends IntegrationService {
+        final IntegrationConnection planning = new IntegrationConnection(
+            "planning", "delivery-tool push", IntegrationConnection.Direction.OUTBOUND);
+
+        InMemoryIntegrations() {
+            super(null, null, null);
+        }
+
+        @Override public IntegrationConnection get(String key) {
+            if (!"planning".equals(key)) throw new java.util.NoSuchElementException(key);
+            return planning;
+        }
+
+        @Override public IntegrationConnection setConnected(String key, boolean connected, String webhookSecret) {
+            planning.setConnected(connected);
+            if (webhookSecret != null) planning.setWebhookSecret(webhookSecret);
+            return planning;
+        }
+
+        @Override public void recordFailure(String key, String error) {
+            planning.recordFailure(error);
+        }
+    }
+
+    @TestConfiguration
+    static class Config {
+        @Bean @Primary InMemoryIntegrations inMemoryIntegrations() {
+            return new InMemoryIntegrations();
+        }
+    }
+
+    private String planningRow() {
+        return jdbc.queryForObject(
+            "SELECT connected || '|' || coalesce(config::text, '') || '|' || coalesce(webhook_secret, '') "
+                + "|| '|' || failure_count FROM integration_connection WHERE key = 'planning'", String.class);
+    }
 
     @Test
     void capabilityScopedBriefPersistsItsScopeAndPushesTheRightMetadataAndFileAgainstRealPostgres() throws IOException {
-        // Preserve whatever "planning" is currently configured with, so this doesn't
-        // clobber a real destination someone has already set up there.
-        String originalConfig = jdbc.queryForObject(
-            "SELECT config FROM integration_connection WHERE key = 'planning'", String.class);
-        String originalSecret = jdbc.queryForObject(
-            "SELECT webhook_secret FROM integration_connection WHERE key = 'planning'", String.class);
-        Boolean originalConnected = jdbc.queryForObject(
-            "SELECT connected FROM integration_connection WHERE key = 'planning'", Boolean.class);
+        // The table's "planning" row is never read or written (see the class comment).
+        String rowBefore = planningRow();
 
         UUID productId = jdbc.queryForObject(
             "INSERT INTO product (key, name) VALUES ('VYB0837', 'VYB-0837 Product') RETURNING id", UUID.class);
@@ -93,10 +133,9 @@ class BriefPushVerificationRunner {
             System.out.println("[verify] brief_capability rows -> " + scopedCaps);
             assertThat(scopedCaps).containsExactly(capId);
 
-            jdbc.update("UPDATE integration_connection SET config = ?::jsonb, webhook_secret = ? WHERE key = 'planning'",
-                "{\"pushUrl\":\"http://localhost:" + server.getAddress().getPort() + "/push\","
-                    + "\"apiKey\":\"verify-api-key\",\"customerName\":\"VYB-0837 Customer\"}",
-                "verify-secret");
+            integrations.planning.setConfig("{\"pushUrl\":\"http://localhost:" + server.getAddress().getPort() + "/push\","
+                + "\"apiKey\":\"verify-api-key\",\"customerName\":\"VYB-0837 Customer\"}");
+            integrations.planning.setWebhookSecret("verify-secret");
 
             var result = briefPushService.push(brief.getId(), devId);
             System.out.println("[verify] push result -> " + result);
@@ -112,10 +151,10 @@ class BriefPushVerificationRunner {
                 .contains("name=\"capabilityName\"").contains("VYB-0837 Cap")
                 .contains("name=\"file\"; filename=\"VY-vyb-0837-app-implementation-brief.md\"")
                 .contains("Content-Type: text/markdown");
+            assertThat(integrations.planning.isConnected()).isTrue();
+            assertThat(planningRow()).as("the real integration_connection row is untouched").isEqualTo(rowBefore);
         } finally {
             server.stop(0);
-            jdbc.update("UPDATE integration_connection SET config = ?::jsonb, webhook_secret = ?, connected = ? WHERE key = 'planning'",
-                originalConfig, originalSecret, originalConnected);
             jdbc.update("DELETE FROM test_case WHERE id = ?", tc.getId());
             jdbc.update("DELETE FROM trace_link WHERE to_id = ? OR from_id = ?", reqId, tc.getId());
             jdbc.update("DELETE FROM brief_capability WHERE capability_id = ?", capId);

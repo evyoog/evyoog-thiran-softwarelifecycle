@@ -1,6 +1,9 @@
 package com.vyoog.api.web;
 
 import com.vyoog.ai.AiProviderUnavailableException;
+import com.vyoog.api.config.PrincipalGuard;
+import com.vyoog.identity.AccessRole;
+import com.vyoog.identity.ScopeType;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.importqueue.DocumentAnalysis;
 import com.vyoog.importqueue.DocumentAnalysisService;
@@ -39,13 +42,29 @@ public class ImportController {
     private final DocumentAnalysisService analysis;
     private final UserProvisioningService provisioning;
     private final RateLimiter rateLimiter;
+    private final PrincipalGuard guard;
+
+    /** VYB-0902: the matrix's "Create req" column (Business Analyst, Architect); an administrator is never blocked. */
+    private static final java.util.List<AccessRole> CREATE_ROLES =
+        java.util.List.of(AccessRole.BUSINESS_ANALYST, AccessRole.ARCHITECT);
 
     public ImportController(ImportService service, DocumentAnalysisService analysis,
-                            UserProvisioningService provisioning, RateLimiter rateLimiter) {
+                            UserProvisioningService provisioning, RateLimiter rateLimiter, PrincipalGuard guard) {
         this.service = service;
         this.analysis = analysis;
         this.provisioning = provisioning;
         this.rateLimiter = rateLimiter;
+        this.guard = guard;
+    }
+
+    /**
+     * VYB-0902 (F02): committing writes requirements into the register, and deleting removes an
+     * upload for good. Both need "Create req" rights on the application the batch was uploaded to
+     * (a grant on its product counts).
+     */
+    private void requireCreateRoleOnBatch(Jwt jwt, UUID batchId, String action) {
+        UUID applicationId = service.getBatch(batchId).getApplicationId();
+        guard.requireAnyRoleOrAdmin(jwt, CREATE_ROLES, ScopeType.APP, applicationId, action);
     }
 
     private UUID currentUserId(Jwt jwt) {
@@ -138,6 +157,7 @@ public class ImportController {
     @DeleteMapping("/batches/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBatch(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        requireCreateRoleOnBatch(jwt, id, "delete an import batch");
         service.deleteBatch(id, currentUserId(jwt));
     }
 
@@ -339,6 +359,7 @@ public class ImportController {
     /** VYB-0636/0665: only selected+confirmed candidates commit; everything else states exactly why it didn't. */
     @PostMapping("/batches/{id}/commit")
     public List<CommitOutcomeView> commit(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        requireCreateRoleOnBatch(jwt, id, "commit an import batch");
         return service.commit(id, currentUserId(jwt)).stream()
             .map(o -> new CommitOutcomeView(o.candidateId().toString(), o.imported(), o.reason(),
                 o.requirementId() == null ? null : o.requirementId().toString()))

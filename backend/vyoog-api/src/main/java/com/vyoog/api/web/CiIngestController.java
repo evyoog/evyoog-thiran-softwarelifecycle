@@ -7,6 +7,7 @@ import com.vyoog.evidence.CommitIngestService;
 import com.vyoog.evidence.TestRun;
 import com.vyoog.evidence.VerificationResult;
 import com.vyoog.evidence.VerificationService;
+import com.vyoog.identity.KnownServiceScopes;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
@@ -18,8 +19,9 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * VYB-0311/0315/0316/0481: everything a CI system pushes in, not a person — {@link
- * PrincipalGuard#requireServiceAccount} refuses any caller this realm's own upsert
- * (VYB-0009) would otherwise have turned into an {@code app_user} row.
+ * PrincipalGuard#requireServiceAccountScope} refuses any caller that is not a registered
+ * service account holding the {@code ci:ingest} scope (VYB-0901: registration and scope are
+ * both required; a token with merely no email claim is not enough).
  */
 @RestController
 @RequestMapping("/api/v1/ci")
@@ -46,7 +48,7 @@ public class CiIngestController {
     @PostMapping("/test-runs")
     @ResponseStatus(HttpStatus.CREATED)
     public TestRunResponse ingestTestRun(@RequestBody TestRunBody body, @AuthenticationPrincipal Jwt jwt) {
-        guard.requireServiceAccount(jwt);
+        guard.requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST);
         TestRun run = verification.findOrCreateRun(body.buildLabel(), body.source());
         List<IngestOutcomeView> outcomes = body.results().stream()
             .map(r -> verification.ingest(run, new VerificationService.ResultInput(
@@ -62,7 +64,7 @@ public class CiIngestController {
     @PostMapping("/commits")
     @ResponseStatus(HttpStatus.CREATED)
     public CommitResponse ingestCommit(@RequestBody CommitBody body, @AuthenticationPrincipal Jwt jwt) {
-        guard.requireServiceAccount(jwt);
+        guard.requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST);
         var result = commits.ingest(body.sha(), body.message(), body.authorEmail());
         return new CommitResponse(result.alreadyIngested(), result.linkedKeys(), result.unknownKeys());
     }
@@ -75,7 +77,7 @@ public class CiIngestController {
     @PostMapping("/deployments")
     @ResponseStatus(HttpStatus.CREATED)
     public DeploymentResponse ingestDeployment(@RequestBody DeploymentBody body, @AuthenticationPrincipal Jwt jwt) {
-        guard.requireServiceAccount(jwt);
+        guard.requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST);
         Deployment d = deployment.recordDeployment(
             UUID.fromString(body.environmentId()), body.buildLabel(), body.succeeded(), body.commitShas());
         return new DeploymentResponse(d.getId().toString());

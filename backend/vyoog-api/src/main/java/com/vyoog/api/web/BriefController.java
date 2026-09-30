@@ -7,6 +7,9 @@ import com.vyoog.brief.BriefService;
 import com.vyoog.brief.BriefStalenessService;
 import com.vyoog.brief.BriefSection;
 import com.vyoog.brief.BriefTarget;
+import com.vyoog.api.config.PrincipalGuard;
+import com.vyoog.identity.AccessRole;
+import com.vyoog.identity.ScopeType;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.portfolio.Application;
 import com.vyoog.portfolio.ApplicationRepository;
@@ -32,14 +35,17 @@ public class BriefController {
     private final BriefPushService push;
     private final ApplicationRepository applications;
     private final UserProvisioningService provisioning;
+    private final PrincipalGuard guard;
 
     public BriefController(BriefService service, BriefStalenessService staleness, BriefPushService push,
-                            ApplicationRepository applications, UserProvisioningService provisioning) {
+                            ApplicationRepository applications, UserProvisioningService provisioning,
+                            PrincipalGuard guard) {
         this.service = service;
         this.staleness = staleness;
         this.push = push;
         this.applications = applications;
         this.provisioning = provisioning;
+        this.guard = guard;
     }
 
     private UUID currentUserId(Jwt jwt) {
@@ -123,6 +129,11 @@ public class BriefController {
      */
     @PostMapping("/{id}/push")
     public PushResultView push(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        // VYB-0902 (F02): this sends requirement content to an external system, an act nobody can
+        // take back. The matrix's nearest column is "Baseline" (Approver / Product Owner), so:
+        // APPROVER on the brief's application (a grant on its product counts), or ADMINISTRATOR.
+        guard.requireAnyRoleOrAdmin(jwt, java.util.List.of(AccessRole.APPROVER), ScopeType.APP,
+            service.get(id).getApplicationId(), "push a brief to the planning tool");
         BriefPushService.PushResult result = push.push(id, currentUserId(jwt));
         return new PushResultView(result.success(), result.statusCode(), result.error());
     }

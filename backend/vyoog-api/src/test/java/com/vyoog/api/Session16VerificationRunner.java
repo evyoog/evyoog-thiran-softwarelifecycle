@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,8 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   -Dtest=Session16VerificationRunner -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class Session16VerificationRunner {
+class Session16VerificationRunner extends VerificationRunnerBase {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired VerificationService verificationService;
@@ -132,11 +130,11 @@ class Session16VerificationRunner {
             assertThat(uploaded2.version().getVersion()).isEqualTo((short) 2);
             assertThat(uploaded2.attachment().getId()).isEqualTo(uploaded1.attachment().getId()); // same attachment, versioned not overwritten
 
-            var downloadedCurrent = attachmentService.downloadCurrent(uploaded1.attachment().getId());
+            var downloadedCurrent = attachmentService.downloadCurrent(reqId, uploaded1.attachment().getId());
             assertThat(downloadedCurrent.bytes()).isEqualTo(v2Bytes);
             System.out.println("[verify] downloadCurrent returned v2, " + downloadedCurrent.bytes().length + " bytes, byte-identical");
 
-            var downloadedV1 = attachmentService.download(uploaded1.attachment().getId(), (short) 1);
+            var downloadedV1 = attachmentService.download(reqId, uploaded1.attachment().getId(), (short) 1);
             assertThat(downloadedV1.bytes()).isEqualTo(v1Bytes);
             System.out.println("[verify] download(v1) still retrievable after v2 exists, byte-identical — versioned, not overwritten");
         } finally {

@@ -303,6 +303,66 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0783 | 5 | Performance | Graceful degradation; unavailable is reported, not zero | DONE | 12 |
 | VYB-0784 | 5 | Performance | Observability: metrics, health, integration status, request tracing | DONE | 12,16 |
 | VYB-0785 | 5 | Performance | Backup and restore rehearsed and documented | DONE | 15 |
+| VYB-0900 | 6 | Remove the critical exposure | Rotate database and Keycloak secrets, require them from the environment, fail fast when unset; scrub git history [M; F01, F07] | PARTIAL: code done, rotation and history scrub are human steps (docs/SECRETS-ROTATION.md) | S1 |
+| VYB-0901 | 6 | Remove the critical exposure | Close the open doors: CORS default, bootstrap endpoint, service-account detection and scopes, attachment access check and upload limits [M; F03–F06] | DONE on dev (commit only; no PR yet). CORS default was closed in VYB-0900 | S1 |
+| VYB-0902 | 6 | Remove the critical exposure | Guard the highest-risk writes first: requirement delete, import commit, team roles, brief push [M; F02] | DONE on dev (commit only; no PR yet) | S1 |
+| VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
+| VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
+| VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | TODO | S2 |
+| VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
+| VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
+| VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
+| VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
+| VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
+| VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
+| VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
+| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
+| VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
+| VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | TODO | S3 |
+| VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | TODO | S3 |
+| VYB-0918 | 6 | Agile Planner inbound and reconciliation | Process inbound backlog_item.status_changed and write completion signals back to requirements [M; F16] | TODO | S4 |
+| VYB-0919 | 6 | Agile Planner inbound and reconciliation | sprint.reassigned marks affected trace links suspect [S; F16] | TODO | S4 |
+| VYB-0920 | 6 | Agile Planner inbound and reconciliation | Orphan and reconciliation handling, conflict queue where both sides changed a field [M; F40] | TODO | S4 |
+| VYB-0921 | 6 | Agile Planner inbound and reconciliation | Webhook hardening: timestamp window, rate limit, constant-time compare, real payload processing [S; F08] | TODO | S4 |
+| VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
+| VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | TODO | S5 |
+| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | TODO | S5 |
+| VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
+| VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
+| VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
+| VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | TODO | S6 |
+| VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | TODO | S6 |
+| VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | TODO | S6 |
+| VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | TODO | S6 |
+| VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
+| VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | TODO | S7 |
+| VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | TODO | S7 |
+| VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | TODO | S7 |
+| VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | TODO | S8 |
+| VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | TODO | S8 |
+| VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
+| VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
+| VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |
+| VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | TODO | S9 |
+| VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | TODO | S9 |
+| VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | TODO | S9 |
+| VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | TODO | S9 |
+| VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | TODO | S9 |
+| VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | TODO | S9 |
+| VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | TODO | S10 |
+| VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
+| VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
+| VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
+| VYB-0951 | 6 | Configurability and boards | Artifact type registry replacing type lists in checks, enums, detectors and UI [L; F39] | TODO | S11 |
+| VYB-0952 | 6 | Configurability and boards | Custom fields on requirements with revision capture and import mapping [L; F39] | TODO | S11 |
+| VYB-0953 | 6 | Configurability and boards | Kanban board driven from status, with templates per team [M; F42] | TODO | S11 |
+| VYB-0954 | 6 | Configurability and boards | Tenant model spike: what a second customer would need, cost and migration path [S; F39] | TODO | S11 |
+| VYB-0955 | 6 | Reporting, notifications and release to pilot | Notifications: review, approval, release, test failure and mention events; email and chat channels; user preferences [M; F21] | TODO | S12 |
+| VYB-0956 | 6 | Reporting, notifications and release to pilot | Trend dashboards for defects, test pass rate, release readiness; xlsx and PDF export [M; F24] | TODO | S12 |
+| VYB-0957 | 6 | Reporting, notifications and release to pilot | Import: downloadable template, re-enable Word and ReqIF with validation [M; F25] | TODO | S12 |
+| VYB-0958 | 6 | Reporting, notifications and release to pilot | Locale layer and first translated screens; code splitting and accessibility pass [M; F38, F42] | TODO | S12 |
+| VYB-0959 | 6 | Reporting, notifications and release to pilot | Pilot onboarding of one real team, load and recovery rehearsal [S; F11] | TODO | S12 |
 
 ## Session 1 — Phase 0 Foundation
 
@@ -4522,3 +4582,364 @@ raw JSON editor, saved the same way `planning`'s structured fields are — throu
 backend change needed — `setConfig` already accepts arbitrary JSON for any key. Nothing
 reads `git`'s config yet; this is storage only, same disclosed scope as Session 56's
 "registering a connection wires up nothing on its own" note. `tsc -b --noEmit` clean.
+
+
+## Session 58 — VYB-0900 (D22, F01/F07/F03): secrets out of the repo
+
+Phase 6 Sprint 1, session 1. Worked on branch `dev` (the environment's branch rule), not `sprint/s1-harden`.
+
+**Done (code)**
+- `application.yml`: every real credential default removed. `DB_URL`, `DB_USER`, `DB_PASSWORD`, `KEYCLOAK_ROPC_CLIENT_SECRET`, `KEYCLOAK_IMPERSONATION_CLIENT_SECRET` and `INTERNAL_SSO_SHARED_SECRET` now default to empty (the live RDS host, the database password and both client secrets are gone from the file; the fake SSO default is gone too).
+- `RequiredSecretsEnvironmentPostProcessor` (registered in `META-INF/spring.factories`) stops startup when any of the six is empty or blank, listing every missing one by environment-variable name and never echoing a value. `MissingRequiredSecretsFailureAnalyzer` prints it as Boot's "APPLICATION FAILED TO START" block.
+- CORS: `vyoog.cors-allowed-origin-patterns` no longer defaults to `*` (empty now). `SecurityConfig` refuses `*`, `https://*` and `http://*:*` in either list at startup. `cors-allowed-origins` keeps its existing explicit default `https://devops.evyoog.com`.
+- `run-local.sh` now exports `.env` (`set -a`; before, plain `source` did not export to the Maven child), requires `.env`, and refuses a non-localhost `DB_URL`. `docker-compose.yml` takes the Postgres password from `DB_PASSWORD`. New `backend/.env.example` (fake values). `backend/README.md` (and its identical copy in `frontend/README.md`), `docs/running-minio-locally.md` and `docs/vyoog-getting-started.md` no longer say the default database is the live one.
+- New `docs/SECRETS-ROTATION.md`: what to rotate, who owns each, order of work, and the `git filter-repo` commands for a person to run. **The history rewrite was not run.**
+
+**Tests** (`VYB0900_ACn_...`): `RequiredSecretsStartupTest` (16: boots a real `SpringApplication` against the real `application.yml`; each of the six missing, blank, all missing, message never echoes a value, yml has no defaults) and `SecurityConfigCorsAllowlistTest` (6: an unlisted origin gets 403 and no `Access-Control-Allow-*` headers, wildcards refused, default is not `*`). The existing `SecurityConfigCorsTest` (6) still passes.
+
+**Not done / could not verify**
+- Rotation and the history scrub: human steps. Until they happen the old values are still valid and still in git history. D22 is still Proposed.
+- `./mvnw -B verify` is **not green** because of `RopcConfigurationMessageTest.VYB0048b_AC1_aMissingSecretNamesTheSecretAndNotTheClient`, which fails identically on untouched HEAD: it expects the message to contain `D8`, and `KeycloakPasswordGrantService` cites D21 since 2026-09-11. Not in this row's scope, so left alone. With that one test ignored: vyoog-domain 335 run, 1 failure (that one); vyoog-api 28 run, 0 failures. Frontend `npm test`: 616 passed.
+- The `*VerificationRunner` classes start the full application, so they now need all six variables. They were not run (they need a live database); making them safe is row VYB-0903. They previously fell through to the live RDS database by default, so this change also removes that path.
+- The "fails before, passes after" check could not be run literally for the startup tests, because they reference the new classes; the CORS default test asserts the old `:*` default is gone.
+- Object-store keys still default to the local MinIO pair in `StorageConfig` (fake, local); not in this row's list.
+
+
+## Session 59 — VYB-0901 (F04/F05/F06): close the open doors
+
+Phase 6 Sprint 1, session 2. Branch `dev`. The CORS wildcard default (F03, named in the row) was already closed in session 58.
+
+**Bootstrap (F04).** `POST /settings/bootstrap` had no guard, so on a fresh deployment the first authenticated caller could make anyone the administrator. It now needs all of: a person (`requireHuman`); a configured `BOOTSTRAP_TOKEN` (empty = endpoint off) matched in constant time against the `X-Bootstrap-Token` header; no live ADMINISTRATOR grant anywhere (`TenantBootstrapService.administratorExists`); and `bootstrapped_at` unset. Refusals are `BootstrapRefusedException` → 403 (previously "already bootstrapped" was a 409 `IllegalStateException`; the frontend has a client method but no screen that calls it).
+
+**Service accounts (F04).** `ServiceAccountChecker.isServiceAccount(azp)` is now registered accounts only; a blank `email` no longer counts. New `isPerson(azp, email)`; `requireHuman` uses it, so a token that is neither a registered account nor a person is refused by both guards. The three CI ingest endpoints (`/ci/test-runs`, `/ci/commits`, `/ci/deployments`) now call `requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST)`. `CI_INGEST` already existed in `KnownServiceScopes`; no new scope names were needed.
+
+**Attachments (F05/F06).** `AttachmentService.download/downloadCurrent/versionsOf` take the requirement id from the path and return 404 unless the attachment belongs to it. The controller's list, versions, download and upload endpoints call `requireHuman`. New `AttachmentPolicy`: size cap (`vyoog.attachments.max-bytes`, default 10 MiB), extension allowlist and content-type allowlist (no html, svg, js, executables or archives), and filename sanitising (last path segment, `[A-Za-z0-9._ -]` only, no leading dots, 120 chars) — the sanitised name is what reaches the database and the S3 key. Errors map to 413 / 415 / 400. `spring.servlet.multipart.max-file-size: 10MB` and `max-request-size: 12MB` are explicit. Downloads add `X-Content-Type-Options: nosniff`.
+
+**Tests** (`VYB0901_ACn_...`): `ServiceAccountCheckerTest` (5), `TenantBootstrapServiceTest` (3), `AttachmentPolicyTest` (22), `AttachmentServiceAccessTest` (6), `Vyb0901OpenDoorsTest` (14, real `PrincipalGuard` + `ServiceAccountChecker`, mocked repositories). vyoog-domain: 371 run, 1 failure (the pre-existing `RopcConfigurationMessageTest`, see session 58). vyoog-api: 42 run, 0 failures.
+
+**Deploy notes / not done**
+- Existing service accounts must hold the `ci:ingest` scope or their CI calls now get 403. Check the registered accounts before deploying.
+- "The caller may read it" is enforced as "a signed-in person, and the attachment belongs to this requirement". Reads of requirements are not scoped by grant anywhere yet, so attachments are not either; grant-scoped reads are VYB-0908.
+- Content type is the client's claim; nothing sniffs the bytes and nothing scans for malware.
+- The bootstrap-status GET is unchanged (it only reveals a boolean).
+- The attack cases were not run against the old code: the tests use new methods and classes, so they do not compile against it.
+- Upload has no role rule beyond "a person" (writes are VYB-0902 / VYB-0906).
+- Not run: the verification runners and anything needing a live database, MinIO or Keycloak.
+
+
+## Session 60 — VYB-0902 (F02): guard the riskiest writes
+
+Phase 6 Sprint 1, session 3. Branch `dev`. Only the seven endpoints named in the row; no other controller was touched.
+
+**Minimum role per endpoint** (from the spec's §4.4 matrix; a platform ADMINISTRATOR passes every one, following the precedent in `RequirementTransitionAuthorizer`; a service account or email-less token passes none):
+
+| Endpoint | Minimum | Scope checked | Why |
+|---|---|---|---|
+| `PATCH /requirements/{id}` | BUSINESS_ANALYST or ARCHITECT | the requirement's capability, else app, else product | matrix "Edit req" |
+| `DELETE /requirements/{id}` | same as PATCH | same | the matrix has no delete column; closest is "Edit req". It is soft and audited. **Product owner: say if delete should be narrower** |
+| `POST /import/batches/{id}/commit` | BUSINESS_ANALYST or ARCHITECT | the batch's application | writes requirements into the register: matrix "Create req" |
+| `DELETE /import/batches/{id}` | same as commit | same | a real (hard) delete of an upload |
+| `PUT /teams/{t}/members/{u}/role` | ADMINISTRATOR, or a LEAD of that team | the team | decides who may assign the team's work (D11); a team with no lead is administrator-only |
+| `DELETE /teams/{t}/members/{u}` | same as role change | the team | |
+| `POST /briefs/{id}/push` | APPROVER | the brief's application | sends content to an external system and cannot be recalled; nearest matrix column is "Baseline" (Approver / Product Owner) |
+
+A grant on a product covers its apps and capabilities (existing `GrantResolver` chain). A refusal is a 403 naming the roles needed.
+
+**Code.** `PrincipalGuard.requireAnyRoleOrAdmin(jwt, roles, scopeType, scopeId, action)` and `requireAdministratorOr(jwt, predicate, message)` (both call `requireHuman` first). `RoleCapabilityRegistry` (the Roles screen) now lists BUSINESS_ANALYST, ARCHITECT and APPROVER as enforced for these endpoints.
+
+**Tests** (`Vyb0902WriteGuardsTest`, 9): MockMvc through the real `ApiExceptionHandler` and a real `PrincipalGuard`. Per endpoint: an ordinary signed-in user, a viewer, the wrong role, the right role at the wrong scope, and a registered service account all get 403 and the service is never called; the permitted role and an administrator succeed. **Red/green checked**: run against the pre-change controllers, all 9 fail; with the guards, all 9 pass. vyoog-api 51 run, 0 failures. vyoog-domain 371 run, 1 failure (the pre-existing `RopcConfigurationMessageTest`, see session 58). Frontend 616 passed.
+
+**Not done / to know**
+- Other endpoints on the same controllers stay open (for example team `create` and `addMember`, requirement `transition`, every other import step). That is VYB-0906.
+- PATCH checks the requirement's current placement only; moving a requirement into a capability the caller has no role on is not checked at the target.
+- The UI does not yet hide these actions from users who lack the role, so they will see a 403 message. The existing per-user role lists are the data for that.
+- Users who relied on any-signed-in-user access to these actions need a grant before this ships. Check who holds BUSINESS_ANALYST, ARCHITECT and APPROVER today.
+
+
+## Session 61 — VYB-0903 and VYB-0904 (F10, F11): safe runners and CI
+
+Phase 6 Sprint 1, session 4. Branch `dev`.
+
+**VYB-0903 — runners can only reach a local database.**
+- `vyoog-testkit` `LocalDatabase`: `DB_URL` unset gives a throwaway Testcontainers Postgres (pgvector image, schema `vyg_requirement`, started once per JVM); `DB_URL` set must name only localhost or loopback hosts (every host of a multi-host URL is checked; a host smuggled in through `?host=` or `user@host` is refused; the message names the offending host and what to do instead).
+- `VerificationRunnerBase` (`@SpringBootTest` + `@DynamicPropertySource`) supplies the datasource from `LocalDatabase` and fake values for the three secrets the app now requires (D22) unless the environment sets them. All 16 `*Runner` classes extend it. `RunnersUseLocalDatabaseTest` fails the build if a runner in the package does not.
+- `BriefPushVerificationRunner` no longer touches the shared `integration_connection` "planning" row at all. It used to overwrite its config and secret and restore them in a `finally` (a crash left a fake push URL and secret behind, and a successful push also flipped `connected`). It now replaces `IntegrationService` with an in-memory subclass holding its own "planning" connection, and asserts that the real row is byte-for-byte unchanged afterwards.
+
+**VYB-0904 — CI.** `.github/workflows/ci.yml`, on `pull_request`: `backend` job (Temurin 21, Maven cache, `./mvnw -B -ntp verify`) and `frontend` job (Node 20, npm cache, `npm ci`, `npx tsc -b`, `npm test`). Read-only permissions, concurrency cancels superseded runs, no secrets, no services, no Docker. Timeouts 20 and 15 minutes.
+
+**Also fixed (needed for a green CI):** `RopcConfigurationMessageTest` asserted the message cites "D8"; the service has cited D21 since 2026-09-11, so it had been failing on `main`. The assertion now expects "D21". This is the failure recorded in sessions 58 to 60; `./mvnw -B verify` now passes with nothing ignored.
+
+**Tests** (`VYB0903_AC1_...`): `LocalDatabaseGuardTest` (local URLs accepted; 12 non-local or malformed URLs refused; message content; `resolve` behaviour) and `RunnersUseLocalDatabaseTest` (1). Red check: removing `extends VerificationRunnerBase` from one runner makes the second one fail naming it. Backend: `./mvnw -B verify` green. Frontend `npx tsc -b` clean, `npm test` 616 passed.
+
+**Could not verify**
+- No runner was executed: this environment has no Docker daemon and no pgvector, and no local Postgres was started. `LocalDatabase`'s container path, `VerificationRunnerBase` wiring against a live context, and the new `BriefPushVerificationRunner` are compile-checked only.
+- The workflow has not run on GitHub (no pull request yet). Its two command lines were run locally; the YAML parses. The action versions (`checkout@v4`, `setup-java@v4`, `setup-node@v4`) are unpinned to a sha.
+- The `Requirement:` trailer check the register header mentions ("a commit without a trailer fails CI") is not implemented; it was not in the row.
+- Lint (`npm run lint`) is not in CI: ESLint is not set up yet (VYB-0912).
+
+
+## Session 62 — VYB-0905 (F37): one README, one register, one CLAUDE.md
+
+Phase 6 Sprint 1, session 5. Branch `dev`. The register merge and the root `CLAUDE.md` were done earlier on `dev` (commit `6b64a7a`); this session did the rest and audited the whole.
+
+**Done**
+1. **Old schema deleted.** `backend/docs/vyoog-schema.sql` (the multi-tenant design-time DDL, with `tenant_id` and row-level security) is removed. Nothing in code, tests, pom files or scripts read it. The three docs that named it as the schema now name the Flyway migrations (`backend/vyoog-domain/src/main/resources/db/migration`) and say the file was removed: the specification (companion-file table, §5 intro, closing line), the kickoff prompts, and the getting-started runbook. Session logs in this register that mention it are history and are unchanged.
+2. **Registers merged** (earlier): one `BUILD-REGISTER.md` at the root, all session logs kept, Phase 6 rows added, conflicts reported in its "Merge note". Nothing more to report: the frontend copy was an older snapshot, and its colliding session 21 and 22 logs are kept and marked.
+3. **One `CLAUDE.md`** (earlier) at the root with the section B edits; the two copies are gone.
+4. **README rewritten.** The root `README.md` was empty. It now describes the current system: what it is, where the plan, rules, decisions, specification and schema live, how to run everything locally (with the real steps: `.env`, docker compose, `run-local.sh`, dev server on 5175 and its proxy target), the six required variables and the optional ones, how to test and build, the layout, and the rules. `backend/README.md` and `frontend/README.md` had been identical 184-line copies of the old Phase 0 README (claiming "Phases 0-2 are built", telling readers to run a `FoundationSmokeIT` that does not exist, and a `frontend/.env.example` that does not exist). They are now short component READMEs that link to the root: modules, integration runners, CI for the backend; configuration and layout for the frontend.
+5. **Sprint 1 rows audited** against what is on `dev`: VYB-0901 to VYB-0905 are DONE on dev; VYB-0900 stays PARTIAL (rotation and the history scrub are human steps, see `docs/SECRETS-ROTATION.md`). None is marked DONE on the strength of a pull request, because none exists yet; "DONE on dev" means the commit and its tests exist, not that it was reviewed or merged.
+
+**Checked:** relative links in the three READMEs resolve; `./mvnw -B verify` green (371 domain, 73 api); `npx tsc -b` clean; `npm test` 616 passed.
+
+**Not done / to know**
+- The `frontend/.env.local` committed in the repo points the dev proxy at `http://localhost:8083` while the API defaults to 8080; the README says so but the file is unchanged (not in scope).
+- `backend/docs/vyoog-build-specification.md` still describes the original multi-tenant design in §3, §4 and §5 in places. Only its schema pointer was corrected. Bringing the spec in line with the code is D23's follow-up and was not attempted.
+- `backend/README.md` and `frontend/README.md` remain as component READMEs rather than being deleted, so a reader can still find module-level notes. Say if you want them removed so only the root README exists.
+
+---
+
+## Merge note — frontend copy (VYB-0905, Phase 6 Sprint 1)
+
+`backend/BUILD-REGISTER.md` and `frontend/BUILD-REGISTER.md` were merged into this single register. Nothing was dropped. Findings:
+
+- **The frontend copy is an older snapshot of the backend copy.** The table differs in three places and the backend copy is newer in each, so the table above is the backend copy's:
+  - VYB-0360 and VYB-0361 (review rounds screen, signing): frontend says DONE in session 9; backend says SUPERSEDED in session 41.
+  - VYB-0634: frontend session column `11`; backend `11,21`.
+  - VYB-0824 to VYB-0829: present only in the backend copy.
+- **Session logs 1 to 20 are identical in both copies** and appear once, above.
+- **Session numbers 21 and 22 collide.** The frontend copy's "Session 21" (Portfolio dashboard restyle) and "Session 22" (document analysis panel) are different work from the backend copy's "Session 21" (VYB-0634) and "Session 22" (VYB-0667/0668). Both are kept. The frontend copy's two logs are below, headings unchanged, marked "(frontend copy)". Nothing was renumbered, so existing references to session numbers still resolve to the backend copy's logs.
+- Backend-only sessions 23 to 57 had no frontend counterpart.
+
+## Frontend-copy session logs with colliding numbers
+
+## Session 21 — VYB-0788 restyle: the Portfolio dashboard rendered in the prototype's `.pf-*` design (frontend copy)
+
+**The ask**: the `.pf-*` block from `Downloads/vyoog-layout- user-budget-mytask-calender.html`,
+plus a screenshot of that prototype rendered in light theme — "i need this exact style for
+my portfolio cards also."
+
+`tokens.css` already carried the ported `.pf-*` / `.add-card` / `.crumb` rules from the
+earlier pass on this requirement; `Portfolio.tsx` was still drawing the dashboard with
+the generic `.card` grid, so every one of those rules was dead CSS. This session wired
+the markup to them: centred glyph/name/vertical, the purpose, a bordered three-cell stat
+row, the product's apps as rows, a coverage footer, the joined `.pf-sum` platform strip
+in place of six detached stat tiles, the dashed `.add-card`, and the
+`Product Portfolio ▸ <product> ▸ <app>` `.crumb`. Header is the prototype's own eyebrow /
+"Product Portfolio" / subtitle, and `.pf-actions .btn` / `.pf-foot .btn` make those two
+button rows uppercase without touching the app's global `.btn`.
+
+Adaptations, none of them cosmetic accidents:
+
+- **Per-product accent, not one fixed `--prod`.** The prototype hardcodes a single accent
+  for all five sample products. Each card re-binds `--prod`/`--prod-dim`/`--prod-bd` to
+  its own mark's triad from `marks.tsx`, so glyph, vertical, app bullets and hover border
+  all follow the mark the user actually picked — one inline binding instead of a rule per
+  mark, and no new colour that `contrast.test.ts` cannot see.
+- **Nothing hardcoded.** Every figure still comes from `/products/dashboard`; the card
+  gained no data it cannot derive. The eyebrow counts real unarchived products rather
+  than repeating the prototype's "five verticals", so it cannot drift from the grid.
+- **Coverage banding tightened** to the prototype's three-tier `covCol` (green ≥88, amber
+  ≥75, red below) from the single 75% cut — the same 75% the summary strip's "apps below
+  75%" figure already uses.
+- **Gap chips are not suppressed.** The prototype chips an app's gap count only above 5;
+  every non-zero count is chipped here, since hiding a live figure to quieten a card
+  hides real work.
+- **Nothing was dropped.** The prototype's card has no lifecycle badge, owner, edit or
+  archive control; all four survive — lifecycle and owner in one compact centred
+  `.pf-meta` line, edit/archive in a `.pf-acts` cluster revealed on hover/`:focus-within`
+  so the footer is exactly bar + percentage + OPEN as in the screenshot. Absent
+  owner/vertical/purpose render as stated text ("No owner assigned"), never blank —
+  rule 8. App rows became real links that drill to the app, not just to the product.
+- **The crumb needed a home.** This Portfolio is tabbed (Dashboard/Hierarchy/Glossary),
+  not the prototype's three drill-down states, so it renders in Hierarchy once a product
+  is selected, each ancestor a link back up.
+
+`StatTile` and `MiniStat` became unused and were removed rather than left dangling;
+`MarkIcon` is no longer used here (the card draws the glyph through `.pf-glyph`) but is
+still used by `NewProductModal`, so it stays in `marks.tsx`.
+
+`tsc --noEmit` clean, `npm run build` clean, suite **126 passed** with contrast still
+120/120 — the change is markup against already-verified rules, so it added no new pairing.
+
+**Follow-up, same session — "portfolio card sizes are very large"**. Two real defects,
+found by rendering the exact card markup against `tokens.css` in headless Chrome and
+measuring `getBoundingClientRect()` rather than eyeballing it:
+
+- **The `.pf-*` block's own header comment closed itself early.** It described the rule
+  family as `.pf-*` immediately followed by `/.crumb` — and `*/` ends a CSS comment. The
+  parser therefore treated the rest of the comment prose as a selector prelude and ate
+  the entire `.pf-grid` rule that followed it. There was no grid at all: every card laid
+  out as a full-width block, **1641px wide**, one per row. The comment is reworded and
+  now says why the sequence must never appear again. Worth noting the whole suite was
+  green through this, because `contrast.test.ts` reads declarations out of the file, not
+  the cascade a browser actually builds — a green suite is not evidence that a
+  stylesheet parses.
+- **`auto-fit` + `1fr` only works when the row is full.** The prototype always renders
+  five products plus the add-card, so its tracks are always occupied. With two products
+  `auto-fit` collapses the empty tracks and stretches those two cards across the page.
+  Changed to `auto-fill` with `minmax(226px, 300px)`, which pins a card to the width it
+  has in the prototype's own screenshot (~298px at 1920) no matter how few products
+  exist.
+
+Measured after the fix: **300×494** per card (prototype ~298×485), five across in the
+app's content column, and the two-product grid renders identically sized cards instead
+of two page-wide ones. Checked in both themes. `tsc --noEmit` clean; **126 passed**;
+contrast still 120/120 — the corrected comment exposed no new colour pairing, since
+`.pf-grid` declares none.
+
+**Follow-up, same session — "portfolio card sizes are very large", then "there is a lot
+of difference still … smooth lines i need, not it looks like more grid"**. Three real
+defects, all found by rendering the exact card markup against `tokens.css` in headless
+Chrome and measuring `getBoundingClientRect()` instead of eyeballing a diff:
+
+- **The `.pf-` block's own header comment closed itself early.** It described the rule
+  family as `.pf-` plus a star, immediately followed by `/.crumb` — and that sequence
+  ends a CSS comment. The parser treated the remaining prose as a selector prelude and
+  ate the entire `.pf-grid` rule after it. There was no grid at all: every card laid out
+  as a full-width block, **1641px wide**, one per row. The comment now says why that
+  sequence must never reappear. The suite was green throughout, because
+  `contrast.test.ts` reads declarations out of this file rather than the cascade a
+  browser builds — a green suite is not evidence that a stylesheet parses.
+- **`auto-fit` + `1fr` only holds when the row is full.** The prototype always renders
+  five products plus the add-card, so its tracks are always occupied; with two products
+  `auto-fit` collapses the empty tracks and stretches those two across the page. Now
+  `auto-fill` with `minmax(226px, 300px)`, which pins a card to the width it has in the
+  prototype's own screenshot (~298px at 1920) however few products exist. Measured
+  after: **300×493** per card (prototype ~298×485).
+- **Every product on the default mark rendered with no accent at all.** The card re-bound
+  its `--prod*` trio inline from `marks.tsx`, whose values are `var(--prod)` strings — so
+  for `box` (which is `DEFAULT_MARK`) the inline style evaluated to
+  `--prod: var(--prod)`, a self-referential custom property. CSS resolves that to
+  guaranteed-invalid, and the top border, glyph ring, italic vertical and app bullets all
+  silently vanished; the flat grey card the user was comparing against the prototype. The
+  binding is now an `.acc-*` class per accent family, with no class for the marks already
+  on `--prod`. A `var(--acc, var(--prod))` fallback chain would also have worked, but
+  `contrast.test.ts` pairs a rule's background against its border *by token name*, so
+  `--acc-dim` — not a defined colour — would have dropped `.pf-glyph` out of the gate
+  without failing it.
+
+**The "looks like a grid" difference was line weight, not layout.** The prototype's
+hairline is `#DDE2EA` light / `#272E3A` dark; this project's `--line` is `#7990B5` /
+`#586989`, because session 16 raised every boundary token to clear 3:1 for WCAG 1.4.11.
+Drawing a card's internal rulings in it reads as a table. The card's *outline* stays
+`--line` — it is a real boundary and `contrast.test.ts` still asserts it in both themes —
+while the rulings inside (under the description, between stat cells, above the footer,
+between summary cells) are now `--panel-3`, which is within a shade of the prototype's
+own hairline. The `.pf-meta` line lost its rule entirely: the prototype's card has three
+horizontal lines and a fourth is what made this read as a grid; lifecycle and owner now
+sit directly under the vertical, above the description.
+
+Honest note on the gate: contrast went **120 → 118 tests**. Both lost assertions are the
+same pairing — `.pf-foot`'s old `border-top: --line` on its `--panel-2` fill, in each
+theme. That divider now lives on `.pf-apps`, which declares no background, and the
+checker only asserts a border where the same rule declares a background var. So these
+hairlines are outside the automated gate rather than passing it. That is the right
+reading of 1.4.11 for a decorative separator — none of them is the boundary of any
+control — but it is a coverage reduction, not a free win, and it is recorded here rather
+than left for someone to discover in the test count.
+
+`tsc --noEmit` clean, `npm run build` clean, **124 passed**. Verified in both themes at
+1920 and 1280 wide, and with a two-product grid as well as five.
+
+**Follow-up, same session — "after i click open button it opens some page … i need the
+same design which was in html"**. OPEN on a product card jumped to the Hierarchy tab's
+three columns; the prototype's OPEN leads to its own second portfolio state, one product
+and its apps. That state is now built: `portfolio/ProductDetail.tsx`, with the
+prototype's `.pd-*` head (glyph, serif name, italic vertical, purpose, and a bordered
+Reqs/Verified/Gaps box reusing the same `.pf-stat` cells so the two states cannot drift),
+its `Apps in this product` row with the `N apps · N requirements · N open gaps` line, and
+its `.app-grid` of `.app-card`s — dot-pill gap badge, a Requirements row, a Verified row
+banded by the shared `covColor`, and an uppercase footer. Reached by state, not by route:
+the crumb and "All products" return to the grid, and the drill-down replaces the page
+title and tab row exactly as the prototype replaces its own view.
+
+- **`covColor` moved to `portfolio/coverage.ts`** with `verifiedPctOf`, so the card grid
+  and the drill-down band the same percentage identically rather than each holding a copy.
+- **`.app-grid` is capped at 340px**, for the reason `.pf-grid` was: the prototype's
+  `1fr` is only safe because it always has six apps, and a two-app product would
+  otherwise get two half-page cards.
+- **The gap badge keeps all three of the prototype's states** — red above five, grey at
+  one to five, green at none. The prototype's middle state is grey, not amber, so rule 5
+  ("amber means AI") costs nothing here. It is the prototype's own `.bdg` shape (mono,
+  uppercase, 3px corners, leading dot), added as `.app-bdg`, not this app's rounded
+  `.badge`; the token triads are the ones the app's badges already use, and
+  contrast.test.ts now asserts all three in both themes.
+- **The Requirements bar is full width, as in the prototype.** It reports a count, not a
+  share of anything — an earlier pass scaled it against the largest sibling app, which
+  looked like data the payload doesn't contain.
+- **Two of the three footer buttons cannot be scoped yet.** The prototype's per-app
+  "Requirements" and "Gaps" need an application-level filter; the requirements list
+  filters by capability, and the coverage matrix's gaps-only toggle is local state, not a
+  URL parameter. Both buttons open the real views unfiltered and say so on hover, rather
+  than implying a scope they don't apply. An app-scoped requirements filter is the honest
+  follow-up.
+- **"New app" is real.** It posts through the existing `createApplication` endpoint from a
+  dialog rendered by `Modal` (focus trap and restore, VYB-0768) and invalidates both the
+  dashboard and that product's application list. Previously an app could only be created
+  from the Hierarchy tab's inline field.
+- **"Open app"** drills to the app in the Hierarchy tab, which is where capabilities are
+  listed today. The prototype's third state (a full app detail page) is not built.
+
+`tsc --noEmit` clean, `npm run build` clean, **142 passed** — contrast 118 → **136**, the
+18 new assertions being the drill-down's own pairings (`.pd-head`, `.pd-glyph`,
+`.app-card`, and the three `.app-bdg` states across both themes), all clearing AA.
+Verified against the user's screenshot in both themes: `app-card` 322×142 at the app's
+content width (prototype ~305×142), `pd-head` 110px tall.
+
+## Session 22 — VYB-0668: the document analysis panel (frontend copy)
+
+The frontend half of VYB-0667 (see the backend register for the three-agent pipeline
+itself). One panel in the Import Queue's batch view, above the candidate list, because a
+reviewer who understands the document first makes better decisions on the candidates it
+produced — extraction and analysis are independent and neither gates the other.
+
+- **Amber throughout** (`.ai-panel`), because everything in it is AI output and amber is
+  reserved for exactly that. New rules pair `--ai-bd` on `--ai-dim`, the triad the app's
+  AI badges already use.
+- **The panel shows what the run did not do.** Sections read out of sections total,
+  findings kept, noise blocks discarded, quotes rejected for not being in the document,
+  and AI call count. A partial run says the remainder was *not read* rather than letting
+  a shorter description imply the document was thinner than it is.
+- **Unsupported claims render before the description, not after it.** If the verifier
+  could not tie a claim back to the document, that is the first thing a reviewer should
+  see.
+- **Every claim is checkable.** "Show N source findings" lists each finding grouped by
+  category with its verbatim quote and where in the document it came from — the thing
+  that makes a fluent description auditable rather than merely persuasive.
+- **Accept or dismiss, and dismissal takes a reason** in an inline field wired to the
+  same endpoint the backend validates. Nothing about displaying the description applies
+  it.
+
+`contrast.test.ts` caught three of the new rules on the first run: `.ai-stats`,
+`.ai-desc` and `.ai-findings` had been given `--panel-3` hairline borders on a `--panel`
+fill, which is not a perceivable boundary. They are boxes on the amber panel, so their
+outline is a real boundary and now takes `--line`; only the rulings inside them stayed
+hairlines. The gate was right and the fix was the design, not the test.
+
+`tsc --noEmit` clean; suite **154 passed** (contrast 136 → 148 as the panel added 12 real
+pairings, all clearing AA).
+
+**Follow-up, same session — the analysis panel is gone.** `DocumentAnalysisPanel` was
+deleted. It asked the user to run a second, separate AI step and rendered a "Not analysed
+yet" empty state next to a "Not Found" error whenever the running backend predated the
+endpoints — three pieces of ceremony for something that should just be part of pressing
+Extract candidates.
+
+In its place, `DocumentSummary` renders only when a run exists, with no controls and no
+empty state: extraction produces the description, so there is nothing here to start.
+Above the candidate list it shows what the document is about, the themes, and one honest
+coverage line — findings kept, sections read out of sections total, boilerplate blocks
+ignored, claims dropped for not being quotable from the document, and the model. A
+partial run still says the remainder was *not read* rather than letting a shorter
+description imply a thinner document.
+
+Each candidate card gained an amber chip naming what the agents read it to be (a business
+rule, a problem, a constraint), and its existing "Show original text" now reveals the
+verbatim sentence from the document that the candidate was derived from.
+
+Extraction errors all land in the one error line under the header — a failed validation
+rule, a document with no readable text, or the analysis agents being unreachable or
+misconfigured — carrying the backend's own message rather than a generic failure.
+
+`tsc --noEmit` clean; suite **146 passed** (contrast 148 → 140 as the deleted panel's
+rules went with it).

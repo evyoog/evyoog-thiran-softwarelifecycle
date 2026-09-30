@@ -1,5 +1,6 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.attachments.Attachment;
 import com.vyoog.attachments.AttachmentService;
 import com.vyoog.attachments.AttachmentVersion;
@@ -25,10 +26,13 @@ public class AttachmentController {
 
     private final AttachmentService service;
     private final UserProvisioningService provisioning;
+    private final PrincipalGuard guard;
 
-    public AttachmentController(AttachmentService service, UserProvisioningService provisioning) {
+    public AttachmentController(AttachmentService service, UserProvisioningService provisioning,
+                                 PrincipalGuard guard) {
         this.service = service;
         this.provisioning = provisioning;
+        this.guard = guard;
     }
 
     public record AttachmentView(String id, String filename, short currentVersion) {}
@@ -48,20 +52,30 @@ public class AttachmentController {
             v.getUploadedAt().toString());
     }
 
+    /**
+     * VYB-0901 (F05): reads need a person (not a service account or an email-less token) and
+     * the attachment must belong to the requirement in the path — checked in the service.
+     * Read access is otherwise as open as reading the requirement itself, which is any signed-in
+     * person today; grant-scoped reads are VYB-0908.
+     */
     @GetMapping
-    public List<AttachmentView> list(@PathVariable UUID requirementId) {
+    public List<AttachmentView> list(@PathVariable UUID requirementId, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
         return service.list(requirementId).stream().map(AttachmentController::toView).toList();
     }
 
     @GetMapping("/{attachmentId}/versions")
-    public List<VersionView> versions(@PathVariable UUID requirementId, @PathVariable UUID attachmentId) {
-        return service.versionsOf(attachmentId).stream().map(AttachmentController::toView).toList();
+    public List<VersionView> versions(@PathVariable UUID requirementId, @PathVariable UUID attachmentId,
+                                       @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
+        return service.versionsOf(requirementId, attachmentId).stream().map(AttachmentController::toView).toList();
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public AttachmentView upload(@PathVariable UUID requirementId, @RequestParam MultipartFile file,
                                   @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
         byte[] bytes;
         try {
             bytes = file.getBytes();
@@ -75,20 +89,25 @@ public class AttachmentController {
 
     @GetMapping("/{attachmentId}/download")
     public ResponseEntity<ByteArrayResource> downloadCurrent(@PathVariable UUID requirementId,
-                                                              @PathVariable UUID attachmentId) {
-        return toResponse(service.downloadCurrent(attachmentId));
+                                                              @PathVariable UUID attachmentId,
+                                                              @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
+        return toResponse(service.downloadCurrent(requirementId, attachmentId));
     }
 
     @GetMapping("/{attachmentId}/versions/{version}/download")
     public ResponseEntity<ByteArrayResource> downloadVersion(@PathVariable UUID requirementId,
                                                               @PathVariable UUID attachmentId,
-                                                              @PathVariable short version) {
-        return toResponse(service.download(attachmentId, version));
+                                                              @PathVariable short version,
+                                                              @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
+        return toResponse(service.download(requirementId, attachmentId, version));
     }
 
     private ResponseEntity<ByteArrayResource> toResponse(AttachmentService.Downloaded d) {
         return ResponseEntity.ok()
             .contentType(d.contentType() != null ? MediaType.parseMediaType(d.contentType()) : MediaType.APPLICATION_OCTET_STREAM)
+            .header("X-Content-Type-Options", "nosniff")
             .header(HttpHeaders.CONTENT_DISPOSITION,
                 ContentDisposition.attachment().filename(d.filename()).build().toString())
             .body(new ByteArrayResource(d.bytes()));

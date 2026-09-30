@@ -1,115 +1,63 @@
-# Vyoog
+# Vyoog backend
 
-Requirements management platform. Spring Boot (Java 21) · React 18 + TypeScript ·
-PostgreSQL 16 · Keycloak 25.
+Spring Boot 3.3 multi-module Maven build. Start with the [root README](../README.md): how to run it,
+the required environment variables, the layout and where the plan lives. This file has the
+backend-only detail.
 
-**Phases 0–2 are built** (foundation, the requirement register, and flow/evidence —
-review rounds, verification, defects, clarifications, derived work, change requests).
-See `BUILD-REGISTER.md` for the line-by-line status of every requirement and
-`docs/vyoog-build-specification.md` §12 for the phase sequence.
+## Modules
 
-Vyoog is **single-tenant by design** (see `docs/DECISIONS.md` D3): it lives in its own
-Postgres schema (`vyg_requirement`) on the same shared RDS instance as the company's
-other applications, and authenticates against the same shared Keycloak realm (`eVyoog`)
-as vyg-pms and the pricing tool — not a Vyoog-local realm or database.
-
----
-
-## Run it
-
-You need Docker, JDK 21 and Node 20+. You do **not** need Maven installed.
-
-```bash
-# 1. local Postgres, Redis, MinIO (Keycloak is the shared eVyoog realm — no local one)
-docker compose up -d
-docker compose ps                       # wait for healthy
-
-# 2. backend — Flyway applies V001__baseline.sql into the vyg_requirement schema
-#    on first start. Point these at the real shared RDS instance once you're past
-#    pure local iteration; the defaults below only work with docker-compose's
-#    local postgres.
-export DB_URL="jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public"
-export DB_USER=postgres
-export DB_PASSWORD=postgres
-cd backend && ./mvnw -pl vyoog-api -am spring-boot:run
-
-# 3. frontend, in a second terminal
-cd frontend && cp .env.example .env     # then set VITE_KEYCLOAK_CLIENT_ID, see below
-npm install && npm run dev
-```
-
-Open `http://localhost:5173`.
-
-**Before sign-in works**, a Keycloak admin needs to register a client in the real
-`eVyoog` realm — see `docs/vyoog-getting-started.md` for exactly what to create
-(a public, PKCE-enabled client for the frontend; optionally an audience mapper for the
-API). There is no local Keycloak to fall back on.
-
-| Service | URL |
+| Module | What is in it |
 |---|---|
-| Web | http://localhost:5173 |
-| API | http://localhost:8080 |
-| API health | http://localhost:8080/actuator/health |
-| Swagger | http://localhost:8080/swagger-ui.html |
-| Keycloak (shared, not local) | https://user.evyoog.com |
-| MinIO console | http://localhost:9001 (minio / minio123) |
+| `vyoog-domain` | entities, repositories, services, detectors, and the Flyway migrations (`src/main/resources/db/migration`), which are the database schema |
+| `vyoog-api` | REST controllers, security (`SecurityConfig`, `PrincipalGuard`), startup checks, the Boot application |
+| `vyoog-worker` | reserved; empty today |
+| `vyoog-testkit` | `PostgresFixture` (Testcontainers) and `LocalDatabase`, the guard that keeps integration runners on a local database |
 
-## Verify Phase 0
+`./mvnw -B verify` builds all four and runs the unit tests and the ArchUnit boundary tests.
+Modules may not import each other's `internal` packages (see `CLAUDE.md`).
+
+## Other docs
+
+- `docs/DECISIONS.md`: decision log
+- `docs/vyoog-build-specification.md`: specification
+- `docs/running-minio-locally.md`: object storage for attachments
+- `docs/backup-restore-rehearsal.md`, `docs/load-test-rehearsal.md`: rehearsals
+- `docs/vyoog-getting-started.md`, `docs/vyoog-maven-project-setup.md`, `docs/vyoog-claude-code-kickoff.md`:
+  the original Phase 0 bootstrap notes, kept for history (see the banners at their tops)
+
+## Running the integration runners locally
+
+The `*VerificationRunner` / `LoadRehearsalRunner` classes in `vyoog-api/src/test` boot the whole
+application against a real Postgres. They are invisible to `mvn test` / `mvn verify` (and to CI) on
+purpose — run one by name. They only ever use a **local** database:
+
+- **`DB_URL` unset** — a throwaway Testcontainers Postgres (pgvector image) is started for the run and
+  discarded afterwards. Needs Docker.
+- **`DB_URL` set** — it must point at localhost or a loopback address, normally the docker-compose
+  database. Any other host (RDS, a shared server) is refused before anything connects, with a message
+  naming the host.
 
 ```bash
-cd backend && ./mvnw -B verify
+# Option A: throwaway container (Docker running, DB_URL not set)
+cd backend && ./mvnw -B -pl vyoog-api -am test -Dtest=Session14VerificationRunner \
+  -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
+
+# Option B: the docker-compose database
+cd backend && docker compose up -d
+set -a && source .env && set +a          # DB_URL must be jdbc:postgresql://localhost:...
+./mvnw -B -pl vyoog-api -am test -Dtest=Session14VerificationRunner \
+  -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
-`FoundationSmokeIT` proves the app starts against the real schema shape (Flyway ran
-into `vyg_requirement`) and a product round-trips through the repository layer.
-`ArchitectureTest` proves the domain module has no dependency on web types.
+The three Keycloak/SSO secrets the application requires get fake values in a runner unless you have
+set them (`AuthEndpointVerificationRunner` needs its own, see its class comment). Runners that talk to
+object storage need MinIO from `docker compose up -d`. A runner cleans up the rows it creates, and none
+of them touches the seeded `integration_connection` rows: `BriefPushVerificationRunner` swaps in an
+in-memory integration service with its own "planning" connection. A new `*Runner` class must extend
+`VerificationRunnerBase`; a unit test fails the build otherwise.
 
-**Do not start Phase 1 until both are green.**
+## CI
 
----
-
-## Layout
-
-```
-backend/
-  pom.xml               parent reactor
-  vyoog-domain/         entities, repositories, detectors
-  vyoog-api/            controllers, security, the Boot application
-  vyoog-worker/         detection sweep, outbox relay (Phase 2+)
-  vyoog-testkit/        Testcontainers fixture, schema vyg_requirement
-frontend/               React + TypeScript + Vite
-infra/                  docker-compose support: local db init
-docs/                   specification, schema, decisions, build sequence, runbook
-docker-compose.yml      local postgres, redis, minio
-CLAUDE.md               rules the coding agent reads automatically
-BUILD-REGISTER.md       every requirement, one line, with status
-```
-
-## How isolation works
-
-Vyoog does not implement multi-tenancy itself. Isolation between Vyoog and the
-company's other applications is a Postgres schema boundary, enforced by which schema
-the connection targets (`vyg_requirement`, owned by `postgres`) — the same convention
-vyg-pms and the pricing tool use for their own schemas. See `docs/DECISIONS.md` D3 for
-the full rationale, and why the original RLS/`tenant_id` design was dropped.
-
-Identity comes from the shared `eVyoog` Keycloak realm (`docs/DECISIONS.md` D6):
-Spring's OAuth2 resource server validates issuer and signature against that realm's
-JWKS; `UserProvisioningService` mirrors the subject into `app_user` on first sight.
-
-## Rules that are not negotiable
-
-Full list in `docs/vyoog-build-specification.md` §1.4 and `CLAUDE.md`.
-
-- Vyoog never stores a password. Keycloak owns authentication.
-- "Verified" is a predicate over the current revision, never a stored flag.
-- Tasks are derived from requirement state, never authored.
-- Amber means AI output, and only AI output.
-- No money, no hours, no effort estimates, no per-person productivity.
-- Borrowed data looks borrowed; absence reads "not connected", never blank.
-
-## Next
-
-Phase 1 is the requirement register: CRUD with revisions, the state machine, the data
-grid, the create screen with live linting, trace links, and the six graph detectors.
-Use the per-session prompt in `docs/vyoog-claude-code-kickoff.md` §3.
+`.github/workflows/ci.yml` runs on every pull request: `cd backend && ./mvnw -B -ntp verify` and, in
+`frontend`, `npm ci`, `npx tsc -b` and `npm test`. It needs no secrets or services. Run the same commands
+locally before you push.

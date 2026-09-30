@@ -34,7 +34,7 @@ public class SecurityConfig {
     @Value("${vyoog.cors-allowed-origins:https://devops.evyoog.com}")
     private String allowedOrigins;
 
-    @Value("${vyoog.cors-allowed-origin-patterns:*}")
+    @Value("${vyoog.cors-allowed-origin-patterns:}")
     private String allowedOriginPatterns;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
@@ -106,13 +106,20 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Credentialed CORS (the refresh-token cookie rides on it), so an origin is allowed only
+     * if it is listed: exact matches from {@code vyoog.cors-allowed-origins}, plus optional
+     * local-dev host patterns from {@code vyoog.cors-allowed-origin-patterns} (empty by
+     * default). A bare {@code *} in either list is refused at startup — it would reflect any
+     * site's origin back with credentials allowed (D22, VYB-0900).
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> origins = parseOrigins("vyoog.cors-allowed-origins", allowedOrigins);
+        List<String> patterns = parseOrigins("vyoog.cors-allowed-origin-patterns", allowedOriginPatterns);
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
-            .map(String::trim).filter(s -> !s.isEmpty()).toList());
-        cfg.setAllowedOriginPatterns(Arrays.stream(allowedOriginPatterns.split(","))
-            .map(String::trim).filter(s -> !s.isEmpty()).toList());
+        cfg.setAllowedOrigins(origins);
+        cfg.setAllowedOriginPatterns(patterns);
         cfg.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setExposedHeaders(List.of("X-Request-Id"));
@@ -120,5 +127,20 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
+    }
+
+    private static List<String> parseOrigins(String property, String csv) {
+        List<String> entries = Arrays.stream(csv.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty()).toList();
+        if (entries.stream().anyMatch(SecurityConfig::isMatchEverything)) {
+            throw new IllegalStateException(property + " contains a match-everything origin ('*' or 'https://*'). "
+                + "A wildcard origin is not allowed "
+                + "because credentials are enabled; list each origin explicitly (D22).");
+        }
+        return entries;
+    }
+
+    private static boolean isMatchEverything(String entry) {
+        return entry.equals("*") || entry.matches("(?i)[a-z][a-z0-9+.-]*://\\*(:\\*)?");
     }
 }

@@ -4,20 +4,19 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 /**
- * VYB-0305/0311: is this caller a service account rather than a person. The token
- * itself never says so directly — there's no single Keycloak claim that reliably
- * means "this is a client-credentials token" across every possible realm
- * configuration — so this combines two signals: the {@code azp} (authorized party)
- * claim matching a registered {@link ServiceAccount#getClientId()} (current or, during
- * a rotation's overlap window, {@code previousClientId} — VYB-0712 AC1), or the caller
- * simply having no {@code email} claim, which every human sign-in carries (VYB-0009
- * upserts one on first sight) and a client-credentials grant never does.
+ * VYB-0305/0311/0901: is this caller a service account rather than a person.
  *
- * <p><strong>Unverified against a real client-credentials token</strong> — this
- * realm's actual client-credentials response has never been inspected in this
- * environment (see BUILD-REGISTER.md). If eVyoog's client-credentials tokens turn
- * out to carry an {@code email} claim after all, the first signal below is what
- * actually protects VYB-0305; the second would then need reconsidering.
+ * <p>A service account is a <em>registered</em> one: the token's {@code azp} (authorized
+ * party) claim must match a {@link ServiceAccount#getClientId()} (current or, during a
+ * rotation's overlap window, {@code previousClientId} — VYB-0712 AC1). Nothing else
+ * counts. An earlier version also treated any token with a blank {@code email} as a
+ * service account, on the theory that a client-credentials grant never carries one; that
+ * let <em>any</em> email-less token from the realm (another client, a public client
+ * without the email scope) use the CI ingestion endpoints without ever being registered.
+ *
+ * <p>The inverse question — "is this a person" — is {@link #isPerson}: not a registered
+ * service account, and carrying the {@code email} claim every human sign-in has (VYB-0009
+ * upserts one on first sight). A token that is neither is refused by both guards.
  */
 @Service
 public class ServiceAccountChecker {
@@ -38,9 +37,14 @@ public class ServiceAccountChecker {
             .findFirst();
     }
 
-    public boolean isServiceAccount(String azpClaim, String emailClaim) {
-        if (resolve(azpClaim).isPresent()) return true;
-        return emailClaim == null || emailClaim.isBlank();
+    /** VYB-0901: registered accounts only — a blank {@code email} does not make a token a service account. */
+    public boolean isServiceAccount(String azpClaim) {
+        return resolve(azpClaim).isPresent();
+    }
+
+    /** A person: not a registered service account, and carrying an {@code email} claim. */
+    public boolean isPerson(String azpClaim, String emailClaim) {
+        return !isServiceAccount(azpClaim) && emailClaim != null && !emailClaim.isBlank();
     }
 
     /** VYB-0711: an account with no scopes can do nothing — a claim that doesn't resolve to any account has none either. */

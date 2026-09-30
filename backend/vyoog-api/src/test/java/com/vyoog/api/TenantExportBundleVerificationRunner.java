@@ -12,7 +12,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,8 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class TenantExportBundleVerificationRunner {
+class TenantExportBundleVerificationRunner extends VerificationRunnerBase {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired AttachmentService attachments;

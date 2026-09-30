@@ -13,13 +13,13 @@ This is the master specification. It is written to be handed to an AI coding age
 (Claude Code) or to a human team, section by section. It is deliberately long because
 the instruction was *do not miss any feature*.
 
-Three companion files ship with it:
+Companion files:
 
 | File | Purpose |
 |---|---|
 | `vyoog-build-specification.md` | This document. Architecture, data model, every feature. |
-| `vyoog-schema.sql` | Runnable PostgreSQL DDL for the whole model. |
 | `vyoog-claude-code-kickoff.md` | Paste-ready prompts: project kickoff and the per-session protocol. |
+| Flyway migrations, `backend/vyoog-domain/src/main/resources/db/migration` | The database schema. A `vyoog-schema.sql` once shipped here as design-time DDL; it was removed (VYB-0905) because it described the multi-tenant model dropped in D3, and the migrations are the only schema that runs. |
 
 **Do not attempt to build this in one pass.** Section 12 breaks the work into phases and
 sessions. The single most common failure mode for a system this size is an agent that
@@ -532,7 +532,7 @@ Administration → Service accounts renders.
 
 ## 5. Data model
 
-Full DDL is in `vyoog-schema.sql`. This section explains the decisions that DDL encodes.
+The schema is the Flyway migrations (`backend/vyoog-domain/src/main/resources/db/migration`); the original design-time `vyoog-schema.sql` has been removed (VYB-0905). This section explains the decisions the schema encodes, as originally designed: where it mentions `tenant_id` or row-level security, that was dropped in `DECISIONS.md` D3 and is not in the migrations.
 
 ### 5.1 Conventions
 
@@ -1651,4 +1651,4 @@ Recording these prevents them being rebuilt by accident.
 
 ---
 
-*End of specification. Companion files: `vyoog-schema.sql`, `vyoog-claude-code-kickoff.md`.*
+*End of specification. Companion file: `vyoog-claude-code-kickoff.md`. The schema is the Flyway migrations.*

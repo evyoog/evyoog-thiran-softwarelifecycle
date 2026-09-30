@@ -7,7 +7,6 @@ import com.vyoog.portfolio.ProductDashboardService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,8 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   -Dtest=PortfolioDashboardVerificationRunner -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class PortfolioDashboardVerificationRunner {
+class PortfolioDashboardVerificationRunner extends VerificationRunnerBase {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired ProductController productController;

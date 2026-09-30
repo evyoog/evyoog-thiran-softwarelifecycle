@@ -7,7 +7,6 @@ import com.vyoog.design.DesignService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -22,8 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *   -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
  * </pre>
  */
-@SpringBootTest
-class DesignPipelineMilestonesVerificationRunner {
+class DesignPipelineMilestonesVerificationRunner extends VerificationRunnerBase {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired DesignService designService;

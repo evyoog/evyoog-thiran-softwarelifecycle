@@ -3,7 +3,8 @@
 ## What this is
 A requirements management platform. Spring Boot (Java 21) + React 18/TypeScript +
 PostgreSQL 16 + Keycloak 25. The authoritative specification is
-`docs/vyoog-build-specification.md`. The schema is `docs/vyoog-schema.sql`.
+`backend/docs/vyoog-build-specification.md`. The schema is the Flyway migrations in
+`backend/vyoog-domain/src/main/resources/db/migration`.
 Read the relevant section of the spec before writing code. Do not infer requirements.
 
 ## Hierarchy
@@ -12,11 +13,11 @@ Platform → Product → App → Capability → Requirement
 ## Rules that are never negotiable
 
 1. **Schema isolation, not multi-tenancy.** Vyoog is single-tenant by design (see
-   `docs/DECISIONS.md` D3). It lives in its own Postgres schema (`vyg_requirement`) on
+   `backend/docs/DECISIONS.md` D3). It lives in its own Postgres schema (`vyg_requirement`) on
    the same shared RDS instance as the company's other applications — vyg-pms in
    `vyoog_pms`, the pricing tool in its own schema — exactly their pattern. There is no
    `tenant_id` column and no row-level security anywhere in this schema. Do not add
-   either back without a new decision recorded in `docs/DECISIONS.md`; a stray
+   either back without a new decision recorded in `backend/docs/DECISIONS.md`; a stray
    `tenant_id` column here is a mistake, not a convention to follow.
 2. **No passwords.** Keycloak owns authentication (the shared `eVyoog` realm — same as
    vyg-pms and the pricing tool). Never add a password column, a reset flow, or a field
@@ -33,7 +34,7 @@ Platform → Product → App → Capability → Requirement
    `requirement_verification_state.is_verified` is still a live predicate over that
    evidence. None of it may ever again write to `requirement.status`. Do not reintroduce
    a VERIFIED (or renamed-but-equivalent) requirement status without a new decision
-   recorded in `docs/DECISIONS.md`.
+   recorded in `backend/docs/DECISIONS.md`.
 4. **Tasks are derived.** There is no task table and no create-task endpoint. D19
    carves one narrow, explicitly-confirmed exception: `task_completion` (V034) records
    that a person dismissed one derived task, at the object's revision at the time —
@@ -49,6 +50,10 @@ Platform → Product → App → Capability → Requirement
    productivity anywhere. Finance and the delivery tool own those.
 8. **Borrowed data looks borrowed.** Anything from an external system renders hatched
    with a source tag. Absence renders "not connected", never blank or zero.
+9. **No real credentials in the repo.** Database, Keycloak client and SSO secrets come
+   from environment variables. Defaults in `application.yml` are empty or obviously
+   fake. The app must fail at startup with a clear message when a required secret is
+   missing (D22, proposed; it supersedes D9 and D20, which committed real defaults).
 
 ## Definition of Done — a task is not finished until all of these hold
 
@@ -57,12 +62,15 @@ Platform → Product → App → Capability → Requirement
 - [ ] Flyway migration is forward-only, targets the `vyg_requirement` schema, and runs
       against a populated database
 - [ ] `cd backend && ./mvnw -B verify` is green
-- [ ] OpenAPI regenerated; frontend types regenerated
+- [ ] OpenAPI regenerated; frontend types regenerated (once `generate-api` exists, Sprint 2, VYB-0912)
 - [ ] An audit event is emitted for every state change
 - [ ] Commit trailer present: `Requirement: VYB-nnnn`
 - [ ] Test named `VYBnnnn_ACn_shortDescription`
 - [ ] `BUILD-REGISTER.md` row updated
 - [ ] No new `TODO` without a linked issue
+- [ ] Every new or changed write endpoint has an explicit role rule and a test that proves an unauthorised user gets 403
+- [ ] No test or runner can reach a non-local database (tests use Testcontainers or the docker-compose database)
+- [ ] CI is green on the pull request
 
 ## Commands
 ```bash
@@ -70,15 +78,24 @@ cd backend && ./mvnw -B verify                 # compile + unit (Surefire) + IT 
 cd backend && ./mvnw -B test                   # unit only, fast loop
 cd backend && ./mvnw -B -pl vyoog-api spring-boot:run
 cd backend && ./mvnw -B -pl vyoog-api spring-boot:build-image
-docker compose up -d             # local postgres, redis, minio (Keycloak is the shared eVyoog realm — no local instance)
+cd backend && docker compose up -d   # local postgres, redis, minio (Keycloak is the shared eVyoog realm — no local instance)
 cd frontend && npm run dev
 cd frontend && npm run test
-cd frontend && npm run generate-api   # OpenAPI → TypeScript
+# `npm run generate-api` (OpenAPI → TypeScript) does not exist yet; Sprint 2 adds it (VYB-0912).
 ```
 
 Integration tests are named `*IT.java` and run under Failsafe, not Surefire. A test that
 touches Postgres and is named `*Test` will run in the wrong phase — this is the most
 common Maven mistake on this project.
+
+**Current state:** no `*IT.java` tests exist yet, including the `FoundationSmokeIT` that
+older docs mention. The requirement stands; Sprint 2 adds them (VYB-0907). Until then
+`verify` runs unit tests and ArchUnit only.
+
+## Sprint work
+The plan is in `BUILD-REGISTER.md`, Phase 6 (rows VYB-0900 onwards). One register row per session. Read the row and its finding IDs before you start. Do not start a row from a later sprint. Do not change scope. If the row is bigger than one session, stop and say how you would split it.
+The branch is `sprint/sNN-<name>`. One pull request per row. Commit trailer: `Requirement: VYB-nnnn`.
+Never run anything against the production database or call the production Keycloak.
 
 ## Architecture boundaries
 Modular monolith. `com.vyoog.<module>`. A module may not import another module's
