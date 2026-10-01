@@ -89,7 +89,7 @@ Platform → Product → App → Capability → Requirement
 - [ ] `BUILD-REGISTER.md` row updated, and `python3 scripts/generate-requirements-docs.py` run so `docs/02-requirements/` matches it
 - [ ] Every database structure change is a new forward-only migration in `database/migrations/`
 - [ ] No new `TODO` without a linked issue
-- [ ] Every new or changed write endpoint has an explicit role rule and a test that proves an unauthorised user gets 403
+- [ ] Every new or changed write endpoint has an explicit role rule and a test that proves an unauthorised user gets 403 (annotate it `@RequiresAccess` and add it to `AccessPolicyTest.EXPECTED`; see `docs/08-architecture/security/access-rules.md`)
 - [ ] No test or runner can reach a non-local database (tests use Testcontainers or the docker-compose database)
 - [ ] CI is green on the pull request
 

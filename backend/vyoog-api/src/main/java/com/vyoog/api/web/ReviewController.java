@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.review.Review;
@@ -67,6 +69,8 @@ public class ReviewController {
                 .toList());
     }
 
+    // VYB-0906: the requirement is in the body.
+    @RequiresAccess(value = AccessRule.REVIEW, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ReviewView open(@RequestBody OpenRequest body, @AuthenticationPrincipal Jwt jwt) {
@@ -104,6 +108,8 @@ public class ReviewController {
             c.getAuthorId().toString(), c.getBody(), c.getCreatedAt().toString());
     }
 
+    // VYB-0906: participation is checked in the service.
+    @RequiresAccess(value = AccessRule.REVIEW, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{id}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentView comment(@PathVariable UUID id, @RequestBody CommentBody body,

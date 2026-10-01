@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.trace.CoverageMatrixService;
 import com.vyoog.trace.TraceHop;
@@ -68,6 +70,8 @@ public class TraceLinkController {
         return new HopView(h.type().name(), h.id().toString());
     }
 
+    // VYB-0906: both ends are in the body.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/links")
     @ResponseStatus(HttpStatus.CREATED)
     public LinkView createLink(@RequestBody CreateLink body, @AuthenticationPrincipal Jwt jwt) {
@@ -78,12 +82,14 @@ public class TraceLinkController {
         return toView(link);
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @DeleteMapping("/links/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteLink(@PathVariable UUID id) {
         trace.deleteLink(id);
     }
 
+    @RequiresAccess(value = AccessRule.REVIEW, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/links/{id}/review")
     public LinkView reviewLink(@PathVariable UUID id) {
         return toView(trace.reviewLink(id));

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 353 tests cover 37 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 369 tests cover 38 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -467,3 +467,22 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC1` everyRunnerInThisPackageExtendsTheLocalDatabaseBase (`backend/vyoog-api/src/test/java/com/vyoog/api/RunnersUseLocalDatabaseTest.java`)
 - `AC1` localUrlsAreAccepted (`backend/vyoog-api/src/test/java/com/vyoog/api/LocalDatabaseGuardTest.java`)
 - `AC1` theRefusalNamesTheOffendingHostAndWhatToDoInstead (`backend/vyoog-api/src/test/java/com/vyoog/api/LocalDatabaseGuardTest.java`)
+
+## VYB-0906: Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02]
+
+- `AC1` everyWriteEndpointHasAStatedAccessRule (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessPolicyTest.java`)
+- `AC1` theOpenAndPendingListsOnlyNameEndpointsThatStillNeedThem (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessPolicyTest.java`)
+- `AC2` everyAnnotatedEndpointHasExactlyTheRuleTheTableSays (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessPolicyTest.java`)
+- `AC2` noEndpointIsBothOpenAndPending (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessPolicyTest.java`)
+- `AC2` pendingWorkIsTrackedByCount (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessPolicyTest.java`)
+- `AC3` aTokenWithNoEmailAndNoRegistrationIsRefusedEverywhere (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessRulesTest.java`)
+- `AC3` anAdministratorPassesEveryRule (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessRulesTest.java`)
+- `AC3` eachRoleIsAllowedExactlyWhereTheMatrixSaysAndAdministratorEverywhere (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessRulesTest.java`)
+- `AC3` everyAnnotatedEndpointGives403ToAnOrdinaryUserAndToAServiceAccount (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessRulesTest.java`)
+- `AC4` theMatrixIsWhatTheRolesScreenPromises (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessRulesTest.java`)
+- `AC5` aCriterionIsCheckedAtItsRequirementsScope (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC5` aGrantOnAnotherCapabilityDoesNotOpenThisRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC5` aGrantOnTheCapabilityOrOnItsProductDoes (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC5` anUnknownRequirementOrCriterionIsA404NotAnOpenDoor (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC5` anUnplacedRequirementNeedsTheRoleSomewhere (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC5` creatingARequirementChecksThePlacementInTheBody (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)

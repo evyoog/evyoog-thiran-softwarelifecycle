@@ -309,7 +309,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
-| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | TODO | S2 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | PARTIAL: session 6a of 3 done on dev (26 of 88 endpoints); 6b and 6c pending | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
@@ -4723,6 +4723,37 @@ Not a register row: an instruction from the product owner to lay the repository 
 - The SWLCA gap-analysis findings F01 to F42 are referenced by id in the Phase 6 rows but their source document is not in the repository. If you want it kept here, add it under `docs/01-business/`.
 - The historical session logs above this one still cite the old paths; they are history and are unchanged. `database/migrations/V001__baseline.sql` still mentions the old spec file in a comment; a merged migration must not be edited (Flyway checksum).
 - The `Requirement:` trailer and branch naming (`feature/VYB-nnnn-name`) in `docs/README.md` are conventions, not enforced by CI.
+
+
+## Session 64 — VYB-0906, session 6a of 3 (F02): the access-rule mechanism and the requirement-core endpoints
+
+Phase 6 Sprint 2, first session. Branch `dev`. VYB-0906 ("role checks on every remaining write endpoint") is size L. Surveyed first: 94 write endpoints had no role rule (88 that need one, 6 that authenticate themselves: login, refresh, logout, webhooks, internal SSO). Per the sprint rules I stopped and proposed a split; the product owner chose **three sessions** and **"nearest matrix column"** for endpoints the matrix has no column for.
+
+**Split**
+- **6a (this session):** the mechanism, the generated tests, and 26 requirement-core endpoints.
+- **6b:** products, applications, capabilities, glossary, clauses, documents, variants, import (34 endpoints).
+- **6c:** design, releases, defects, test cases, briefs, environments, teams, tasks, notifications, saved views, lint, AI re-embed (28 endpoints). Also decides the last open mappings, and flips the policy test to fail on any endpoint left unclassified.
+- VYB-0906 is done when `AccessPolicyTest.PENDING` is empty.
+
+**Mechanism.** `AccessRule` (domain) is the roles matrix as data. `@RequiresAccess` on a handler declares the rule and where it is checked (platform, the requirement or criterion named in the URL, or "somewhere" when the target is in the body). `AccessInterceptor` enforces it before the body is read, so a caller without the role gets a 403 whatever they send. `PrincipalGuard.requireRuleAnywhere` and `GrantResolver.holdsRoleAnywhere` support the body-targeted case. Docs: `docs/08-architecture/security/access-rules.md`.
+
+**Mapping chosen for 6a** (administrator passes all; service accounts and email-less tokens pass none):
+
+| Rule | Endpoints |
+|---|---|
+| Business Analyst or Architect ("Create/Edit req") | create requirement (and the placement in the body is checked at that scope), add/reorder/edit/remove acceptance criteria (checked at the requirement's scope), bulk edit and undo, answer a clarification, raise a change request, create/delete a trace link |
+| Reviewer, Approver, Compliance Lead or Architect ("Review") | open a review, comment on a review, accept/dismiss/reopen a finding, review a trace link |
+| Any signed-in person | requirement status transition (the per-edge role and separation-of-duties checks stay in `RequirementTransitionAuthorizer`), comment on a requirement, raise a clarification, change-request impact analysis, authoring signals, AI rewrite and test-case suggestions, dependency cluster |
+
+**Tests** (`VYB0906_ACn_...`, 16 new, API module now 89): `AccessPolicyTest` (every write endpoint is annotated, guarded in its own code (read from source), open by design, or on the shrinking pending list; stale list entries fail; an independent `EXPECTED` table of every rule so changing one is a reviewed change); `AccessRulesTest` (generated by reflection over every annotated endpoint: all nine roles, an administrator, an ordinary user, a service account and an unregistered token, each against what `AccessRule` says; a real 403 through `ApiExceptionHandler`); `AccessScopeTest` (a grant on another capability is refused, a grant on the capability or its product is allowed, unknown ids are 404, placement in the body is checked). **Red checks run:** disabling the interceptor fails 7 tests; removing an annotation fails the classification test naming the endpoint; loosening one endpoint's rule fails the table test and the matrix test. `./mvnw -B clean verify` green (371 domain, 89 api).
+
+**Behaviour change to expect.** Until now these actions needed only a login. Anyone without a Business Analyst or Architect grant can no longer create requirements, edit criteria, bulk edit, answer clarifications, raise change requests or create trace links; anyone without a Reviewer, Approver, Compliance Lead or Architect grant cannot open reviews, comment on them, act on findings or review trace links. **Check who holds those grants before this ships.** The UI does not hide these actions for users who lack the role; they will see a 403 message.
+
+**Not done / to know**
+- 62 endpoints remain (6b and 6c); 26 are done. Nothing else was changed.
+- The interceptor and its beans were not started in a full Spring context here (no database); the wiring is exercised through standalone MockMvc only.
+- Judgement calls the product owner may want to change: "raise a change request" as Business Analyst/Architect (deciding and applying stay with their existing guards); "answer a clarification" as an editor; "comment" and "raise a clarification" as any signed-in person; AI suggestion endpoints as any signed-in person because they store nothing.
+- Clarification answers, review comments and findings are gated "somewhere", not at their requirement's scope; scoped resolvers for them can come with 6b/6c if wanted.
 
 ---
 

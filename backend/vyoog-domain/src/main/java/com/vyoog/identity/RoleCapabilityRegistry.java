@@ -41,10 +41,19 @@ public final class RoleCapabilityRegistry {
             "PrincipalGuard.requireAnyRoleOrAdmin — RequirementController#update/delete, ImportController#commit/deleteBatch"),
         new Capability(AccessRole.ARCHITECT, "Edit or delete a requirement; commit or delete an import batch (VYB-0902)", true,
             "PrincipalGuard.requireAnyRoleOrAdmin — same endpoints as BUSINESS_ANALYST"),
+        new Capability(AccessRole.REVIEWER, "Open or comment on a review; accept, dismiss or reopen a finding; review a trace link (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.REVIEW) — ReviewController, FindingController, TraceLinkController"),
+        new Capability(AccessRole.COMPLIANCE_LEAD, "Same review actions as REVIEWER (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.REVIEW)"),
+        new Capability(AccessRole.ARCHITECT, "Same review actions as REVIEWER (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.REVIEW)"),
+        new Capability(AccessRole.BUSINESS_ANALYST, "Create requirements, edit their acceptance criteria, bulk edit, raise change requests, answer clarifications, create or delete trace links (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.CREATE_EDIT_REQ) — RequirementController, AcceptanceCriterionController, BulkEditController, ChangeRequestController, ClarificationController, TraceLinkController"),
+        new Capability(AccessRole.ARCHITECT, "Same create and edit actions as BUSINESS_ANALYST (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.CREATE_EDIT_REQ)"),
         new Capability(AccessRole.VIEWER, "—", false, "No endpoint checks this role yet"),
         new Capability(AccessRole.DEVELOPER, "—", false, "No endpoint checks this role yet"),
-        new Capability(AccessRole.TESTER, "—", false, "No endpoint checks this role yet"),
-        new Capability(AccessRole.COMPLIANCE_LEAD, "—", false, "No endpoint checks this role yet"));
+        new Capability(AccessRole.TESTER, "—", false, "No endpoint checks this role yet; the Verify rule is applied to test cases and defects in VYB-0906 session 6c"));
 
     private RoleCapabilityRegistry() {}
 }
