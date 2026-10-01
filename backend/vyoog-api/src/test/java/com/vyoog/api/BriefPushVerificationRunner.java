@@ -54,8 +54,13 @@ class BriefPushVerificationRunner extends VerificationRunnerBase {
 
     /** VYB-0903: a stand-in for IntegrationService that owns its own "planning" connection and never touches the table. */
     static class InMemoryIntegrations extends IntegrationService {
-        final IntegrationConnection planning = new IntegrationConnection(
+        private final IntegrationConnection planning = new IntegrationConnection(
             "planning", "delivery-tool push", IntegrationConnection.Direction.OUTBOUND);
+
+        /** A method, not a field read: the autowired bean is a Spring proxy, whose own fields are never the real ones. */
+        public IntegrationConnection planning() {
+            return planning;
+        }
 
         InMemoryIntegrations() {
             super(null, null, null);
@@ -133,9 +138,9 @@ class BriefPushVerificationRunner extends VerificationRunnerBase {
             System.out.println("[verify] brief_capability rows -> " + scopedCaps);
             assertThat(scopedCaps).containsExactly(capId);
 
-            integrations.planning.setConfig("{\"pushUrl\":\"http://localhost:" + server.getAddress().getPort() + "/push\","
+            integrations.planning().setConfig("{\"pushUrl\":\"http://localhost:" + server.getAddress().getPort() + "/push\","
                 + "\"apiKey\":\"verify-api-key\",\"customerName\":\"VYB-0837 Customer\"}");
-            integrations.planning.setWebhookSecret("verify-secret");
+            integrations.planning().setWebhookSecret("verify-secret");
 
             var result = briefPushService.push(brief.getId(), devId);
             System.out.println("[verify] push result -> " + result);
@@ -151,7 +156,7 @@ class BriefPushVerificationRunner extends VerificationRunnerBase {
                 .contains("name=\"capabilityName\"").contains("VYB-0837 Cap")
                 .contains("name=\"file\"; filename=\"VY-vyb-0837-app-implementation-brief.md\"")
                 .contains("Content-Type: text/markdown");
-            assertThat(integrations.planning.isConnected()).isTrue();
+            assertThat(integrations.planning().isConnected()).isTrue();
             assertThat(planningRow()).as("the real integration_connection row is untouched").isEqualTo(rowBefore);
         } finally {
             server.stop(0);

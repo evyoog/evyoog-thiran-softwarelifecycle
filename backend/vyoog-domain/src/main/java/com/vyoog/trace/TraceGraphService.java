@@ -86,7 +86,9 @@ public class TraceGraphService {
         // creation as an implicit first review, not leaving the field null until someone
         // explicitly reviews it.
         currentRevisionIfRequirement(fromType, fromId).ifPresent(link::markReviewedAt);
-        links.save(link);
+        // saveAndFlush, not save: recomputeClosure() reads trace_link with JdbcTemplate, which does not
+        // wait for Hibernate's deferred INSERT, so with save() the closure was always one link behind.
+        links.saveAndFlush(link);
         recomputeClosure();
         if (toType == TraceObjectType.REQUIREMENT) rescan(toId);
         if (fromType == TraceObjectType.REQUIREMENT) rescan(fromId);
@@ -97,6 +99,7 @@ public class TraceGraphService {
     public void deleteLink(UUID id) {
         TraceLink link = links.findById(id).orElseThrow(NoSuchElementException::new);
         links.deleteById(id);
+        links.flush(); // same reason as createLink: the closure query must see the delete
         recomputeClosure(); // VYB-0142 AC2/AC3: removes exactly the justified rows, no orphans
         if (link.getToType() == TraceObjectType.REQUIREMENT) rescan(link.getToId());
         if (link.getFromType() == TraceObjectType.REQUIREMENT) rescan(link.getFromId());
@@ -186,7 +189,7 @@ public class TraceGraphService {
         Integer diff = jdbc.queryForObject("""
             SELECT count(*) FROM (
               (SELECT ancestor_type, ancestor_id, descendant_type, descendant_id, depth FROM trace_closure
-               EXCEPT %s)
+               EXCEPT (%s))
               UNION ALL
               (%s
                EXCEPT

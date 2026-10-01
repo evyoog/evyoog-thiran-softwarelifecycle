@@ -100,7 +100,8 @@ python3 scripts/generate-requirements-docs.py --check    # docs/02-requirements 
 ```
 
 The same three commands run in CI on every pull request (`.github/workflows/ci.yml`); CI needs no secrets or
-services. There are no integration tests (`*IT`) yet: Sprint 2 adds them (VYB-0907). The manual
+services except Docker, which the integration tests (`*IT`) use to start a throwaway PostgreSQL
+(or set `DB_URL` to a local database; see [`docs/08-architecture/testing.md`](docs/08-architecture/testing.md)). The manual
 `*VerificationRunner` classes that boot the full application against a real Postgres, and how to run
 them safely against a local database only, are in `backend/README.md`.
 

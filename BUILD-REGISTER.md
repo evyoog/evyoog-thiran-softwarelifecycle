@@ -310,7 +310,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
 | VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | DONE on dev (sessions 6a, 6b, 6c; commits only, no PR yet) | S2 |
-| VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
+| VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | DONE on dev (49 integration tests passing against a real local Postgres 16 + pgvector; the Testcontainers path and CI run not verified) | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
 | VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
@@ -4810,6 +4810,33 @@ For the "any signed-in person" group the services already scope to the caller (a
 - Not run in a full Spring context with a database; wiring is exercised through standalone MockMvc only.
 - Role checks for review comments, clarification answers and findings are "somewhere", not at their requirement's scope.
 - Endpoints guarded in their own code were not re-expressed as annotations.
+
+
+## Session 67 — VYB-0907 (F11): integration tests against a real database, and four defects they found
+
+Phase 6 Sprint 2. Branch `dev`. **49 integration tests** (`*IT`, run by Failsafe in `mvn verify`) now boot the whole application against a real PostgreSQL 16 with pgvector, apply all 34 migrations, and call the real services.
+
+**How I could run them.** The earlier sessions could not (no Docker, no pgvector). This session installed `postgresql-16-pgvector` with apt and started a throwaway local cluster on localhost, then ran the tests with `DB_URL` pointing at it (the local-only guard from VYB-0903 allows that). They also pass against a brand-new empty database with no pre-created extensions (V001 creates `pgcrypto`, `pg_trgm`, `vector`). **Not run: the Testcontainers path**, because there is still no Docker daemon here; that is what CI will use.
+
+**Coverage** (`backend/vyoog-api/src/test/java/com/vyoog/api/it`, base class `IntegrationTestBase`): `FoundationSmokeIT` (3), `RequirementIT` (11: keys, revisions, no-op saves, stale revision, full lifecycle and who may move it, illegal moves, reasons, approved-is-locked, soft delete), `TraceIT` (8: links, closure, drift, traversal, cycle, suspect links, coverage), `ReleaseIT` (6), `ReviewIT` (9), `BaselineIT` (5), `ChangeRequestApplyIT` (7: raise, scope gate, impact, decide, apply through the change request, applied state, suspect links). Docs: `docs/08-architecture/testing.md`.
+
+**Four defects found by running them for the first time, and fixed** (the first run had 12 failures; these are why):
+1. **Trace closure was always one write behind** (`TraceGraphService.createLink/deleteLink`): the link was saved through JPA (INSERT deferred) and the closure recomputed with plain SQL straight after, which could not see it. Fixed with `saveAndFlush` and a flush after delete.
+2. **`checkClosureDrift()` was invalid SQL** (a `WITH RECURSIVE` after `EXCEPT` needs parentheses), so the drift check threw on every call. Fixed.
+3. **Raising a change request always failed** with a foreign-key violation (`ChangeRequestService.raise`): same JPA-defers/JdbcTemplate-doesn't hazard, as already fixed for briefs, reviews and baselines. Fixed with `saveAndFlush`.
+4. **The separation-of-duties refusal on a review was never recorded** (`ReviewService`): the audit event was written in the same transaction the refusal then rolled back. Added `AuditService.recordIndependently` (its own transaction) and used it there.
+
+Each is a small change, in the pattern the code already uses elsewhere. They were fixed here rather than left failing because a test suite that fails on a known defect cannot gate CI.
+
+**Also found by running for real, in session 4's work (now fixed).** The startup check for required settings runs before Spring applies `@DynamicPropertySource` values, so the runners' and tests' fake secrets and container database URL were invisible to it and the application refused to start. `TestDatabaseProperties` now exports them as system properties from a static initializer. `BriefPushVerificationRunner` read a field on a Spring proxy (null); it now calls a method. Both runners I executed (`Session14VerificationRunner`, `BriefPushVerificationRunner`) pass, and the BriefPush one confirms the real `integration_connection` row is untouched.
+
+**Build.** `./mvnw -B clean verify` from an empty database: 371 domain and 95 api unit tests, 49 integration tests, BUILD SUCCESS. CI (`ci.yml`) now runs the integration tests in the backend job (timeout raised to 30 minutes) and documents that Docker is needed.
+
+**Not done / to know**
+- Testcontainers path and the GitHub run unverified; image pull time unknown.
+- Not covered: briefs, import, design, defects and test cases, detection sweeps end to end, and the HTTP layer with a real database.
+- The other 14 verification runners were not executed.
+- Tests commit and do not clean up (deliberate, see testing.md); against the docker-compose database they leave test rows.
 
 ---
 

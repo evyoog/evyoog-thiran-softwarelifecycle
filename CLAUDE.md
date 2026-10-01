@@ -109,9 +109,11 @@ Integration tests are named `*IT.java` and run under Failsafe, not Surefire. A t
 touches Postgres and is named `*Test` will run in the wrong phase — this is the most
 common Maven mistake on this project.
 
-**Current state:** no `*IT.java` tests exist yet, including the `FoundationSmokeIT` that
-older docs mention. The requirement stands; Sprint 2 adds them (VYB-0907). Until then
-`verify` runs unit tests and ArchUnit only.
+**Current state:** `*IT.java` tests exist for the foundation, requirements, trace graph, releases,
+reviews, baselines and the change-request apply path (VYB-0907, `backend/vyoog-api/src/test/java/com/vyoog/api/it`).
+They boot the whole application against a real PostgreSQL 16 with pgvector (a Testcontainers one, or
+`DB_URL` if it points at localhost) and call real services; see `docs/08-architecture/testing.md`. New
+SQL or JPA-plus-JdbcTemplate code needs one. More areas are still uncovered.
 
 ## Sprint work
 The plan is in `BUILD-REGISTER.md`, Phase 6 (rows VYB-0900 onwards). One register row per session. Read the row and its finding IDs before you start. Do not start a row from a later sprint. Do not change scope. If the row is bigger than one session, stop and say how you would split it.

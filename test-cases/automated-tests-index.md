@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 375 tests cover 38 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 424 tests cover 39 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -492,3 +492,55 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` anUnknownCandidateOrBatchIsA404 (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
 - `AC6` uploadingChecksTheApplicationNamedInTheRequest (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
 - `AC7` addingATeamMember_ordinaryUserGets403_teamLeadAndAdminSucceed (`backend/vyoog-api/src/test/java/com/vyoog/api/web/Vyb0902WriteGuardsTest.java`)
+
+## VYB-0907: Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11]
+
+- `AC1` aBaselineNeedsAtLeastOneRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BaselineIT.java`)
+- `AC1` aChangeRequestNeedsRequirementsGetsItsOwnKeyAndStoresItsScope (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+- `AC1` aDuplicateLinkIsRefusedAndAMissingEndpointIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC1` aNewLinkRecordsTheUpstreamRevisionItWasMadeAgainstAndEntersTheClosure (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC1` aRequirementCanBeInOnlyOneReleaseAtATime (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseIT.java`)
+- `AC1` anApproverWhoseGrantCoversTheRequirementJoinsTheRoundAutomatically (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC1` committingToAReleaseNeedsAReasonAndIsIdempotent (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseIT.java`)
+- `AC1` creatingARequirementAllocatesAKeyRecordsRevisionOneAndAnAuditEvent (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC1` everyMigrationInTheRepositoryWasApplied (`backend/vyoog-api/src/test/java/com/vyoog/api/it/FoundationSmokeIT.java`)
+- `AC1` everyRequirementGetsItsOwnKeyAndTheKeysNeverCollide (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC1` freezingRecordsEachRevisionAtThatMomentAndAnAuditEvent (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BaselineIT.java`)
+- `AC1` openingARoundFreezesEachItemsRevisionAndStoresTheParticipants (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC1` theSchemaAndTheExtensionsTheCodeNeedsExist (`backend/vyoog-api/src/test/java/com/vyoog/api/it/FoundationSmokeIT.java`)
+- `AC1` theSearchPathHoldsTheApplicationSchemaAndPublicSoTheVectorOperatorsResolve (`backend/vyoog-api/src/test/java/com/vyoog/api/it/FoundationSmokeIT.java`)
+- `AC2` aFrozenBaselineDoesNotChangeWhenTheRequirementIsEditedLater (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BaselineIT.java`)
+- `AC2` aMaterialEditMakesExactlyOneNewImmutableRevision (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC2` aRoundGoesStaleOnceAnItemsRequirementMovesOn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC2` anEditFromAStaleRevisionIsRefusedNamingBothRevisions (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC2` nothingEditsAnApprovedRequirementUntilTheChangeRequestIsApprovedAndNamesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+- `AC2` removingFromScopeNeedsAReasonAndLeavesAnOutMovementInTheHistory (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseIT.java`)
+- `AC2` savingWithNothingChangedMakesNoRevisionAndNoAuditNoise (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC2` theClosureHoldsTransitiveReachAndShrinksWhenALinkIsDeleted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC3` aCycleDoesNotMakeTheWalkLoopForeverOrRepeatANode (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC3` aMoveTheStateMachineDoesNotAllowIsRefusedAndChangesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC3` aParticipantSignsOnceAndSigningAgainIsANoOp (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC3` aRejectedOrAlreadyDecidedChangeRequestCannotBeDecidedAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+- `AC3` aRejectionNeedsAReasonAndSubmittingWithoutCriteriaNeedsAnOverride (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC3` aRequirementWalksTheWholeLifecycleAndEveryMoveIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC3` aWalkStopsAtTheRequestedDepth (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC3` anObserverCannotSignAndANonParticipantIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC3` downstreamAndUpstreamWalksReturnEachNodeWithItsDepth (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC3` onlyTheAuthorMaySubmitAndOnlyAReviewerOrAdminMayMarkItReviewed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC3` openGapsAtFreezeTimeAreRecordedOnTheBaseline (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BaselineIT.java`)
+- `AC3` readinessIsDerivedFromTheScopeAndAnUnverifiedRequirementIsReportedBlocked (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseIT.java`)
+- `AC4` aDiffListsAddedRemovedAndChangedSeparatelyWithBothRevisions (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BaselineIT.java`)
+- `AC4` anApprovedRequirementCannotBeEditedDirectly (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC4` anApproverCannotApproveARequirementTheyAuthoredAndTheRefusalIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC4` editingTheUpstreamRequirementMakesItsLinkSuspectAndReviewingItClearsThat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC4` releaseNotesSeparateApprovedRequirementsFromHeldOnes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseIT.java`)
+- `AC4` theApprovedEditMakesANewRevisionAuditedAsViaChangeRequestAndTheRequirementStaysApproved (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+- `AC5` aRoundWithNoApproverCannotClose (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC5` aTargetDateIsStoredAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseIT.java`)
+- `AC5` anOpenBlockingClarificationStopsTheRoundClosingUntilItIsAnswered (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC5` coverageShowsWhichRequirementsHaveAnUpstream (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceIT.java`)
+- `AC5` deletingIsSoftHistoryStaysAndTheReasonIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementIT.java`)
+- `AC5` theChangeRequestIsMarkedAppliedOnlyAfterItWasApproved (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+- `AC6` commentsAreStoredAgainstTheRoundAndTheRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
+- `AC6` impactCountsTheScopePlusEverythingDownstreamInTheTraceGraph (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+- `AC7` applyingTheEditLeavesTheDownstreamLinkSuspect (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
