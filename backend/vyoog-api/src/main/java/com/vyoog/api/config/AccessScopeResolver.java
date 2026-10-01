@@ -1,6 +1,9 @@
 package com.vyoog.api.config;
 
 import com.vyoog.identity.ScopeType;
+import com.vyoog.importqueue.DocumentAnalysisRepository;
+import com.vyoog.importqueue.ImportBatchRepository;
+import com.vyoog.importqueue.ImportCandidateRepository;
 import com.vyoog.requirements.AcceptanceCriterionRepository;
 import com.vyoog.requirements.Requirement;
 import com.vyoog.requirements.RequirementRepository;
@@ -16,10 +19,34 @@ public class AccessScopeResolver {
 
     private final RequirementRepository requirements;
     private final AcceptanceCriterionRepository criteria;
+    private final ImportBatchRepository batches;
+    private final ImportCandidateRepository candidates;
+    private final DocumentAnalysisRepository analyses;
 
-    public AccessScopeResolver(RequirementRepository requirements, AcceptanceCriterionRepository criteria) {
+    public AccessScopeResolver(RequirementRepository requirements, AcceptanceCriterionRepository criteria,
+                                ImportBatchRepository batches, ImportCandidateRepository candidates,
+                                DocumentAnalysisRepository analyses) {
         this.requirements = requirements;
         this.criteria = criteria;
+        this.batches = batches;
+        this.candidates = candidates;
+        this.analyses = analyses;
+    }
+
+    /** An import batch belongs to the application it was uploaded to. */
+    public Resolved ofBatch(UUID batchId) {
+        var b = batches.findById(batchId).orElseThrow(NoSuchElementException::new);
+        return new Resolved(ScopeType.APP, b.getApplicationId());
+    }
+
+    public Resolved ofCandidate(UUID candidateId) {
+        var c = candidates.findById(candidateId).orElseThrow(NoSuchElementException::new);
+        return ofBatch(c.getBatchId());
+    }
+
+    public Resolved ofAnalysis(UUID analysisId) {
+        var a = analyses.findById(analysisId).orElseThrow(NoSuchElementException::new);
+        return ofBatch(a.getBatchId());
     }
 
     public Resolved ofRequirement(UUID requirementId) {

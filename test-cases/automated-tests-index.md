@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 369 tests cover 38 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 374 tests cover 38 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -486,3 +486,8 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` anUnknownRequirementOrCriterionIsA404NotAnOpenDoor (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
 - `AC5` anUnplacedRequirementNeedsTheRoleSomewhere (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
 - `AC5` creatingARequirementChecksThePlacementInTheBody (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC6` aBatchStepAndAnAnalysisDecisionAreCheckedTheSameWay (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC6` aCandidateStepNeedsTheRoleOnTheBatchsApplication (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC6` aGrantOnTheProductAboveTheApplicationCounts (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC6` anUnknownCandidateOrBatchIsA404 (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)
+- `AC6` uploadingChecksTheApplicationNamedInTheRequest (`backend/vyoog-api/src/test/java/com/vyoog/api/web/AccessScopeTest.java`)

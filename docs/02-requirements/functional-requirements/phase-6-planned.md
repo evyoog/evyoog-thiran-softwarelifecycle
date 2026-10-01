@@ -21,7 +21,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | PARTIAL: session 6a of 3 done on dev (26 of 88 endpoints); 6b and 6c pending | S2 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | PARTIAL: sessions 6a and 6b of 3 done on dev (60 of 88 endpoints); 6c pending | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |

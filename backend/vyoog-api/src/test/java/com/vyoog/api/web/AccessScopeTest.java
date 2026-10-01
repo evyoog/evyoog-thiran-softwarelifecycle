@@ -56,6 +56,10 @@ class AccessScopeTest {
     private static final UUID OTHER_CAP = UUID.randomUUID();
     private static final UUID REQ = UUID.randomUUID();
     private static final UUID CRITERION = UUID.randomUUID();
+    private static final UUID OTHER_APP = UUID.randomUUID();
+    private static final UUID BATCH = UUID.randomUUID();
+    private static final UUID CANDIDATE = UUID.randomUUID();
+    private static final UUID ANALYSIS = UUID.randomUUID();
 
     private final GrantResolver grants = mock(GrantResolver.class);
     private final UserProvisioningService provisioning = mock(UserProvisioningService.class);
@@ -78,6 +82,22 @@ class AccessScopeTest {
         when(c.getRequirementId()).thenReturn(REQ);
         when(criteria.findById(CRITERION)).thenReturn(Optional.of(c));
 
+        // an import batch uploaded into APP, with one candidate and one analysis
+        var batches = mock(com.vyoog.importqueue.ImportBatchRepository.class);
+        var batch = mock(com.vyoog.importqueue.ImportBatch.class);
+        when(batch.getApplicationId()).thenReturn(APP);
+        when(batches.findById(BATCH)).thenReturn(Optional.of(batch));
+        var candidates = mock(com.vyoog.importqueue.ImportCandidateRepository.class);
+        var candidate = mock(com.vyoog.importqueue.ImportCandidate.class);
+        when(candidate.getBatchId()).thenReturn(BATCH);
+        when(candidates.findById(CANDIDATE)).thenReturn(Optional.of(candidate));
+        var analyses = mock(com.vyoog.importqueue.DocumentAnalysisRepository.class);
+        var analysis = mock(com.vyoog.importqueue.DocumentAnalysis.class);
+        when(analysis.getBatchId()).thenReturn(BATCH);
+        when(analyses.findById(ANALYSIS)).thenReturn(Optional.of(analysis));
+        user("ba-on-app", AccessRole.BUSINESS_ANALYST, ScopeType.APP, APP);
+        user("ba-on-other-app", AccessRole.BUSINESS_ANALYST, ScopeType.APP, OTHER_APP);
+
         user("ba-on-cap", AccessRole.BUSINESS_ANALYST, ScopeType.CAPABILITY, CAP);
         user("ba-other-cap", AccessRole.BUSINESS_ANALYST, ScopeType.CAPABILITY, OTHER_CAP);
         user("ba-on-product", AccessRole.BUSINESS_ANALYST, ScopeType.PRODUCT, PRODUCT);
@@ -87,8 +107,10 @@ class AccessScopeTest {
         when(grants.hasEffectiveRole(eq(onProduct), eq(AccessRole.BUSINESS_ANALYST), eq(ScopeType.CAPABILITY), eq(CAP))).thenReturn(true);
         when(grants.hasEffectiveRole(eq(onProduct), eq(AccessRole.BUSINESS_ANALYST), eq(ScopeType.APP), eq(APP))).thenReturn(true);
 
-        var interceptor = new AccessInterceptor(guard, new AccessScopeResolver(requirements, criteria));
-        mvc = MockMvcBuilders.standaloneSetup(build(RequirementController.class, requirements, requirementService))
+        var interceptor = new AccessInterceptor(guard,
+            new AccessScopeResolver(requirements, criteria, batches, candidates, analyses));
+        mvc = MockMvcBuilders.standaloneSetup(build(RequirementController.class, requirements, requirementService),
+                build(ImportController.class, requirements, requirementService))
             .setControllerAdvice(new ApiExceptionHandler())
             .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
             .addInterceptors(interceptor)
@@ -196,5 +218,56 @@ class AccessScopeTest {
         when(provisioning.upsert(eq("sub-nobody"), any(), any())).thenReturn(u);
         assertThat(as("nobody", post("/api/v1/requirements").contentType(MediaType.APPLICATION_JSON).content(unplaced)))
             .isEqualTo(403);
+    }
+
+    // ---- import steps are checked at the application the batch was uploaded to (6b) ----------
+
+    private MockHttpServletRequestBuilder json(MockHttpServletRequestBuilder b) {
+        return b.contentType(MediaType.APPLICATION_JSON).content("{}");
+    }
+
+    @Test
+    void VYB0906_AC6_aCandidateStepNeedsTheRoleOnTheBatchsApplication() throws Exception {
+        var step = json(post("/api/v1/import/candidates/{id}/confirm-type", CANDIDATE));
+        assertThat(as("ba-on-other-app", step)).isEqualTo(403);
+        assertThat(as("ba-on-app", step)).isNotEqualTo(403);
+        assertThat(as("ba-on-cap", step)).isEqualTo(403); // a capability grant elsewhere is not on this application
+    }
+
+    @Test
+    void VYB0906_AC6_aBatchStepAndAnAnalysisDecisionAreCheckedTheSameWay() throws Exception {
+        var extract = json(post("/api/v1/import/batches/{id}/extract", BATCH));
+        var accept = json(post("/api/v1/import/analysis/{id}/accept", ANALYSIS));
+        var placement = json(post("/api/v1/import/batches/{batchId}/placement", BATCH));
+        for (var request : new MockHttpServletRequestBuilder[] {extract, accept, placement}) {
+            assertThat(as("ba-on-other-app", request)).isEqualTo(403);
+            assertThat(as("ba-on-app", request)).isNotEqualTo(403);
+        }
+    }
+
+    @Test
+    void VYB0906_AC6_aGrantOnTheProductAboveTheApplicationCounts() throws Exception {
+        UUID onProduct = ids.get("ba-on-product");
+        when(grants.hasEffectiveRole(eq(onProduct), eq(AccessRole.BUSINESS_ANALYST), eq(ScopeType.APP), eq(APP))).thenReturn(true);
+        assertThat(as("ba-on-product", json(post("/api/v1/import/candidates/{id}/select", CANDIDATE)))).isNotEqualTo(403);
+    }
+
+    @Test
+    void VYB0906_AC6_anUnknownCandidateOrBatchIsA404() throws Exception {
+        assertThat(as("ba-on-app", json(post("/api/v1/import/candidates/{id}/select", UUID.randomUUID())))).isEqualTo(404);
+        assertThat(as("ba-on-app", json(post("/api/v1/import/batches/{id}/extract", UUID.randomUUID())))).isEqualTo(404);
+        assertThat(as("ba-on-app", json(post("/api/v1/import/analysis/{id}/dismiss", UUID.randomUUID())))).isEqualTo(404);
+    }
+
+    @Test
+    void VYB0906_AC6_uploadingChecksTheApplicationNamedInTheRequest() throws Exception {
+        // a real file part: the scoped check runs in the handler, after Spring has bound the arguments
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "r.csv", "text/csv", "a,b".getBytes());
+        var intoOther = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/import").file(file)
+            .param("applicationId", OTHER_APP.toString()).param("kind", "PRD_TEMPLATE");
+        var intoOwn = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/import").file(file)
+            .param("applicationId", APP.toString()).param("kind", "PRD_TEMPLATE");
+        assertThat(as("ba-on-app", intoOther)).isEqualTo(403);
+        assertThat(as("ba-on-app", intoOwn)).isNotEqualTo(403);
     }
 }

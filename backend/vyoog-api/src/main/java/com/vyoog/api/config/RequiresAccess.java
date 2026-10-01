@@ -36,6 +36,12 @@ public @interface RequiresAccess {
         /** The path variable is a requirement id: checked at that requirement's capability, application or product. */
         REQUIREMENT,
         /** The path variable is an acceptance-criterion id: checked at its requirement's scope. */
-        CRITERION
+        CRITERION,
+        /** The path variable is an import batch id: checked at the application the batch was uploaded to. */
+        BATCH,
+        /** The path variable is an import candidate id: checked at its batch's application. */
+        CANDIDATE,
+        /** The path variable is a document-analysis id: checked at its batch's application. */
+        ANALYSIS
     }
 }

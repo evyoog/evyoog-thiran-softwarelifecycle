@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.portfolio.ApplicationRepository;
 import com.vyoog.portfolio.Capability;
@@ -43,6 +47,8 @@ public class CapabilityController {
             .map(CapabilityController::toView).toList();
     }
 
+    // VYB-0906: portfolio structure is administrator-only.
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CapabilityView create(@PathVariable UUID applicationId, @RequestBody CreateCapability body) {
@@ -57,6 +63,7 @@ public class CapabilityController {
         return toView(c);
     }
 
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PatchMapping("/{id}")
     public CapabilityView update(@PathVariable UUID applicationId, @PathVariable UUID id,
                                   @RequestBody UpdateCapability body) {

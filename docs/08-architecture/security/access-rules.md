@@ -1,6 +1,6 @@
 # Access rules for write endpoints
 
-Every write endpoint (POST, PUT, PATCH, DELETE) states who may call it. Added by VYB-0906; in progress (see "Status").
+Every write endpoint (POST, PUT, PATCH, DELETE) states who may call it. Added by VYB-0906; in progress (see "Status"): 60 of 88 endpoints done.
 
 ## How it works
 
@@ -26,6 +26,7 @@ A platform **Administrator passes every rule**. A **service account**, or a toke
 
 - `NONE`: platform level only (`PERSON`, `ADMIN`).
 - `REQUIREMENT` / `CRITERION`: the id in the URL names a requirement (or an acceptance criterion, resolved to its requirement); the role must be held at that requirement's capability, application or product, or any scope above it. An unknown id is a 404.
+- `BATCH` / `CANDIDATE` / `ANALYSIS`: the id in the URL names an import batch, one of its candidates, or a document analysis; the role must be held on the application the batch was uploaded to (or above it). An unknown id is a 404. Upload takes the application as a request parameter, so it is checked "somewhere" first and then on that application in the handler.
 - `ANYWHERE`: the target is in the body, so the caller must hold the role at some scope; the handler adds a scoped check where one matters (creating a requirement checks the placement in the body).
 
 ## Adding or changing an endpoint
@@ -41,7 +42,7 @@ A platform **Administrator passes every rule**. A **service account**, or a toke
 VYB-0906 is split into three sessions (`BUILD-REGISTER.md`):
 
 - **6a, done:** the mechanism, the tests, and the requirement-core endpoints (requirements, acceptance criteria, bulk edit, comments, clarifications, change requests, reviews, findings, trace links): 26 endpoints.
-- **6b, pending:** products, applications, capabilities, glossary, clauses, documents, variants, import (34 endpoints).
+- **6b, done:** products, applications, capabilities and clauses (Administrator); glossary, documents, variants and all import steps (Business Analyst or Architect, import checked on the batch's application); the variant matrix (any signed-in person): 34 endpoints.
 - **6c, pending:** design, releases, defects, test cases, briefs, environments, teams, tasks, notifications, saved views, lint, AI re-embed (28 endpoints).
 
 Endpoints guarded in their own code (administration, requirement edit and delete, import commit and delete, team role changes, brief push, and others) are recognised by `AccessPolicyTest` by reading their source.

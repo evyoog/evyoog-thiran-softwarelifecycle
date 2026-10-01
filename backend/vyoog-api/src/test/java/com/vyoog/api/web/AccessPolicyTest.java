@@ -51,24 +51,8 @@ class AccessPolicyTest {
         "InternalSsoController#token", "shared-secret header between backends",
         "InternalSsoController#logout", "shared-secret header between backends");
 
-    /** VYB-0906 session 6b: portfolio structure, import, documents, variants, glossary, clauses. */
-    static final Set<String> PENDING_6B = Set.of(
-        "ProductController#create", "ProductController#update",
-        "ApplicationController#create", "ApplicationController#update",
-        "CapabilityController#create", "CapabilityController#update",
-        "ClauseController#create",
-        "GlossaryController#create", "GlossaryController#recordUsage",
-        "DocumentController#create", "DocumentController#addRequirement",
-        "DocumentController#removeRequirement", "DocumentController#reorder",
-        "VariantController#create", "VariantController#markApplies", "VariantController#clear",
-        "VariantController#matrix",
-        "ImportController#upload", "ImportController#extract", "ImportController#lint",
-        "ImportController#proposeCapability", "ImportController#confirmType",
-        "ImportController#confirmAcceptanceCriteria", "ImportController#proposeTraceLinks",
-        "ImportController#confirmTraceLinks", "ImportController#edit", "ImportController#confirmPlacement",
-        "ImportController#confirmBatchPlacement", "ImportController#confirmCapability",
-        "ImportController#select", "ImportController#setImportReason", "ImportController#analyse",
-        "ImportController#acceptAnalysis", "ImportController#dismissAnalysis");
+    /** VYB-0906 session 6b (portfolio structure, glossary, clauses, documents, variants, import): done; the list is empty. */
+    static final Set<String> PENDING_6B = Set.of();
 
     /** VYB-0906 session 6c: design, releases, quality, delivery, teams, personal state, misc. */
     static final Set<String> PENDING_6C = Set.of(
@@ -106,6 +90,42 @@ class AccessPolicyTest {
         Map.entry("ChangeRequestController#raise", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TraceLinkController#createLink", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TraceLinkController#deleteLink", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        // 6b: portfolio structure and clauses are administrator-only (nearest matrix column: Admin)
+        Map.entry("ProductController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ProductController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ApplicationController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ApplicationController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("CapabilityController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("CapabilityController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ClauseController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        // 6b: authored content = Business Analyst, Architect
+        Map.entry("GlossaryController#create", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("GlossaryController#recordUsage", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DocumentController#create", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DocumentController#addRequirement", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DocumentController#removeRequirement", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DocumentController#reorder", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("VariantController#create", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("VariantController#markApplies", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("VariantController#clear", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ImportController#upload", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ImportController#extract", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.BATCH)),
+        Map.entry("ImportController#analyse", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.BATCH)),
+        Map.entry("ImportController#confirmBatchPlacement", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.BATCH)),
+        Map.entry("ImportController#lint", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#proposeCapability", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#confirmType", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#confirmAcceptanceCriteria", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#proposeTraceLinks", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#confirmTraceLinks", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#edit", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#confirmPlacement", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#confirmCapability", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#select", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#setImportReason", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CANDIDATE)),
+        Map.entry("ImportController#acceptAnalysis", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANALYSIS)),
+        Map.entry("ImportController#dismissAnalysis", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANALYSIS)),
+        Map.entry("VariantController#matrix", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
         // review: Reviewer, Approver, Compliance Lead, Architect
         Map.entry("ReviewController#open", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ReviewController#comment", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
@@ -191,7 +211,7 @@ class AccessPolicyTest {
         }
         assertThat(unclassified).as("write endpoints with no access rule: annotate with @RequiresAccess, "
             + "call the guard, or (if it authenticates itself) add it to OPEN_BY_DESIGN with a reason").isEmpty();
-        assertThat(annotated).as("annotated endpoints").hasSizeGreaterThanOrEqualTo(26);
+        assertThat(annotated).as("annotated endpoints").hasSizeGreaterThanOrEqualTo(60);
         assertThat(inCode).as("endpoints guarded in their own code").isNotEmpty();
     }
 
@@ -230,8 +250,8 @@ class AccessPolicyTest {
 
     @Test
     void VYB0906_AC2_pendingWorkIsTrackedByCount() {
-        // A shrinking number, kept visible: session 6a leaves 6b and 6c.
-        assertThat(PENDING_6B).hasSize(34);
+        // A shrinking number, kept visible: sessions 6a and 6b are done; 6c is what remains.
+        assertThat(PENDING_6B).isEmpty();
         assertThat(PENDING_6C).hasSize(28);
     }
 }

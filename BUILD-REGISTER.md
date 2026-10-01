@@ -309,7 +309,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
-| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | PARTIAL: session 6a of 3 done on dev (26 of 88 endpoints); 6b and 6c pending | S2 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | PARTIAL: sessions 6a and 6b of 3 done on dev (60 of 88 endpoints); 6c pending | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
@@ -4754,6 +4754,31 @@ Phase 6 Sprint 2, first session. Branch `dev`. VYB-0906 ("role checks on every r
 - The interceptor and its beans were not started in a full Spring context here (no database); the wiring is exercised through standalone MockMvc only.
 - Judgement calls the product owner may want to change: "raise a change request" as Business Analyst/Architect (deciding and applying stay with their existing guards); "answer a clarification" as an editor; "comment" and "raise a clarification" as any signed-in person; AI suggestion endpoints as any signed-in person because they store nothing.
 - Clarification answers, review comments and findings are gated "somewhere", not at their requirement's scope; scoped resolvers for them can come with 6b/6c if wanted.
+
+
+## Session 65 — VYB-0906, session 6b of 3 (F02): portfolio, glossary, clauses, documents, variants and every import step
+
+Phase 6 Sprint 2, second session. Branch `dev`. Uses the mechanism from session 64; no new mechanism except three more scope kinds.
+
+**Mapping (as approved: "nearest matrix column")**
+
+| Rule | Endpoints (34) |
+|---|---|
+| Administrator | create/update product, application, capability; create clause |
+| Business Analyst or Architect | create glossary term and record usage; create document, add/remove/reorder its requirements; create variant, mark/clear applicability; **all 17 import steps** |
+| Any signed-in person | variant matrix (computes, stores nothing) |
+
+Import steps are checked on the **application the batch was uploaded to** (a grant on its product counts), the same scope the earlier commit/delete guards use: batch steps (`extract`, `analyse`, batch placement) resolve the batch, candidate steps (lint, propose, confirm, edit, place, select, import reason) resolve candidate to batch, analysis accept/dismiss resolve analysis to batch. `upload` takes the application as a request parameter, so it is gated "somewhere" by the interceptor and checked on that application in the handler. An unknown id is a 404.
+
+**Bug found and fixed on the way.** The interceptor's `ADMIN` branch called `requireAdministrator` without first requiring a person, so a service-account token reached the user lookup (which upserts a user from the token's email claim). It now requires a person first. Caught by the generated matrix test as soon as the first ADMIN endpoint was annotated.
+
+**Tests** (`VYB0906_AC6_...` new; the classification, rule-table and generated matrix tests now cover 60 annotated endpoints): five new scope tests for the import steps (wrong application refused, right application allowed, capability grant elsewhere refused, product grant counts, unknown ids are 404, upload checks the named application). **Red checks run:** removing one import annotation fails 4 tests and names the endpoint; loosening Product create to "any person" fails the rule table; weakening the candidate scope check to "somewhere" fails the scope test. `./mvnw -B clean verify` green: 371 domain, 94 api.
+
+**Behaviour change to expect.** Creating or editing products, applications and capabilities (and creating clauses) is now **Administrator-only**; before, any signed-in user could. Glossary, documents, variants and every import step now need Business Analyst or Architect (on the batch's application for import). **Check who needs which grant before this ships.** The UI does not hide these actions, so users without the role will see a 403 message. Archive endpoints for products, applications and capabilities already had their own guards and are unchanged.
+
+**Not done**
+- 6c remains: design, releases, defects, test cases, briefs, environments, teams, tasks, notifications, saved views, lint, AI re-embed (28 endpoints). It also turns the policy test into a hard "no pending" check and updates the register row to DONE.
+- Wiring in a full Spring context with a database was not run here.
 
 ---
 

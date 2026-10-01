@@ -14,6 +14,7 @@ import com.vyoog.identity.AccessRole;
 import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.AppUser;
 import com.vyoog.identity.GrantResolver;
+import com.vyoog.identity.ScopeType;
 import com.vyoog.identity.ServiceAccount;
 import com.vyoog.identity.ServiceAccountChecker;
 import com.vyoog.identity.ServiceAccountRepository;
@@ -89,6 +90,7 @@ class AccessRulesTest {
         person("none");
         UUID admin = person("admin");
         when(grants.isPlatformAdministrator(admin)).thenReturn(true);
+        when(grants.hasEffectiveRole(admin, AccessRole.ADMINISTRATOR, ScopeType.PLATFORM, null)).thenReturn(true);
         when(accounts.findByClientId("ci-bot"))
             .thenReturn(Optional.of(new ServiceAccount("ci", "t", "ci-bot", List.of("ci:ingest"))));
 
@@ -101,7 +103,20 @@ class AccessRulesTest {
         var criterion = mock(AcceptanceCriterion.class);
         when(criterion.getRequirementId()).thenReturn(UUID.randomUUID());
         when(criteria.findById(any())).thenReturn(Optional.of(criterion));
-        var interceptor = new AccessInterceptor(guard, new AccessScopeResolver(requirements, criteria));
+        var batches = mock(com.vyoog.importqueue.ImportBatchRepository.class);
+        var batch = mock(com.vyoog.importqueue.ImportBatch.class);
+        when(batch.getApplicationId()).thenReturn(UUID.randomUUID());
+        when(batches.findById(any())).thenReturn(Optional.of(batch));
+        var candidates = mock(com.vyoog.importqueue.ImportCandidateRepository.class);
+        var candidate = mock(com.vyoog.importqueue.ImportCandidate.class);
+        when(candidate.getBatchId()).thenReturn(UUID.randomUUID());
+        when(candidates.findById(any())).thenReturn(Optional.of(candidate));
+        var analyses = mock(com.vyoog.importqueue.DocumentAnalysisRepository.class);
+        var analysis = mock(com.vyoog.importqueue.DocumentAnalysis.class);
+        when(analysis.getBatchId()).thenReturn(UUID.randomUUID());
+        when(analyses.findById(any())).thenReturn(Optional.of(analysis));
+        var interceptor = new AccessInterceptor(guard,
+            new AccessScopeResolver(requirements, criteria, batches, candidates, analyses));
 
         Set<Class<?>> controllers = new LinkedHashSet<>();
         annotated.forEach(w -> controllers.add(w.controller()));
@@ -153,12 +168,16 @@ class AccessRulesTest {
         HttpMethod verb;
         String sub;
         Method m = w.method();
+        String consumes = "application/json";
+        if (m.isAnnotationPresent(PostMapping.class) && m.getAnnotation(PostMapping.class).consumes().length > 0) {
+            consumes = m.getAnnotation(PostMapping.class).consumes()[0]; // e.g. the multipart upload
+        }
         if (m.isAnnotationPresent(PostMapping.class)) { verb = HttpMethod.POST; sub = first(m.getAnnotation(PostMapping.class).value()); }
         else if (m.isAnnotationPresent(PutMapping.class)) { verb = HttpMethod.PUT; sub = first(m.getAnnotation(PutMapping.class).value()); }
         else if (m.isAnnotationPresent(PatchMapping.class)) { verb = HttpMethod.PATCH; sub = first(m.getAnnotation(PatchMapping.class).value()); }
         else { verb = HttpMethod.DELETE; sub = first(m.getAnnotation(DeleteMapping.class).value()); }
         String path = VAR.matcher(base + sub).replaceAll(r -> UUID.randomUUID().toString());
-        return MockMvcRequestBuilders.request(verb, path).contentType(MediaType.APPLICATION_JSON).content("{}");
+        return MockMvcRequestBuilders.request(verb, path).contentType(consumes).content("{}");
     }
 
     private static String first(String[] values) {
@@ -200,7 +219,7 @@ class AccessRulesTest {
 
     @Test
     void VYB0906_AC3_everyAnnotatedEndpointGives403ToAnOrdinaryUserAndToAServiceAccount() throws Exception {
-        assertThat(annotated).hasSizeGreaterThanOrEqualTo(26);
+        assertThat(annotated).hasSizeGreaterThanOrEqualTo(60);
         for (var w : annotated) {
             RequiresAccess a = w.method().getAnnotation(RequiresAccess.class);
             Jwt serviceAccount = Jwt.withTokenValue("t").header("alg", "none").subject("sub-ci").claim("azp", "ci-bot")

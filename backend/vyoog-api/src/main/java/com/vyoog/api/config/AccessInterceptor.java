@@ -47,7 +47,10 @@ public class AccessInterceptor implements HandlerInterceptor {
 
         switch (access.scope()) {
             case NONE -> {
-                if (rule == AccessRule.ADMIN) guard.requireAdministrator(jwt);
+                if (rule == AccessRule.ADMIN) {
+                    guard.requireHuman(jwt); // a service account must never reach the user lookup behind the admin check
+                    guard.requireAdministrator(jwt);
+                }
                 else if (rule == AccessRule.PERSON) guard.requireHuman(jwt);
                 else guard.requireRuleAnywhere(jwt, rule, action);
             }
@@ -58,6 +61,18 @@ public class AccessInterceptor implements HandlerInterceptor {
             }
             case CRITERION -> {
                 var s = scopes.ofCriterion(pathId(request, access.idVar()));
+                guard.requireAnyRoleOrAdmin(jwt, rule.roles(), s.type(), s.id(), action);
+            }
+            case BATCH -> {
+                var s = scopes.ofBatch(pathId(request, access.idVar()));
+                guard.requireAnyRoleOrAdmin(jwt, rule.roles(), s.type(), s.id(), action);
+            }
+            case CANDIDATE -> {
+                var s = scopes.ofCandidate(pathId(request, access.idVar()));
+                guard.requireAnyRoleOrAdmin(jwt, rule.roles(), s.type(), s.id(), action);
+            }
+            case ANALYSIS -> {
+                var s = scopes.ofAnalysis(pathId(request, access.idVar()));
                 guard.requireAnyRoleOrAdmin(jwt, rule.roles(), s.type(), s.id(), action);
             }
         }

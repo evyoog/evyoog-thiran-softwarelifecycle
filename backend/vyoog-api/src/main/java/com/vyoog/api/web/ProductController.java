@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.portfolio.Product;
 import com.vyoog.portfolio.ProductDashboardService;
@@ -83,6 +87,8 @@ public class ProductController {
             .body(csv);
     }
 
+    // VYB-0906: portfolio structure is administrator-only (nearest matrix column: Admin).
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProductView create(@RequestBody CreateProduct body) {
@@ -92,6 +98,7 @@ public class ProductController {
         return toView(p);
     }
 
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PatchMapping("/{id}")
     public ProductView update(@PathVariable UUID id, @RequestBody UpdateProduct body) {
         Product p = products.findById(id).orElseThrow(NoSuchElementException::new);
