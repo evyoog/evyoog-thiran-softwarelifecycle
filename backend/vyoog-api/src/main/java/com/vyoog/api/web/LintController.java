@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.detection.AmbiguousTermLexicon;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -18,6 +22,8 @@ public class LintController {
     public record LintFinding(String term, String suggestion) {}
     public record LintResponse(List<LintFinding> findings) {}
 
+    // VYB-0906: computes advice, stores nothing.
+    @RequiresAccess(value = AccessRule.PERSON)
     @PostMapping
     public LintResponse lint(@RequestBody LintRequest body) {
         List<LintFinding> matches = AmbiguousTermLexicon.findIn(body.statement()).stream()

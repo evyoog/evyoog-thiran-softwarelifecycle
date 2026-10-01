@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.defect.Defect;
 import com.vyoog.defect.DefectRepository;
 import com.vyoog.defect.DefectSeverity;
@@ -65,6 +69,8 @@ public class DefectController {
     }
 
     /** VYB-0365: raising from the requirement detail panel means requirementId always arrives set. */
+    // VYB-0906: defects are QA work (matrix: Verify).
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/defects")
     @ResponseStatus(HttpStatus.CREATED)
     public DefectView raise(@RequestBody RaiseDefect body, @AuthenticationPrincipal Jwt jwt) {
@@ -74,12 +80,14 @@ public class DefectController {
         return toView(d);
     }
 
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/defects/{id}/classify")
     public DefectView classify(@PathVariable UUID id, @RequestBody ClassifyDefect body,
                                 @AuthenticationPrincipal Jwt jwt) {
         return toView(service.classify(id, RootCause.valueOf(body.rootCause()), currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/defects/{id}/close")
     public DefectView close(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.close(id, currentUserId(jwt)));

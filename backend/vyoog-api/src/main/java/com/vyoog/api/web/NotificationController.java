@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.api.notify.NotificationSseRegistry;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.notify.Notification;
@@ -52,6 +56,8 @@ public class NotificationController {
         return notifications.unreadCount(currentUserId(jwt));
     }
 
+    // VYB-0906: the service refuses another person's notification.
+    @RequiresAccess(value = AccessRule.PERSON)
     @PostMapping("/{id}/read")
     public void markRead(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         notifications.markRead(id, currentUserId(jwt));

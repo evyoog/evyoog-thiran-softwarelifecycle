@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.deployment.Deployment;
 import com.vyoog.deployment.DeploymentRepository;
 import com.vyoog.deployment.DeploymentService;
@@ -83,6 +87,8 @@ public class EnvironmentController {
         return service.environments().stream().map(EnvironmentController::toView).toList();
     }
 
+    // VYB-0906: deployment environments are administrator-managed.
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping("/environments")
     @ResponseStatus(HttpStatus.CREATED)
     public EnvironmentView create(@RequestBody CreateEnvironment body) {

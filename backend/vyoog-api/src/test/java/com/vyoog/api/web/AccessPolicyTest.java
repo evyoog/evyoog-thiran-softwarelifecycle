@@ -37,8 +37,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>{@link #PENDING}: not done yet, listed so the list can only shrink.</li>
  * </ol>
  * A new write endpoint that is none of these fails the build. A stale entry in the two lists (the
- * endpoint is now annotated or guarded, or no longer exists) also fails it, so each session of
- * VYB-0906 deletes the entries it completes. VYB-0906 is finished when {@code PENDING} is empty.
+ * endpoint is now annotated or guarded, or no longer exists) also fails it. VYB-0906 finished when
+ * {@code PENDING} became empty (session 6c); it is kept, empty, as the one place a deliberate
+ * exception could be recorded.
  */
 class AccessPolicyTest {
 
@@ -54,21 +55,8 @@ class AccessPolicyTest {
     /** VYB-0906 session 6b (portfolio structure, glossary, clauses, documents, variants, import): done; the list is empty. */
     static final Set<String> PENDING_6B = Set.of();
 
-    /** VYB-0906 session 6c: design, releases, quality, delivery, teams, personal state, misc. */
-    static final Set<String> PENDING_6C = Set.of(
-        "DesignController#createFlow", "DesignController#deleteFlow", "DesignController#generate",
-        "DesignController#addNode", "DesignController#addEdge", "DesignController#deleteNode",
-        "DesignController#link", "DesignController#unlink",
-        "ReleaseController#create", "ReleaseController#setTargetDate", "ReleaseController#commit",
-        "ReleaseController#remove",
-        "DefectController#raise", "DefectController#classify", "DefectController#close",
-        "TestCaseController#draft", "TestCaseController#update",
-        "BriefController#generate", "EnvironmentController#create",
-        "TeamController#create", "TeamController#addMember",
-        "TaskController#complete", "TaskController#reopen",
-        "NotificationController#markRead",
-        "SavedViewController#save", "SavedViewController#delete",
-        "LintController#lint", "AiController#reembedStale");
+    /** VYB-0906 session 6c (design, releases, quality, delivery, teams, personal state, misc): done; the list is empty. */
+    static final Set<String> PENDING_6C = Set.of();
 
     /**
      * The rule each annotated endpoint is meant to have, written out independently of the annotations,
@@ -126,6 +114,38 @@ class AccessPolicyTest {
         Map.entry("ImportController#acceptAnalysis", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANALYSIS)),
         Map.entry("ImportController#dismissAnalysis", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANALYSIS)),
         Map.entry("VariantController#matrix", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        // 6c: design flows are authored content = Business Analyst, Architect
+        Map.entry("DesignController#createFlow", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#deleteFlow", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#generate", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#addNode", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#addEdge", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#deleteNode", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#link", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#unlink", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("BriefController#generate", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        // 6c: releases = Approver / Product Owner (matrix: Baseline)
+        Map.entry("ReleaseController#create", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ReleaseController#setTargetDate", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ReleaseController#commit", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ReleaseController#remove", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
+        // 6c: defects and test cases = Tester (matrix: Verify)
+        Map.entry("DefectController#raise", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DefectController#classify", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DefectController#close", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("TestCaseController#draft", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("TestCaseController#update", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        // 6c: administrator-only
+        Map.entry("EnvironmentController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("TeamController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("AiController#reembedStale", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        // 6c: the caller's own state, or advice that stores nothing = any signed-in person
+        Map.entry("TaskController#complete", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        Map.entry("TaskController#reopen", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        Map.entry("NotificationController#markRead", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        Map.entry("SavedViewController#save", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        Map.entry("SavedViewController#delete", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        Map.entry("LintController#lint", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
         // review: Reviewer, Approver, Compliance Lead, Architect
         Map.entry("ReviewController#open", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ReviewController#comment", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
@@ -211,7 +231,7 @@ class AccessPolicyTest {
         }
         assertThat(unclassified).as("write endpoints with no access rule: annotate with @RequiresAccess, "
             + "call the guard, or (if it authenticates itself) add it to OPEN_BY_DESIGN with a reason").isEmpty();
-        assertThat(annotated).as("annotated endpoints").hasSizeGreaterThanOrEqualTo(60);
+        assertThat(annotated).as("annotated endpoints").hasSizeGreaterThanOrEqualTo(87);
         assertThat(inCode).as("endpoints guarded in their own code").isNotEmpty();
     }
 
@@ -250,8 +270,9 @@ class AccessPolicyTest {
 
     @Test
     void VYB0906_AC2_pendingWorkIsTrackedByCount() {
-        // A shrinking number, kept visible: sessions 6a and 6b are done; 6c is what remains.
+        // VYB-0906 is complete when both lists are empty, which they now are: any new write endpoint
+        // must be annotated, guarded in its own code, or open by design.
         assertThat(PENDING_6B).isEmpty();
-        assertThat(PENDING_6C).hasSize(28);
+        assertThat(PENDING_6C).isEmpty();
     }
 }

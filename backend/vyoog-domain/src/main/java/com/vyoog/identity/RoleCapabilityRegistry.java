@@ -37,6 +37,10 @@ public final class RoleCapabilityRegistry {
             "ReviewService#sign, gated on review_participant.role='APPROVER' — a separate field from this grant, see class Javadoc"),
         new Capability(AccessRole.REVIEWER, "Comment and sign a review round as reviewer", true,
             "ReviewService#sign, gated on review_participant.role='REVIEWER' — same caveat as APPROVER above"),
+        new Capability(AccessRole.ADMINISTRATOR, "Create deployment environments and teams; re-embed stale requirements (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.ADMIN) — EnvironmentController, TeamController#create, AiController"),
+        new Capability(AccessRole.APPROVER, "Create a release, set its target date, commit or remove scope (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.BASELINE) — ReleaseController"),
         new Capability(AccessRole.APPROVER, "Push a delivery brief to the planning tool (VYB-0902)", true,
             "PrincipalGuard.requireAnyRoleOrAdmin — BriefController#push, APPROVER on the brief's application"),
         new Capability(AccessRole.BUSINESS_ANALYST, "Edit or delete a requirement; commit or delete an import batch (VYB-0902)", true,
@@ -51,13 +55,16 @@ public final class RoleCapabilityRegistry {
             "@RequiresAccess(AccessRule.REVIEW)"),
         new Capability(AccessRole.BUSINESS_ANALYST, "Create requirements, edit their acceptance criteria, bulk edit, raise change requests, answer clarifications, create or delete trace links (VYB-0906)", true,
             "@RequiresAccess(AccessRule.CREATE_EDIT_REQ) — RequirementController, AcceptanceCriterionController, BulkEditController, ChangeRequestController, ClarificationController, TraceLinkController"),
+        new Capability(AccessRole.BUSINESS_ANALYST, "Author design flows; generate a delivery brief (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.CREATE_EDIT_REQ) — DesignController, BriefController#generate"),
         new Capability(AccessRole.BUSINESS_ANALYST, "Author glossary terms, documents and variants; run every import step (upload, extract, analyse, edit, place, confirm), checked on the batch's application (VYB-0906)", true,
             "@RequiresAccess(AccessRule.CREATE_EDIT_REQ) — GlossaryController, DocumentController, VariantController, ImportController"),
         new Capability(AccessRole.ARCHITECT, "Same create and edit actions as BUSINESS_ANALYST (VYB-0906)", true,
             "@RequiresAccess(AccessRule.CREATE_EDIT_REQ)"),
         new Capability(AccessRole.VIEWER, "—", false, "No endpoint checks this role yet"),
         new Capability(AccessRole.DEVELOPER, "—", false, "No endpoint checks this role yet"),
-        new Capability(AccessRole.TESTER, "—", false, "No endpoint checks this role yet; the Verify rule is applied to test cases and defects in VYB-0906 session 6c"));
+        new Capability(AccessRole.TESTER, "Raise, classify and close defects; draft and update test cases (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.VERIFY) — DefectController, TestCaseController"));
 
     private RoleCapabilityRegistry() {}
 }

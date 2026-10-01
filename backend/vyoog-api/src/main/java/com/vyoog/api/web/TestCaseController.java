@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.evidence.TestCase;
 import com.vyoog.evidence.TestCaseQueryService;
 import com.vyoog.evidence.TestCaseService;
@@ -55,6 +59,8 @@ public class TestCaseController {
      * it came from {@code POST /requirements/{id}/test-case-suggestions}. A manual entry
      * sends no category, same as every row created before VYB-0827 existed.
      */
+    // VYB-0906: test cases are QA work (matrix: Verify).
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TestCaseView draft(@RequestBody DraftTestCase body, @AuthenticationPrincipal Jwt jwt) {
@@ -114,6 +120,7 @@ public class TestCaseController {
      * requirementId} — the caller already knows which requirement's test case this is,
      * and nothing here can change that.
      */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
     @PatchMapping("/{id}")
     public TestCaseView update(@PathVariable UUID id, @RequestBody UpdateTestCase body, @AuthenticationPrincipal Jwt jwt) {
         TestCase tc = service.update(id, body.title(), body.description(), category(body.category()), currentUserId(jwt));

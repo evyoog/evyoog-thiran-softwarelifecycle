@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.ai.AiProviderUnavailableException;
 import com.vyoog.brief.Brief;
 import com.vyoog.brief.BriefPushService;
@@ -72,6 +76,8 @@ public class BriefController {
             b.getDeveloperId().toString(), b.getContent(), b.getGeneratedAt().toString(), b.isStale(), movedKeys);
     }
 
+    // VYB-0906: generating a brief stores a document built from requirements; pushing it stays Approver-only.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BriefView generate(@RequestBody GenerateBrief body, @AuthenticationPrincipal Jwt jwt) {

@@ -309,7 +309,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
-| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | PARTIAL: sessions 6a and 6b of 3 done on dev (60 of 88 endpoints); 6c pending | S2 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | DONE on dev (sessions 6a, 6b, 6c; commits only, no PR yet) | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
@@ -4779,6 +4779,37 @@ Import steps are checked on the **application the batch was uploaded to** (a gra
 **Not done**
 - 6c remains: design, releases, defects, test cases, briefs, environments, teams, tasks, notifications, saved views, lint, AI re-embed (28 endpoints). It also turns the policy test into a hard "no pending" check and updates the register row to DONE.
 - Wiring in a full Spring context with a database was not run here.
+
+
+## Session 66 — VYB-0906, session 6c of 3 (F02): design, releases, quality, delivery, teams, personal state
+
+Phase 6 Sprint 2, third session of the row. Branch `dev`. **VYB-0906 is complete: all 88 write endpoints that needed a role rule have one** (26 + 34 + 28), alongside the endpoints guarded in their own code and the six that authenticate themselves another way (login, refresh, logout, webhooks, internal SSO).
+
+**Mapping (as approved: "nearest matrix column")**
+
+| Rule | Endpoints (28) |
+|---|---|
+| Business Analyst or Architect | design flows (create, delete, generate, add node, add edge, delete node, link/unlink requirement); generate a delivery brief |
+| Approver (matrix: Baseline) | releases: create, set target date, commit scope, remove scope |
+| Tester (matrix: Verify) | defects: raise, classify, close; test cases: draft, update |
+| Administrator | create a deployment environment; create a team; AI re-embed of stale requirements |
+| Administrator, or a lead of that team | add a team member (see below) |
+| Any signed-in person | complete/reopen a derived task, mark a notification read, save/delete a saved view, requirement lint |
+
+For the "any signed-in person" group the services already scope to the caller (a notification of someone else is refused, a saved view is only deleted by its owner, tasks use the caller as actor), so the rule is explicit and the data stays the caller's own.
+
+**One departure from the approved text, for consistency.** "Teams" was mapped to Administrator, but in session 3 (VYB-0902) the product owner's rule for changing a team role and removing a member became "administrator or a lead of that team". Adding a member now follows the same rule (guard in the handler, not the annotation). Creating a team stays Administrator-only. Say if you want add-member to be Administrator-only instead.
+
+**Tests.** The rule table, classification test and generated role matrix now cover 87 annotated endpoints; `PENDING` is empty, so a new write endpoint that is not annotated, not guarded in code and not open by design fails the build. New: add-member test (ordinary user, member, lead of another team, Business Analyst and Approver all 403; lead and administrator succeed). **Red checks run:** removing a defect annotation, loosening the release rule to "anyone", and removing the add-member guard are each caught, by the classification test, the rule table and the matrix test. `./mvnw -B clean verify` green: 371 domain, 95 api. Roles screen data and `docs/08-architecture/security/access-rules.md` updated.
+
+**Behaviour change to expect.** Releases (Approver), defects and test cases (Tester), design flows and brief generation (Business Analyst or Architect), environments, teams and AI re-embed (Administrator) were all open to any signed-in user. **Check who holds those grants before this ships; the UI does not hide these actions.** The Tester-only rule means developers and analysts can no longer raise a defect or draft a test case; if that is wrong for the team, change `AccessRule.VERIFY` (one place) after a decision.
+
+**Judgement calls to confirm:** brief generation as Business Analyst or Architect; releases and Approver only; design flows as authored content; add-member for team leads (above).
+
+**Not done / still true**
+- Not run in a full Spring context with a database; wiring is exercised through standalone MockMvc only.
+- Role checks for review comments, clarification answers and findings are "somewhere", not at their requirement's scope.
+- Endpoints guarded in their own code were not re-expressed as annotations.
 
 ---
 

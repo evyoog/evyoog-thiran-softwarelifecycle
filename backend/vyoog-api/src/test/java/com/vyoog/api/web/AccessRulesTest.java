@@ -219,7 +219,7 @@ class AccessRulesTest {
 
     @Test
     void VYB0906_AC3_everyAnnotatedEndpointGives403ToAnOrdinaryUserAndToAServiceAccount() throws Exception {
-        assertThat(annotated).hasSizeGreaterThanOrEqualTo(60);
+        assertThat(annotated).hasSizeGreaterThanOrEqualTo(87);
         for (var w : annotated) {
             RequiresAccess a = w.method().getAnnotation(RequiresAccess.class);
             Jwt serviceAccount = Jwt.withTokenValue("t").header("alg", "none").subject("sub-ci").claim("azp", "ci-bot")
