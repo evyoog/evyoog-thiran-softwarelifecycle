@@ -74,6 +74,12 @@ vyoog:
     # Empty (the default) switches the endpoint off. Set it only while bootstrapping a new
     # deployment, then unset it. Not a required secret.
     token: ${BOOTSTRAP_TOKEN:}
+  jwt:
+    # VYB-0908 (F09): the audience every access token must carry (its `aud` claim). Empty (the default)
+    # disables the check and logs a warning at startup, because the shared eVyoog realm has no audience
+    # mapper for this API yet (D6): setting it before that mapper exists would lock everyone out.
+    # See docs/08-architecture/security/audience.md for the Keycloak steps, then set JWT_AUDIENCE.
+    audience: ${JWT_AUDIENCE:}
   keycloak:
     # VYB-0048b: the username/password screen's server-side token exchange. The
     # secret lives ONLY in a backend env var — never in the frontend build, and (D22,

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 424 tests cover 39 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 453 tests cover 40 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -544,3 +544,35 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` commentsAreStoredAgainstTheRoundAndTheRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewIT.java`)
 - `AC6` impactCountsTheScopePlusEverythingDownstreamInTheTraceGraph (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
 - `AC7` applyingTheEditLeavesTheDownstreamLinkSuspect (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ChangeRequestApplyIT.java`)
+
+## VYB-0908: Audience check, grant-scoped search, shared rate limiter [M; F09]
+
+- `AC1` aTokenIssuedForAnotherClientInTheSameRealmIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC1` aTokenIssuedForThisApiIsAccepted (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC1` aTokenWithNoAudienceAtAllIsRefusedOnceAnAudienceIsRequired (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC1` oneMatchingAudienceAmongSeveralIsEnough (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC10` aPersonWithNoGrantFindsNothingAtAll (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC10` aRevokedOrExpiredGrantFindsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC11` aDeletedRequirementIsNotFoundByAnyone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC11` findingsAboutAnythingButARequirementCapabilityOrLinkAreForPlatformHoldersOnly (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC11` workPlacedNowhereIsVisibleToItsCreatorAndNotToOtherGrantHolders (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC12` aBlankQueryFindsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC2` aTokenSignedWithAnotherKeyIsRefusedWhateverItsAudience (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC2` withNoAudienceConfiguredTheCheckIsOffButEverythingElseStillApplies (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC3` theConfiguredAudienceIsTrimmedAndTheSettingIsDefinedInApplicationYml (`backend/vyoog-api/src/test/java/com/vyoog/api/config/JwtAudienceValidationTest.java`)
+- `AC4` aServiceAccountOrAnEmaillessTokenSearchesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/web/SearchControllerTest.java`)
+- `AC4` theQueryIsRunForTheCallersOwnUserId (`backend/vyoog-api/src/test/java/com/vyoog/api/web/SearchControllerTest.java`)
+- `AC5` aCallIsAllowedAgainOnceTheCooldownHasPassed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC5` differentKeysDoNotAffectEachOther (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC5` theFirstCallIsAllowedAndASecondWithinTheCooldownIsToldHowLongToWait (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC6` aSecondInstanceSharingTheDatabaseSeesTheFirstInstancesCall (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC6` ofManyCallsRacingOnTheSameKeyExactlyOneIsLetThrough (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC7` aCallCountsEvenIfTheCallersTransactionLaterRollsBack (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC7` aRefusedAttemptDoesNotExtendTheCooldown (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC7` requireNotLimitedThrowsWithTheRemainingWait (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC8` pruningRemovesOnlyRowsNoCooldownCouldStillBeWaitingOn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterIT.java`)
+- `AC9` aCapabilityGrantSeesThatCapabilityAndNothingFromTheOtherPortfolio (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC9` aPlatformGrantSeesEverythingIncludingUnplacedWork (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC9` aProductGrantReachesEverythingBeneathItAndOnlyThat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC9` aRequirementPlacedAtTheProductOrApplicationLevelIsFoundByAGrantOnThatLevel (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+- `AC9` anApplicationGrantReachesItsCapabilitiesAndTheirRequirements (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)

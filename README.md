@@ -88,6 +88,7 @@ Optional:
 | `ATTACHMENT_MAX_BYTES` | `10485760` | largest single attachment upload |
 | `AI_ENABLED`, `AI_API_KEY` | off | OpenAI-backed advisory features; each reports itself unconfigured without a key |
 | `AUTH_COOKIE_SECURE` | `true` | set `false` only for plain-HTTP development on a non-localhost host |
+| `JWT_AUDIENCE` | empty (not enforced) | required `aud` value, normally `vyoog-api`; set it once the Keycloak audience mapper exists ([`audience.md`](docs/08-architecture/security/audience.md)) |
 
 The full list, with comments, is `.env.example`.
 

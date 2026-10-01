@@ -311,7 +311,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
 | VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | DONE on dev (sessions 6a, 6b, 6c; commits only, no PR yet) | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | DONE on dev (49 integration tests passing against a real local Postgres 16 + pgvector; the Testcontainers path and CI run not verified) | S2 |
-| VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
+| VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | DONE on dev (20 new integration tests, 9 new unit tests; commit only, no PR yet) | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
 | VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
 | VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
@@ -4837,6 +4837,30 @@ Each is a small change, in the pattern the code already uses elsewhere. They wer
 - Not covered: briefs, import, design, defects and test cases, detection sweeps end to end, and the HTTP layer with a real database.
 - The other 14 verification runners were not executed.
 - Tests commit and do not clean up (deliberate, see testing.md); against the docker-compose database they leave test rows.
+
+---
+
+## Session 68 — VYB-0908 (F09): audience check, grant-scoped search, shared rate limiter
+
+Phase 6 Sprint 2. Branch `dev`. Three changes, one register row.
+
+**1. Audience check (opt-in).** `SecurityConfig.tokenValidator(issuer, audience)` adds a required-`aud` validator on top of the issuer and expiry checks when `JWT_AUDIENCE` is set. It is **off by default** and logs a WARN at startup, because Keycloak does not yet put `vyoog-api` in `aud`; turning it on first would refuse every user. Steps to enable: `docs/08-architecture/security/audience.md`. Tests: `JwtAudienceValidationTest` (7, real RSA-signed tokens).
+
+**2. Grant-scoped search.** `GET /api/v1/search` used to return matches from the whole database to any signed-in person. `SearchService.search(q, userId)` now resolves the caller's active access grants and returns only requirements and findings inside them: platform-wide grant sees all; otherwise requirements under a granted product, app or capability (plus unplaced requirements the caller created or owns); findings on REQUIREMENT, CAPABILITY and TRACE_LINK objects follow the same reach, other finding types are platform-grant only. Glossary terms are visible to any grant holder. The controller requires a human token (service accounts are refused). Tests: `SearchScopeIT` (11, against real Postgres), `SearchControllerTest` (2).
+
+**3. Shared rate limiter.** `RateLimiter` was a per-process in-memory map, so each replica had its own cooldown. It now keeps one row per key in `rate_limit_hit` (migration `V035__rate_limit.sql`) and decides in a single atomic statement (`INSERT ... ON CONFLICT DO UPDATE ... WHERE last_call <= now - cooldown`), in its own transaction so a caller's rollback does not erase the attempt. A refused attempt does not extend the cooldown. Old rows are pruned (1 hour retention, about 1 call in 200). Callers unchanged: `auth-login:`, `bulk-edit:`, `import.analyse:`. Tests: `RateLimiterIT` (9, including 24 racing threads where exactly one wins and a second limiter instance sharing the state).
+
+**Behaviour changes to know**
+- A user with **no active access grant now gets empty search results** (before: everything).
+- The audience check does nothing until `JWT_AUDIENCE` is set.
+- The rate limiter now needs the database and V035.
+
+**Defect found while testing:** the first `SearchScopeIT` run failed because test findings used a rule key not in `gap_rule_template` (test fixture bug, fixed; no production change).
+
+**Not done / to know**
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
+- `rate_limit_hit` is pruned opportunistically; a scheduled purge belongs with VYB-0910.
+- The audience mapper has to be created in Keycloak by an administrator; nothing here touches a real realm.
 
 ---
 
