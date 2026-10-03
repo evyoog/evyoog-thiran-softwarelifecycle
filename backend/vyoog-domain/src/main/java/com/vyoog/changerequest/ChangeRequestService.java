@@ -45,7 +45,9 @@ public class ChangeRequestService {
         if (requirementIds.isEmpty()) {
             throw new IllegalArgumentException("A change request needs at least one requirement");
         }
-        ChangeRequest cr = changeRequests.save(new ChangeRequest(keys.next(), title, rationale, actor));
+        // saveAndFlush: the change_request_requirement rows below are JdbcTemplate writes that reference this
+        // row, and JPA would otherwise defer the INSERT past them (foreign-key violation on every raise).
+        ChangeRequest cr = changeRequests.saveAndFlush(new ChangeRequest(keys.next(), title, rationale, actor));
         for (UUID reqId : requirementIds) {
             requirements.findById(reqId).orElseThrow(NoSuchElementException::new); // AC-adjacent: fail loud on a bad id
             jdbc.update(

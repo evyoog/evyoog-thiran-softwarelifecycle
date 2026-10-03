@@ -309,12 +309,12 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0903 | 6 | Remove the critical exposure | Point test runners at a throwaway database; stop the runner that edits the live integration row [S; F10] | DONE on dev (commit only; no PR yet; runners not executed) | S1 |
 | VYB-0904 | 6 | Remove the critical exposure | GitHub Actions: backend build and unit tests, frontend tests and type check [S; F11] | DONE on dev (commit only; no PR yet; not yet run on GitHub) | S1 |
 | VYB-0905 | 6 | Remove the critical exposure | Clean up docs: remove the old schema file, rewrite README, merge the duplicate registers [S; F37] | DONE on dev (commit only; no PR yet) | S1 |
-| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | TODO | S2 |
-| VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | TODO | S2 |
-| VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | TODO | S2 |
-| VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
-| VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
-| VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
+| VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | DONE on dev (sessions 6a, 6b, 6c; commits only, no PR yet) | S2 |
+| VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | DONE on dev (49 integration tests passing against a real local Postgres 16 + pgvector; the Testcontainers path and CI run not verified) | S2 |
+| VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | DONE on dev (20 new integration tests, 9 new unit tests; commit only, no PR yet) | S2 |
+| VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | DONE on dev (26 new tests; Dockerfiles not built, no Docker daemon; commit only, no PR yet) | S2 |
+| VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | DONE on dev (11 new tests; commit only, no PR yet) | S2 |
+| VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | DONE on dev (17 new tests; commit only, no PR yet) | S2 |
 | VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
 | VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
@@ -4598,7 +4598,7 @@ Phase 6 Sprint 1, session 1. Worked on branch `dev` (the environment's branch ru
 **Tests** (`VYB0900_ACn_...`): `RequiredSecretsStartupTest` (16: boots a real `SpringApplication` against the real `application.yml`; each of the six missing, blank, all missing, message never echoes a value, yml has no defaults) and `SecurityConfigCorsAllowlistTest` (6: an unlisted origin gets 403 and no `Access-Control-Allow-*` headers, wildcards refused, default is not `*`). The existing `SecurityConfigCorsTest` (6) still passes.
 
 **Not done / could not verify**
-- Rotation and the history scrub: human steps. Until they happen the old values are still valid and still in git history. D22 is still Proposed.
+- Rotation and the history scrub: human steps. Until they happen the old values are still valid and still in git history. D22 was still Proposed when this was written; it was accepted on 2026-10-03 (`docs/DECISIONS.md`).
 - `./mvnw -B verify` is **not green** because of `RopcConfigurationMessageTest.VYB0048b_AC1_aMissingSecretNamesTheSecretAndNotTheClient`, which fails identically on untouched HEAD: it expects the message to contain `D8`, and `KeycloakPasswordGrantService` cites D21 since 2026-09-11. Not in this row's scope, so left alone. With that one test ignored: vyoog-domain 335 run, 1 failure (that one); vyoog-api 28 run, 0 failures. Frontend `npm test`: 616 passed.
 - The `*VerificationRunner` classes start the full application, so they now need all six variables. They were not run (they need a live database); making them safe is row VYB-0903. They previously fell through to the live RDS database by default, so this change also removes that path.
 - The "fails before, passes after" check could not be run literally for the startup tests, because they reference the new classes; the CORS default test asserts the old `:*` default is gone.
@@ -4723,6 +4723,206 @@ Not a register row: an instruction from the product owner to lay the repository 
 - The SWLCA gap-analysis findings F01 to F42 are referenced by id in the Phase 6 rows but their source document is not in the repository. If you want it kept here, add it under `docs/01-business/`.
 - The historical session logs above this one still cite the old paths; they are history and are unchanged. `database/migrations/V001__baseline.sql` still mentions the old spec file in a comment; a merged migration must not be edited (Flyway checksum).
 - The `Requirement:` trailer and branch naming (`feature/VYB-nnnn-name`) in `docs/README.md` are conventions, not enforced by CI.
+
+
+## Session 64 — VYB-0906, session 6a of 3 (F02): the access-rule mechanism and the requirement-core endpoints
+
+Phase 6 Sprint 2, first session. Branch `dev`. VYB-0906 ("role checks on every remaining write endpoint") is size L. Surveyed first: 94 write endpoints had no role rule (88 that need one, 6 that authenticate themselves: login, refresh, logout, webhooks, internal SSO). Per the sprint rules I stopped and proposed a split; the product owner chose **three sessions** and **"nearest matrix column"** for endpoints the matrix has no column for.
+
+**Split**
+- **6a (this session):** the mechanism, the generated tests, and 26 requirement-core endpoints.
+- **6b:** products, applications, capabilities, glossary, clauses, documents, variants, import (34 endpoints).
+- **6c:** design, releases, defects, test cases, briefs, environments, teams, tasks, notifications, saved views, lint, AI re-embed (28 endpoints). Also decides the last open mappings, and flips the policy test to fail on any endpoint left unclassified.
+- VYB-0906 is done when `AccessPolicyTest.PENDING` is empty.
+
+**Mechanism.** `AccessRule` (domain) is the roles matrix as data. `@RequiresAccess` on a handler declares the rule and where it is checked (platform, the requirement or criterion named in the URL, or "somewhere" when the target is in the body). `AccessInterceptor` enforces it before the body is read, so a caller without the role gets a 403 whatever they send. `PrincipalGuard.requireRuleAnywhere` and `GrantResolver.holdsRoleAnywhere` support the body-targeted case. Docs: `docs/08-architecture/security/access-rules.md`.
+
+**Mapping chosen for 6a** (administrator passes all; service accounts and email-less tokens pass none):
+
+| Rule | Endpoints |
+|---|---|
+| Business Analyst or Architect ("Create/Edit req") | create requirement (and the placement in the body is checked at that scope), add/reorder/edit/remove acceptance criteria (checked at the requirement's scope), bulk edit and undo, answer a clarification, raise a change request, create/delete a trace link |
+| Reviewer, Approver, Compliance Lead or Architect ("Review") | open a review, comment on a review, accept/dismiss/reopen a finding, review a trace link |
+| Any signed-in person | requirement status transition (the per-edge role and separation-of-duties checks stay in `RequirementTransitionAuthorizer`), comment on a requirement, raise a clarification, change-request impact analysis, authoring signals, AI rewrite and test-case suggestions, dependency cluster |
+
+**Tests** (`VYB0906_ACn_...`, 16 new, API module now 89): `AccessPolicyTest` (every write endpoint is annotated, guarded in its own code (read from source), open by design, or on the shrinking pending list; stale list entries fail; an independent `EXPECTED` table of every rule so changing one is a reviewed change); `AccessRulesTest` (generated by reflection over every annotated endpoint: all nine roles, an administrator, an ordinary user, a service account and an unregistered token, each against what `AccessRule` says; a real 403 through `ApiExceptionHandler`); `AccessScopeTest` (a grant on another capability is refused, a grant on the capability or its product is allowed, unknown ids are 404, placement in the body is checked). **Red checks run:** disabling the interceptor fails 7 tests; removing an annotation fails the classification test naming the endpoint; loosening one endpoint's rule fails the table test and the matrix test. `./mvnw -B clean verify` green (371 domain, 89 api).
+
+**Behaviour change to expect.** Until now these actions needed only a login. Anyone without a Business Analyst or Architect grant can no longer create requirements, edit criteria, bulk edit, answer clarifications, raise change requests or create trace links; anyone without a Reviewer, Approver, Compliance Lead or Architect grant cannot open reviews, comment on them, act on findings or review trace links. **Check who holds those grants before this ships.** The UI does not hide these actions for users who lack the role; they will see a 403 message.
+
+**Not done / to know**
+- 62 endpoints remain (6b and 6c); 26 are done. Nothing else was changed.
+- The interceptor and its beans were not started in a full Spring context here (no database); the wiring is exercised through standalone MockMvc only.
+- Judgement calls the product owner may want to change: "raise a change request" as Business Analyst/Architect (deciding and applying stay with their existing guards); "answer a clarification" as an editor; "comment" and "raise a clarification" as any signed-in person; AI suggestion endpoints as any signed-in person because they store nothing.
+- Clarification answers, review comments and findings are gated "somewhere", not at their requirement's scope; scoped resolvers for them can come with 6b/6c if wanted.
+
+
+## Session 65 — VYB-0906, session 6b of 3 (F02): portfolio, glossary, clauses, documents, variants and every import step
+
+Phase 6 Sprint 2, second session. Branch `dev`. Uses the mechanism from session 64; no new mechanism except three more scope kinds.
+
+**Mapping (as approved: "nearest matrix column")**
+
+| Rule | Endpoints (34) |
+|---|---|
+| Administrator | create/update product, application, capability; create clause |
+| Business Analyst or Architect | create glossary term and record usage; create document, add/remove/reorder its requirements; create variant, mark/clear applicability; **all 17 import steps** |
+| Any signed-in person | variant matrix (computes, stores nothing) |
+
+Import steps are checked on the **application the batch was uploaded to** (a grant on its product counts), the same scope the earlier commit/delete guards use: batch steps (`extract`, `analyse`, batch placement) resolve the batch, candidate steps (lint, propose, confirm, edit, place, select, import reason) resolve candidate to batch, analysis accept/dismiss resolve analysis to batch. `upload` takes the application as a request parameter, so it is gated "somewhere" by the interceptor and checked on that application in the handler. An unknown id is a 404.
+
+**Bug found and fixed on the way.** The interceptor's `ADMIN` branch called `requireAdministrator` without first requiring a person, so a service-account token reached the user lookup (which upserts a user from the token's email claim). It now requires a person first. Caught by the generated matrix test as soon as the first ADMIN endpoint was annotated.
+
+**Tests** (`VYB0906_AC6_...` new; the classification, rule-table and generated matrix tests now cover 60 annotated endpoints): five new scope tests for the import steps (wrong application refused, right application allowed, capability grant elsewhere refused, product grant counts, unknown ids are 404, upload checks the named application). **Red checks run:** removing one import annotation fails 4 tests and names the endpoint; loosening Product create to "any person" fails the rule table; weakening the candidate scope check to "somewhere" fails the scope test. `./mvnw -B clean verify` green: 371 domain, 94 api.
+
+**Behaviour change to expect.** Creating or editing products, applications and capabilities (and creating clauses) is now **Administrator-only**; before, any signed-in user could. Glossary, documents, variants and every import step now need Business Analyst or Architect (on the batch's application for import). **Check who needs which grant before this ships.** The UI does not hide these actions, so users without the role will see a 403 message. Archive endpoints for products, applications and capabilities already had their own guards and are unchanged.
+
+**Not done**
+- 6c remains: design, releases, defects, test cases, briefs, environments, teams, tasks, notifications, saved views, lint, AI re-embed (28 endpoints). It also turns the policy test into a hard "no pending" check and updates the register row to DONE.
+- Wiring in a full Spring context with a database was not run here.
+
+
+## Session 66 — VYB-0906, session 6c of 3 (F02): design, releases, quality, delivery, teams, personal state
+
+Phase 6 Sprint 2, third session of the row. Branch `dev`. **VYB-0906 is complete: all 88 write endpoints that needed a role rule have one** (26 + 34 + 28), alongside the endpoints guarded in their own code and the six that authenticate themselves another way (login, refresh, logout, webhooks, internal SSO).
+
+**Mapping (as approved: "nearest matrix column")**
+
+| Rule | Endpoints (28) |
+|---|---|
+| Business Analyst or Architect | design flows (create, delete, generate, add node, add edge, delete node, link/unlink requirement); generate a delivery brief |
+| Approver (matrix: Baseline) | releases: create, set target date, commit scope, remove scope |
+| Tester (matrix: Verify) | defects: raise, classify, close; test cases: draft, update |
+| Administrator | create a deployment environment; create a team; AI re-embed of stale requirements |
+| Administrator, or a lead of that team | add a team member (see below) |
+| Any signed-in person | complete/reopen a derived task, mark a notification read, save/delete a saved view, requirement lint |
+
+For the "any signed-in person" group the services already scope to the caller (a notification of someone else is refused, a saved view is only deleted by its owner, tasks use the caller as actor), so the rule is explicit and the data stays the caller's own.
+
+**One departure from the approved text, for consistency.** "Teams" was mapped to Administrator, but in session 3 (VYB-0902) the product owner's rule for changing a team role and removing a member became "administrator or a lead of that team". Adding a member now follows the same rule (guard in the handler, not the annotation). Creating a team stays Administrator-only. Say if you want add-member to be Administrator-only instead.
+
+**Tests.** The rule table, classification test and generated role matrix now cover 87 annotated endpoints; `PENDING` is empty, so a new write endpoint that is not annotated, not guarded in code and not open by design fails the build. New: add-member test (ordinary user, member, lead of another team, Business Analyst and Approver all 403; lead and administrator succeed). **Red checks run:** removing a defect annotation, loosening the release rule to "anyone", and removing the add-member guard are each caught, by the classification test, the rule table and the matrix test. `./mvnw -B clean verify` green: 371 domain, 95 api. Roles screen data and `docs/08-architecture/security/access-rules.md` updated.
+
+**Behaviour change to expect.** Releases (Approver), defects and test cases (Tester), design flows and brief generation (Business Analyst or Architect), environments, teams and AI re-embed (Administrator) were all open to any signed-in user. **Check who holds those grants before this ships; the UI does not hide these actions.** The Tester-only rule means developers and analysts can no longer raise a defect or draft a test case; if that is wrong for the team, change `AccessRule.VERIFY` (one place) after a decision.
+
+**Judgement calls to confirm:** brief generation as Business Analyst or Architect; releases and Approver only; design flows as authored content; add-member for team leads (above).
+
+**Not done / still true**
+- Not run in a full Spring context with a database; wiring is exercised through standalone MockMvc only.
+- Role checks for review comments, clarification answers and findings are "somewhere", not at their requirement's scope.
+- Endpoints guarded in their own code were not re-expressed as annotations.
+
+
+## Session 67 — VYB-0907 (F11): integration tests against a real database, and four defects they found
+
+Phase 6 Sprint 2. Branch `dev`. **49 integration tests** (`*IT`, run by Failsafe in `mvn verify`) now boot the whole application against a real PostgreSQL 16 with pgvector, apply all 34 migrations, and call the real services.
+
+**How I could run them.** The earlier sessions could not (no Docker, no pgvector). This session installed `postgresql-16-pgvector` with apt and started a throwaway local cluster on localhost, then ran the tests with `DB_URL` pointing at it (the local-only guard from VYB-0903 allows that). They also pass against a brand-new empty database with no pre-created extensions (V001 creates `pgcrypto`, `pg_trgm`, `vector`). **Not run: the Testcontainers path**, because there is still no Docker daemon here; that is what CI will use.
+
+**Coverage** (`backend/vyoog-api/src/test/java/com/vyoog/api/it`, base class `IntegrationTestBase`): `FoundationSmokeIT` (3), `RequirementIT` (11: keys, revisions, no-op saves, stale revision, full lifecycle and who may move it, illegal moves, reasons, approved-is-locked, soft delete), `TraceIT` (8: links, closure, drift, traversal, cycle, suspect links, coverage), `ReleaseIT` (6), `ReviewIT` (9), `BaselineIT` (5), `ChangeRequestApplyIT` (7: raise, scope gate, impact, decide, apply through the change request, applied state, suspect links). Docs: `docs/08-architecture/testing.md`.
+
+**Four defects found by running them for the first time, and fixed** (the first run had 12 failures; these are why):
+1. **Trace closure was always one write behind** (`TraceGraphService.createLink/deleteLink`): the link was saved through JPA (INSERT deferred) and the closure recomputed with plain SQL straight after, which could not see it. Fixed with `saveAndFlush` and a flush after delete.
+2. **`checkClosureDrift()` was invalid SQL** (a `WITH RECURSIVE` after `EXCEPT` needs parentheses), so the drift check threw on every call. Fixed.
+3. **Raising a change request always failed** with a foreign-key violation (`ChangeRequestService.raise`): same JPA-defers/JdbcTemplate-doesn't hazard, as already fixed for briefs, reviews and baselines. Fixed with `saveAndFlush`.
+4. **The separation-of-duties refusal on a review was never recorded** (`ReviewService`): the audit event was written in the same transaction the refusal then rolled back. Added `AuditService.recordIndependently` (its own transaction) and used it there.
+
+Each is a small change, in the pattern the code already uses elsewhere. They were fixed here rather than left failing because a test suite that fails on a known defect cannot gate CI.
+
+**Also found by running for real, in session 4's work (now fixed).** The startup check for required settings runs before Spring applies `@DynamicPropertySource` values, so the runners' and tests' fake secrets and container database URL were invisible to it and the application refused to start. `TestDatabaseProperties` now exports them as system properties from a static initializer. `BriefPushVerificationRunner` read a field on a Spring proxy (null); it now calls a method. Both runners I executed (`Session14VerificationRunner`, `BriefPushVerificationRunner`) pass, and the BriefPush one confirms the real `integration_connection` row is untouched.
+
+**Build.** `./mvnw -B clean verify` from an empty database: 371 domain and 95 api unit tests, 49 integration tests, BUILD SUCCESS. CI (`ci.yml`) now runs the integration tests in the backend job (timeout raised to 30 minutes) and documents that Docker is needed.
+
+**Not done / to know**
+- Testcontainers path and the GitHub run unverified; image pull time unknown.
+- Not covered: briefs, import, design, defects and test cases, detection sweeps end to end, and the HTTP layer with a real database.
+- The other 14 verification runners were not executed.
+- Tests commit and do not clean up (deliberate, see testing.md); against the docker-compose database they leave test rows.
+
+---
+
+## Session 68 — VYB-0908 (F09): audience check, grant-scoped search, shared rate limiter
+
+Phase 6 Sprint 2. Branch `dev`. Three changes, one register row.
+
+**1. Audience check (opt-in).** `SecurityConfig.tokenValidator(issuer, audience)` adds a required-`aud` validator on top of the issuer and expiry checks when `JWT_AUDIENCE` is set. It is **off by default** and logs a WARN at startup, because Keycloak does not yet put `vyoog-api` in `aud`; turning it on first would refuse every user. Steps to enable: `docs/08-architecture/security/audience.md`. Tests: `JwtAudienceValidationTest` (7, real RSA-signed tokens).
+
+**2. Grant-scoped search.** `GET /api/v1/search` used to return matches from the whole database to any signed-in person. `SearchService.search(q, userId)` now resolves the caller's active access grants and returns only requirements and findings inside them: platform-wide grant sees all; otherwise requirements under a granted product, app or capability (plus unplaced requirements the caller created or owns); findings on REQUIREMENT, CAPABILITY and TRACE_LINK objects follow the same reach, other finding types are platform-grant only. Glossary terms are visible to any grant holder. The controller requires a human token (service accounts are refused). Tests: `SearchScopeIT` (11, against real Postgres), `SearchControllerTest` (2).
+
+**3. Shared rate limiter.** `RateLimiter` was a per-process in-memory map, so each replica had its own cooldown. It now keeps one row per key in `rate_limit_hit` (migration `V035__rate_limit.sql`) and decides in a single atomic statement (`INSERT ... ON CONFLICT DO UPDATE ... WHERE last_call <= now - cooldown`), in its own transaction so a caller's rollback does not erase the attempt. A refused attempt does not extend the cooldown. Old rows are pruned (1 hour retention, about 1 call in 200). Callers unchanged: `auth-login:`, `bulk-edit:`, `import.analyse:`. Tests: `RateLimiterIT` (9, including 24 racing threads where exactly one wins and a second limiter instance sharing the state).
+
+**Behaviour changes to know**
+- A user with **no active access grant now gets empty search results** (before: everything).
+- The audience check does nothing until `JWT_AUDIENCE` is set.
+- The rate limiter now needs the database and V035.
+
+**Defect found while testing:** the first `SearchScopeIT` run failed because test findings used a rule key not in `gap_rule_template` (test fixture bug, fixed; no production change).
+
+**Not done / to know**
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
+- `rate_limit_hit` is pruned opportunistically; a scheduled purge belongs with VYB-0910.
+- The audience mapper has to be created in Keycloak by an administrator; nothing here touches a real realm.
+
+---
+
+## Session 69 — VYB-0909 (F33–F35): Prometheus, scheduler lock, nginx limits, non-root containers
+
+Phase 6 Sprint 2. Branch `dev`. Four parts, one register row. **26 new tests** (9 + 4 integration, 13 unit). The finding texts F33–F35 are not in the repository; the scope below is the register row's wording.
+
+**1. Prometheus registry.** `micrometer-registry-prometheus` added to `vyoog-api`. `/actuator/prometheus` was already in the exposure list but there was no registry behind it (404). It stays behind a bearer token (decision with the user: keep authenticated; a scraper needs a service-account token). New counter `vyoog_scheduler_runs_total{job,outcome}`. Test: `PrometheusIT` (registry type, scrape content, 401 without a token, liveness still open). Mutation: removing the dependency fails it.
+
+**2. Scheduler lock.** Migration `V036__scheduler_lock.sql`; `SchedulerLock` (domain, `platform`): one lease row per job, taken with one atomic `INSERT ... ON CONFLICT DO UPDATE ... WHERE lapsed`, database clock, own transactions, per-acquisition token so a lapsed holder cannot release its successor's lease, `atMost` (lease) and `atLeast` (stops a late instance re-running a short nightly job). All four `@Scheduled` triggers moved out of their services into one class, `com.vyoog.api.scheduling.ScheduledJobs`: outbox relay (every 2 s), detection sweep 02:00, audit-partition maintenance 02:15, clarification escalation 02:30. **Scope note:** the row names "sweeps and outbox relay"; audit maintenance and clarification escalation have the same duplicate-on-every-instance defect (escalation notified twice) so they were included. The services' methods and transactions are unchanged; they are called through their proxies so each job commits before its lease is released. `SchedulingArchTest` fails the build if a `@Scheduled` method appears anywhere else. Tests: `SchedulerLockIT` (9: refused while held, reusable after, minimum hold, 24 racing instances with exactly one winner, failure still releases, dead holder lapses, lapsed holder cannot release successor, caller rollback, counters), `ScheduledJobsTest` (5), `SchedulingArchTest` (1). Mutation: making the acquire condition `WHERE true` fails 7 of 9.
+
+**3. nginx limits** (`deployment/nginx/frontend.conf`): 50 r/s (burst 100) per address on `/api/`, plus 5 r/s (burst 10) on `/api/v1/auth/`, 100 connections, 12 MB body (equal to the API's multipart cap), header/body/send timeouts, 120 s upstream read (document analysis waits up to 90 s), unbuffered 1 h stream for notifications, `/healthz`. 429 for rate and connection refusals. Exercised with a local nginx and a stub backend: 169 of 200 rapid calls passed and 31 got 429; auth 11 of 30 passed; a 13 MB body got 413; SPA fallback and `/healthz` worked. **Caveat recorded in the file and docs:** behind a load balancer the limits key on the balancer's address until `set_real_ip_from` is configured.
+
+**4. Containers.** Backend runs as `vyoog` (uid/gid 10001) with a `HEALTHCHECK` on `/actuator/health/liveness`. Frontend moved to `nginxinc/nginx-unprivileged` with a `/healthz` check. **The frontend now listens on 8080, not 80** (decision with the user); anything mapping port 80 to that image must change. `DeploymentHardeningTest` (7) asserts the lines that carry this.
+
+Docs: new `docs/08-architecture/deployment/running-more-than-one-instance.md`; `deployment/nginx/README.md`, `deployment/docker/README.md`, `docs/08-architecture/deployment/README.md`.
+
+**Not done / to know**
+- **Neither Dockerfile was built** (no Docker daemon in the sandbox). The `USER`, `adduser`, `wget` healthcheck and the nginx-unprivileged base are unexercised. Build both once before relying on them.
+- The nginx config was tested with nginx 1.24 locally, not the `stable-alpine` build the image uses.
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
+- The manual sweep (`POST /api/v1/findings/sweep`) still only guards against a second sweep on the same instance.
+- A scraper token and `set_real_ip_from` are deployment steps for whoever owns the environment.
+- `vyoog-worker` still has no application of its own, so the triggers stay in the API.
+
+---
+
+## Session 70 — VYB-0910 (F36): foreign-key indexes and purge jobs
+
+Phase 6 Sprint 2. Branch `dev`. **11 new tests**: `PurgeServiceIT` 7 and `ForeignKeyIndexIT` 3 (integration), `ScheduledJobsTest` +1 (unit). The finding text F36 is not in the repository; scope is the register row.
+
+**1. Foreign-key indexes** (`V037__foreign_key_indexes.sql`). A catalog query on the real schema found **68 foreign keys with no index**. **49 are now indexed** (a partial `WHERE col IS NOT NULL` index on nullable columns): every key to a non-user parent (`requirement_id`, `flow_id`, `release_id`, ...) and the `app_user` columns that are owners, assignees, memberships or filtered on (`owner_id`, `developer_id`, `tester_id`, `assigned_to`, `user_id`, `manager_id`, `delegate_id`, `requirement.created_by`). **19 are left unindexed on purpose** — the "who did it" columns pointing at `app_user` (`granted_by`, `updated_by`, `changed_by`, `decided_by`, `raised_by`, ...): nothing filters on them and `app_user` rows are never deleted, so an index would only slow writes (on `requirement` alone it avoids 2 extra indexes). Scope decided with the product owner (the alternative was all 68). `ForeignKeyIndexIT` fails when a migration adds a foreign key that is neither indexed nor on that reasoned list. Plain `CREATE INDEX` (Flyway runs a migration in one transaction, so not `CONCURRENTLY`): a short write lock per table; run on a large database in a quiet period.
+
+**2. Purge jobs.** `PurgeService` + a 03:00 trigger `purge-expired-records` in `ScheduledJobs` (behind `SchedulerLock`). `idempotency_key` kept **7 days**, `webhook_delivery` kept **90 days** (both chosen by the product owner; `vyoog.retention.*`, env `IDEMPOTENCY_RETENTION_DAYS` / `WEBHOOK_DELIVERY_RETENTION_DAYS`, below 1 stops startup). Also prunes `rate_limit_hit` (session 68's follow-up). Batches of 5,000, one transaction each, database clock; indexes on `idempotency_key.created_at` and `webhook_delivery.received_at` so the delete is not a scan. One `retention.purged` SYSTEM audit event per run that deleted anything; counter `vyoog_purge_deleted_total{table}`.
+
+**The webhook window is a security setting.** The signed payload has no timestamp; the stored delivery id is the only replay protection. After 90 days a captured, correctly signed delivery with a purged id would be accepted again. The old migration comment called this table "never delete this kind of row"; the row's wording and the owner's choice of 90 days supersede that, and the trade-off is written in `PurgeService`, `application.yml` and the docs.
+
+**Evidence.** Added an unindexed foreign key by hand → `ForeignKeyIndexIT` failed, then dropped it. Flipped the purge cutoff → 5 of 7 `PurgeServiceIT` tests failed. Both restored. Migrations 1–37 applied to an **empty database** (`fresh_it`) and `ForeignKeyIndexIT`, `PurgeServiceIT`, `SchedulerLockIT` passed there; V037 also applied to the populated local database.
+
+**Not done / to know**
+- No index was measured under load; the choice is by what the code queries and what the foreign-key check needs, not by `EXPLAIN` on production-sized data.
+- Idempotency: a client retrying the same key after 7 days creates a second row.
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
+- The purge does not touch `outbox_event` (published rows also only grow), `notification`, or `finding`; not named by the row, not changed.
+
+---
+
+## Session 71 — VYB-0911 (F22, F23, F32): saved-view check, export table list, adjudicator noise
+
+Phase 6 Sprint 2. Branch `dev`. **17 new tests**: `SavedViewIT` 5 and `TenantExportIT` 6 (integration); `AiOffDetectionNoiseTest` 4 and `ConflictingRequirementsDetectorTest` +2 (unit). Two existing tests in that class were adjusted: a mocked adjudicator now has to say it is configured, and the "no adjudicator" test no longer stubs a query that is no longer made. Each fix was reproduced red first on the unchanged code. The finding texts are not in the repository; the scope is the register row's wording and what each name pointed at.
+
+**F22: `saved_view` status CHECK** (`V038__saved_view_status_check.sql`). V019 copied the requirement statuses as they were then. Nothing updated it when V026 added REVIEWED, V027 dropped VERIFIED and V028 added NEEDS_REVISION, so a view of REVIEWED or NEEDS_REVISION could not be saved (a constraint error) and VERIFIED, which has not been a status since D16, was still accepted. Fixed: backfill `VERIFIED` to `APPROVED` first (the mapping V027 used on the requirement table), then the CHECK is the six real statuses. Run on the populated local database: a seeded `VERIFIED` view became `APPROVED`. Priority and type checks were already right; a test now keeps all three in step with the requirement table and with `RequirementStatus`.
+
+**F23: the export's table list** (`TenantExportService`). A hand-written list of 56 tables, whose comment called it a complete accounting, had fallen behind by 10: `saved_view`, `team`, `team_member`, `review_comment`, `task_completion`, `import_document_analysis`, `ingested_commit`, `brief_capability`, `change_request_requirement`, `document_requirement`. It is now read from the schema. Left out on purpose and named in `NOT_EXPORTED`: `flyway_schema_history`, `rate_limit_hit`, `scheduler_lock` (not data); detached `audit_event_archive_*` tables are also skipped (retention moved them out on purpose and they can be large). Also fixed: a failing table was swallowed inside the repeatable-read transaction, after which Postgres refuses every later query, so one bad table silently emptied the rest of the manifest; a read failure now fails the export. The manifest is now in alphabetical table order (it was in a hand-picked order) and `summary()` no longer reports `-1` for a missing table, which cannot happen now.
+
+**F32: adjudicator noise with AI off.** With AI off (the default) the hashing embedder is still active, so similar pairs exist, and the conflict detector then called the always-registered OpenAI adjudicator, which threw because it is not configured. That escaped as an ordinary exception, so **every requirement write that had a similar neighbour logged an ERROR with a full stack trace** and spent a slot of the AI-call budget on a call that could not happen. Fixed: `LlmAdjudicator.isConfigured()` (default true); the detector checks it before querying or spending budget and reports the rule unavailable through a new `DetectorNotConfiguredException`, which the sweep logs at DEBUG per write and INFO per nightly sweep, with one INFO line the first time naming `AI_ENABLED`/`AI_API_KEY`. Existing conflict findings are still left untouched. A configured provider that is down is now reported as an ordinary "unavailable" warning without a stack trace. Reproduction: the four tests in `AiOffDetectionNoiseTest` all failed on the old code.
+
+**Not done / to know**
+- `TenantHardResetService` already discovers its tables from the schema (it was written because of this drift); it truncates everything except `app_config`, `audit_event` and `flyway_schema_history`, so it also clears `rate_limit_hit` and `scheduler_lock`, which is harmless. Not changed.
+- A saved view that filtered on VERIFIED is silently changed to filter on APPROVED.
+- The nightly sweep now logs the conflict rule at INFO ("not run, not configured") instead of WARN when AI is off.
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
 
 ---
 

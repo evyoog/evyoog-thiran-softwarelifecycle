@@ -29,6 +29,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SecurityConfig.class);
+
     private final JwtAuthConverter jwtAuthConverter;
 
     @Value("${vyoog.cors-allowed-origins:https://devops.evyoog.com}")
@@ -51,15 +53,32 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         var decoder = org.springframework.security.oauth2.jwt.NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
+        decoder.setJwtValidator(tokenValidator(issuerUri, requiredAudience));
         if (requiredAudience == null || requiredAudience.isBlank()) {
-            decoder.setJwtValidator(withIssuer);
+            log.warn("[security] JWT_AUDIENCE is not set: this API accepts a valid token issued to ANY client in "
+                + "the realm. Add an audience mapper for the API in Keycloak and set JWT_AUDIENCE "
+                + "(docs/08-architecture/security/audience.md).");
         } else {
-            OAuth2TokenValidator<Jwt> withAudience = new JwtClaimValidator<List<String>>(
-                "aud", aud -> aud != null && aud.contains(requiredAudience));
-            decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer, withAudience));
+            log.info("[security] tokens must carry audience '{}'", requiredAudience);
         }
         return decoder;
+    }
+
+    /**
+     * VYB-0908 (F09): what a token must satisfy beyond its signature: the issuer and expiry always, and,
+     * when {@code audience} is configured, that it was issued <em>for this API</em> (its {@code aud}
+     * claim contains it). Without the audience check a token minted for any other client in the shared
+     * realm is accepted here. A blank audience turns only that check off. Static so it can be tested
+     * against really signed tokens.
+     */
+    public static OAuth2TokenValidator<Jwt> tokenValidator(String issuer, String audience) {
+        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
+        if (audience == null || audience.isBlank()) {
+            return withIssuer;
+        }
+        OAuth2TokenValidator<Jwt> withAudience = new JwtClaimValidator<List<String>>(
+            "aud", aud -> aud != null && aud.contains(audience.trim()));
+        return new DelegatingOAuth2TokenValidator<>(withIssuer, withAudience);
     }
 
     @Bean

@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.requirements.AcceptanceCriterionService;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,7 @@ public class AcceptanceCriterionController {
         this.acceptanceCriteria = acceptanceCriteria;
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CRITERION)
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable UUID id) {

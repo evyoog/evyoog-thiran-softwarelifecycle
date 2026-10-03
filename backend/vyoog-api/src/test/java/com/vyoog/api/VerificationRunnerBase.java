@@ -1,9 +1,6 @@
 package com.vyoog.api;
 
-import com.vyoog.testkit.LocalDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 /**
  * VYB-0903 (F10): every {@code *Runner} in this package extends this. It gives the full
@@ -19,21 +16,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest
 abstract class VerificationRunnerBase {
 
-    @DynamicPropertySource
-    static void database(DynamicPropertyRegistry registry) {
-        LocalDatabase.Coordinates db = LocalDatabase.resolve();
-        registry.add("spring.datasource.url", db::url);
-        registry.add("spring.datasource.username", db::user);
-        registry.add("spring.datasource.password", db::password);
-        fakeUnlessSet(registry, "vyoog.keycloak.ropc-client-secret", "KEYCLOAK_ROPC_CLIENT_SECRET");
-        fakeUnlessSet(registry, "vyoog.internal.impersonation-client-secret", "KEYCLOAK_IMPERSONATION_CLIENT_SECRET");
-        fakeUnlessSet(registry, "vyoog.internal.sso-shared-secret", "INTERNAL_SSO_SHARED_SECRET");
-    }
-
-    private static void fakeUnlessSet(DynamicPropertyRegistry registry, String property, String envVar) {
-        String fromEnv = System.getenv(envVar);
-        if (fromEnv == null || fromEnv.isBlank()) {
-            registry.add(property, () -> "verification-runner-fake-" + envVar.toLowerCase());
-        }
+    static {
+        TestDatabaseProperties.exportToSystemProperties(); // before the context starts; see that class for why
     }
 }

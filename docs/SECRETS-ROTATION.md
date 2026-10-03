@@ -2,7 +2,7 @@
 
 **Status: the code no longer contains these secrets, but they are still valid and still in git history.** Removing them from `application.yml` does not make them safe. Treat every value below as public until it has been rotated. Rotation is done by a person with the right access, outside the code. This document is the checklist.
 
-D22 (`docs/DECISIONS.md`) is still *Proposed*. Get the product owner's yes before rotating, because it reverses D9 and D20.
+D22 (`docs/DECISIONS.md`) was **accepted on 2026-10-03** by the product owner; it reverses D9 and D20. Accepting it changes the policy only: nothing below is rotated or scrubbed until someone does it.
 
 ## 1. What to rotate
 

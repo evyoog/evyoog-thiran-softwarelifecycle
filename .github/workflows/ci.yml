@@ -1,7 +1,8 @@
-# VYB-0904: what must pass before a pull request merges. Nothing here needs a real secret,
-# a database, Docker, Keycloak or any external service: the backend unit tests are
-# self-contained (mocks and in-process Spring contexts), and the integration runners are
-# deliberately not run (see backend/README.md, "Running the integration runners locally").
+# VYB-0904/0907: what must pass before a pull request merges. Nothing here needs a real secret,
+# Keycloak or any external service. The backend job runs the unit tests AND the integration tests
+# (*IT, VYB-0907) against a throwaway PostgreSQL 16 + pgvector started by Testcontainers, which
+# needs Docker; GitHub's ubuntu runners have it. The manual *VerificationRunner classes are not run
+# (see backend/README.md, "Running the integration runners locally").
 name: CI
 
 on:
@@ -16,9 +17,9 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend build and unit tests
+    name: Backend build, unit tests and integration tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: backend
@@ -30,7 +31,8 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: backend/**/pom.xml
-      # compile + unit tests (Surefire) + ArchUnit + package. Any failing test or compile error fails the job.
+      # compile + unit tests (Surefire) + ArchUnit + package + integration tests (Failsafe, Testcontainers).
+      # Any failing test or compile error fails the job.
       - name: Build and test
         run: ./mvnw -B -ntp verify
 

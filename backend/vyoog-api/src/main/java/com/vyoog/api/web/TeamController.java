@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.TeamService;
 import jakarta.validation.constraints.NotBlank;
@@ -45,13 +49,17 @@ public class TeamController {
         return teams.all().stream().map(TeamController::toView).toList();
     }
 
+    // VYB-0906: creating a team is administrator-only; managing its members is administrator or the team lead.
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping
     public void create(@RequestBody CreateTeam body) {
         teams.create(body.name());
     }
 
     @PutMapping("/{teamId}/members/{userId}")
-    public void addMember(@PathVariable UUID teamId, @PathVariable UUID userId) {
+    public void addMember(@PathVariable UUID teamId, @PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
+        // VYB-0906: same rule as changing a role or removing a member (VYB-0902): an administrator or a lead of this team.
+        requireAdminOrTeamLead(jwt, teamId, "add a member");
         teams.addMember(teamId, userId);
     }
 

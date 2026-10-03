@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.detection.Finding;
@@ -76,17 +78,20 @@ public class FindingController {
         return found.map(FindingController::toView);
     }
 
+    @RequiresAccess(value = AccessRule.REVIEW, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{id}/dismiss")
     public FindingView dismiss(@PathVariable UUID id, @RequestBody DismissRequest body,
                                 @AuthenticationPrincipal Jwt jwt) {
         return toView(service.dismiss(id, body.reason(), currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.REVIEW, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{id}/accept")
     public FindingView accept(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.accept(id, currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.REVIEW, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{id}/reopen")
     public FindingView reopen(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.reopen(id, currentUserId(jwt)));

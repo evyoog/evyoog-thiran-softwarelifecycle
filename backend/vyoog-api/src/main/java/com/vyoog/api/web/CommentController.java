@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.requirements.CommentService;
 import com.vyoog.requirements.RequirementComment;
@@ -40,6 +42,8 @@ public class CommentController {
             .toList();
     }
 
+    // VYB-0906: commenting is open to any signed-in person.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommentView add(@PathVariable UUID requirementId, @RequestBody AddComment body,

@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.platform.RateLimiter;
 import com.vyoog.requirements.BulkEditService;
@@ -48,6 +50,8 @@ public class BulkEditController {
             r.outcomes().stream().map(o -> new RowOutcomeView(o.id().toString(), o.applied(), o.reason())).toList());
     }
 
+    // VYB-0906: the ids are in the body.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     public BulkResultView apply(@RequestBody BulkEditRequest body, @AuthenticationPrincipal Jwt jwt) {
         rateLimiter.requireNotLimited("bulk-edit:" + jwt.getSubject(), COOLDOWN);
@@ -60,6 +64,8 @@ public class BulkEditController {
         return toView(service.apply(ids, changes, currentUserId(jwt)));
     }
 
+    // VYB-0906: the batch is in the path but spans requirements.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{batchId}/undo")
     public BulkResultView undo(@PathVariable UUID batchId, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.undo(batchId, currentUserId(jwt)));

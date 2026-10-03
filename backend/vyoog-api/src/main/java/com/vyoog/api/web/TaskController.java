@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.identity.AccessRole;
 import com.vyoog.identity.GrantService;
 import com.vyoog.identity.UserProvisioningService;
@@ -93,6 +97,8 @@ public class TaskController {
      * the same underlying condition still shows up, and this same task reopens on its
      * own if the object's revision moves past what was recorded here.
      */
+    // VYB-0906: the caller's own derived task.
+    @RequiresAccess(value = AccessRule.PERSON)
     @PostMapping("/complete")
     public void complete(@RequestBody CompleteTaskRequest body, @AuthenticationPrincipal Jwt jwt) {
         UUID actor = currentUserId(jwt);
@@ -102,6 +108,8 @@ public class TaskController {
         audit.record(actor, "task.completed", "TASK", objectId, null, Map.of("kind", kind.name()));
     }
 
+    // VYB-0906: the caller's own derived task.
+    @RequiresAccess(value = AccessRule.PERSON)
     @PostMapping("/reopen")
     public void reopen(@RequestBody CompleteTaskRequest body, @AuthenticationPrincipal Jwt jwt) {
         UUID actor = currentUserId(jwt);

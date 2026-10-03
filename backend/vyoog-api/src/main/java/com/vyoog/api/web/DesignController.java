@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.design.DesignEdge;
 import com.vyoog.design.DesignFlow;
 import com.vyoog.design.DesignNode;
@@ -51,6 +55,8 @@ public class DesignController {
         return new EdgeView(e.getId().toString(), e.getFlowId().toString(), e.getFromNode().toString(), e.getToNode().toString(), e.getLabel());
     }
 
+    // VYB-0906: design flows are authored content.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/flows")
     @ResponseStatus(HttpStatus.CREATED)
     public FlowView createFlow(@RequestParam UUID applicationId, @AuthenticationPrincipal Jwt jwt) {
@@ -62,6 +68,7 @@ public class DesignController {
         return toView(service.flowFor(applicationId));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @DeleteMapping("/flows/{id}")
     public void deleteFlow(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         service.deleteFlow(id, currentUserId(jwt));
@@ -82,18 +89,21 @@ public class DesignController {
      * repeatable — re-running after an import adds only what is new and never removes
      * anything already on the diagram, so a hand-edited flow survives a regenerate.
      */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/flows/{id}/generate")
     public DesignService.Generated generate(@PathVariable UUID id, @RequestParam UUID applicationId,
                                              @AuthenticationPrincipal Jwt jwt) {
         return service.generateFrom(id, applicationId, currentUserId(jwt));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/flows/{id}/nodes")
     @ResponseStatus(HttpStatus.CREATED)
     public NodeView addNode(@PathVariable UUID id, @RequestBody CreateNode body, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.addNode(id, NodeKind.valueOf(body.kind()), body.label(), body.note(), currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/flows/{id}/edges")
     @ResponseStatus(HttpStatus.CREATED)
     public EdgeView addEdge(@PathVariable UUID id, @RequestBody CreateEdge body, @AuthenticationPrincipal Jwt jwt) {
@@ -101,16 +111,19 @@ public class DesignController {
             body.label(), currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @DeleteMapping("/nodes/{id}")
     public void deleteNode(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         service.deleteNode(id, currentUserId(jwt));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PutMapping("/nodes/{nodeId}/requirements/{requirementId}")
     public void link(@PathVariable UUID nodeId, @PathVariable UUID requirementId, @AuthenticationPrincipal Jwt jwt) {
         service.linkRequirement(nodeId, requirementId, currentUserId(jwt));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @DeleteMapping("/nodes/{nodeId}/requirements/{requirementId}")
     public void unlink(@PathVariable UUID nodeId, @PathVariable UUID requirementId, @AuthenticationPrincipal Jwt jwt) {
         service.unlinkRequirement(nodeId, requirementId, currentUserId(jwt));

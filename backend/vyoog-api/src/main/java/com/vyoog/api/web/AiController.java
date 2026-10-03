@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.ai.AiUsageTracker;
 import com.vyoog.ai.EmbeddingProvider;
 import com.vyoog.ai.EmbeddingService;
@@ -55,6 +59,8 @@ public class AiController {
     }
 
     /** VYB-0604: re-embeds whatever the corpus has on a stale model, bounded by the per-run AI-call budget. */
+    // VYB-0906: a bulk, costly operation.
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping("/reembed-stale")
     public int reembedStale() {
         return embeddingService.reembedStaleModel();

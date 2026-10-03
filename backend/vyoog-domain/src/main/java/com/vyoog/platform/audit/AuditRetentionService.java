@@ -8,7 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,8 +94,7 @@ public class AuditRetentionService {
             String.class);
     }
 
-    /** Daily: keep the partition window from ever running dry, independent of retention. */
-    @Scheduled(cron = "0 15 2 * * *")
+    /** Daily at 02:15 (triggered by {@code ScheduledJobs}): keep the partition window from ever running dry, independent of retention. */
     public void scheduledMaintenance() {
         ensureFuturePartitions();
         archiveEligiblePartitions();

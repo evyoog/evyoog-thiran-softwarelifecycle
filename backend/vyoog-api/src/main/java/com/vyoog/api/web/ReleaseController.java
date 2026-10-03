@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.release.Release;
 import com.vyoog.release.ReleaseService;
@@ -46,6 +50,8 @@ public class ReleaseController {
         return service.list().stream().map(ReleaseController::toView).toList();
     }
 
+    // VYB-0906: releases are an Approver / Product Owner decision (matrix: Baseline).
+    @RequiresAccess(value = AccessRule.BASELINE, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ReleaseView create(@RequestBody CreateRelease body) {
@@ -59,17 +65,20 @@ public class ReleaseController {
     }
 
     /** VYB-0372: the calendar's one real, settable planning date. */
+    @RequiresAccess(value = AccessRule.BASELINE, scope = RequiresAccess.Scope.ANYWHERE)
     @PutMapping("/{id}/target-date")
     public ReleaseView setTargetDate(@PathVariable UUID id, @RequestBody SetTargetDate body,
                                       @AuthenticationPrincipal Jwt jwt) {
         return toView(service.setTargetDate(id, Instant.parse(body.targetDate()), currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.BASELINE, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{id}/scope")
     public void commit(@PathVariable UUID id, @RequestBody ScopeChange body, @AuthenticationPrincipal Jwt jwt) {
         service.commit(id, UUID.fromString(body.requirementId()), currentUserId(jwt), body.reason());
     }
 
+    @RequiresAccess(value = AccessRule.BASELINE, scope = RequiresAccess.Scope.ANYWHERE)
     @DeleteMapping("/{id}/scope/{requirementId}")
     public void remove(@PathVariable UUID id, @PathVariable UUID requirementId,
                         @RequestParam String reason, @AuthenticationPrincipal Jwt jwt) {

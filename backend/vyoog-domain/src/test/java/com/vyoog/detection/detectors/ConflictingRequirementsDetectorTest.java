@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 import com.vyoog.ai.AiUsageTracker;
 import com.vyoog.ai.LlmAdjudicator;
 import com.vyoog.ai.SimilaritySearchService;
+import com.vyoog.ai.AiProviderUnavailableException;
+import com.vyoog.detection.DetectorNotConfiguredException;
 import com.vyoog.detection.DetectorUnavailableException;
 import com.vyoog.detection.GapRuleService;
 import java.util.List;
@@ -26,6 +28,11 @@ class ConflictingRequirementsDetectorTest {
     @Mock AiUsageTracker aiUsage;
     @Mock LlmAdjudicator adjudicator;
 
+    @BeforeEach
+    void adjudicatorIsConfigured() {
+        lenient().when(adjudicator.isConfigured()).thenReturn(true); // a mock's default would be false
+    }
+
     private SimilaritySearchService.SimilarPair pair() {
         return new SimilaritySearchService.SimilarPair(
             UUID.randomUUID(), "VY-1", "The system shall allow logins.",
@@ -34,7 +41,6 @@ class ConflictingRequirementsDetectorTest {
 
     @Test
     void withNoAdjudicatorConfiguredScanThrowsRatherThanReturningNoFindings() {
-        when(similarity.allPairsAboveThreshold(anyDouble(), anyInt())).thenReturn(List.of(pair()));
         var detector = new ConflictingRequirementsDetector(similarity, Optional.empty(), gapRules, aiUsage);
 
         // Unavailable, not "ran and found nothing" — DetectionSweepService treats these differently.
@@ -77,5 +83,29 @@ class ConflictingRequirementsDetectorTest {
 
         assertThat(detector.scan()).isEmpty();
         verify(adjudicator, never()).adjudicate(any(), any());
+    }
+
+    @Test
+    void VYB0911_AC3_anAdjudicatorThatIsSwitchedOffIsReportedNotConfiguredBeforeAnythingIsQueriedOrSpent() {
+        when(adjudicator.isConfigured()).thenReturn(false);
+        var detector = new ConflictingRequirementsDetector(similarity, Optional.of(adjudicator), gapRules, aiUsage);
+
+        assertThatThrownBy(detector::scan).isInstanceOf(DetectorNotConfiguredException.class);
+        assertThatThrownBy(() -> detector.scanOne(UUID.randomUUID())).isInstanceOf(DetectorNotConfiguredException.class);
+        verifyNoInteractions(similarity, aiUsage);
+        verify(adjudicator, never()).adjudicate(any(), any());
+    }
+
+    @Test
+    void VYB0911_AC3_aConfiguredProviderThatIsDownIsReportedUnavailableNotAsAnUnexpectedFailure() {
+        when(similarity.allPairsAboveThreshold(anyDouble(), anyInt())).thenReturn(List.of(pair()));
+        when(aiUsage.tryConsume()).thenReturn(true);
+        when(adjudicator.adjudicate(any(), any())).thenThrow(new AiProviderUnavailableException("timed out"));
+        var detector = new ConflictingRequirementsDetector(similarity, Optional.of(adjudicator), gapRules, aiUsage);
+
+        assertThatThrownBy(detector::scan)
+            .isInstanceOf(DetectorUnavailableException.class)
+            .isNotInstanceOf(DetectorNotConfiguredException.class)
+            .hasMessageContaining("timed out");
     }
 }

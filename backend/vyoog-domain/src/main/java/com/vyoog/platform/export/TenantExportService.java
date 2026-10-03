@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -44,22 +45,38 @@ public class TenantExportService {
         this.objectMapper = objectMapper;
     }
 
-    /** Every table Flyway has ever created for this application's own data — platform/audit/outbox tables included, so the manifest is a complete accounting. */
-    private static final List<String> TABLES = List.of(
-        "product", "application", "capability", "glossary_term", "glossary_term_usage",
-        "requirement", "requirement_revision", "acceptance_criterion", "requirement_comment",
-        "attachment", "attachment_version", "clarification", "idempotency_key",
-        "trace_link", "trace_closure", "design_flow", "design_node", "design_edge", "design_node_requirement",
-        "gap_rule_template", "gap_rule", "finding",
-        "clause", "requirement_embedding",
-        "review", "review_item", "review_participant", "test_case", "test_run", "verification",
-        "defect", "brief", "brief_requirement",
-        "release", "release_scope_item", "scope_movement", "baseline", "baseline_item",
-        "variant", "variant_applicability", "environment", "deployment", "deployment_requirement",
-        "document", "import_batch", "import_candidate", "change_request",
-        "app_user", "access_grant", "service_account",
-        "audit_event", "outbox_event", "notification", "integration_connection", "webhook_delivery",
-        "app_config");
+    /**
+     * Tables that are in the schema but are not application data, so an export leaves them out:
+     * Flyway's own bookkeeping, and two tables of per-instance operational state (rate-limit cooldowns,
+     * scheduled-job leases) that mean nothing in another environment and would be harmful to restore.
+     * Detached audit archives ({@code audit_event_archive_*}) are also left out: retention moved them
+     * out of the live table on purpose and they can be large. Everything else is exported.
+     */
+    public static final Set<String> NOT_EXPORTED = Set.of("flyway_schema_history", "rate_limit_hit", "scheduler_lock");
+    private static final String AUDIT_ARCHIVE_PREFIX = "audit_event_archive_";
+
+    /**
+     * VYB-0911 (F23): read from the schema, not from a hand-kept list. The list this replaced named 56
+     * tables and had silently fallen behind by ten as migrations added more, while its comment claimed
+     * a complete accounting. A table added by a future migration is now exported without anyone
+     * remembering to say so; to leave one out, add it to {@link #NOT_EXPORTED} with the reason.
+     *
+     * <p>Partitions are skipped (the partitioned parent, {@code audit_event}, reads them all). Names
+     * come from the catalog and are quoted, never from input.
+     */
+    private List<String> tablesToExport() {
+        return jdbc.queryForList("""
+            SELECT c.relname FROM pg_class c
+             WHERE c.relnamespace = current_schema()::regnamespace AND c.relkind IN ('r', 'p') AND NOT c.relispartition
+             ORDER BY c.relname
+            """, String.class).stream()
+            .filter(t -> !NOT_EXPORTED.contains(t) && !t.startsWith(AUDIT_ARCHIVE_PREFIX))
+            .toList();
+    }
+
+    private static String quoted(String table) {
+        return "\"" + table.replace("\"", "\"\"") + "\"";
+    }
 
     public record TableDump(String table, long rowCount, List<Map<String, Object>> rows) {}
     public record Manifest(Instant generatedAt, List<TableDump> tables, long totalRows) {}
@@ -72,14 +89,11 @@ public class TenantExportService {
     private Manifest buildManifest() {
         List<TableDump> dumps = new ArrayList<>();
         long total = 0;
-        for (String table : TABLES) {
-            List<Map<String, Object>> rows;
-            try {
-                rows = jdbc.queryForList("SELECT * FROM " + table);
-            } catch (Exception e) {
-                // A table that doesn't exist yet on an older schema shouldn't fail the whole export.
-                rows = List.of();
-            }
+        for (String table : tablesToExport()) {
+            // No catch: a table that cannot be read is a failed export, not an empty table. (It used to
+            // be swallowed here, and inside this transaction Postgres would then refuse every later
+            // query, so one bad table silently emptied the rest of the manifest.)
+            List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM " + quoted(table));
             dumps.add(new TableDump(table, rows.size(), rows));
             total += rows.size();
         }
@@ -149,13 +163,8 @@ public class TenantExportService {
     /** VYB-0732 AC1 in miniature — counts only, for a quick "what would this export contain" preview. */
     public Map<String, Long> summary() {
         Map<String, Long> counts = new LinkedHashMap<>();
-        for (String table : TABLES) {
-            try {
-                Long n = jdbc.queryForObject("SELECT count(*) FROM " + table, Long.class);
-                counts.put(table, n == null ? 0 : n);
-            } catch (Exception e) {
-                counts.put(table, -1L); // -1: table doesn't exist on this schema version
-            }
+        for (String table : tablesToExport()) {
+            counts.put(table, jdbc.queryForObject("SELECT count(*) FROM " + quoted(table), Long.class));
         }
         return counts;
     }

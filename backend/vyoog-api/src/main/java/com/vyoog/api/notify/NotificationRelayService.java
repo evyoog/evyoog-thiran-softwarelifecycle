@@ -10,7 +10,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +38,7 @@ public class NotificationRelayService {
         this.json = json;
     }
 
-    @Scheduled(fixedDelay = 2000)
+    /** Triggered every 2 seconds by {@code ScheduledJobs}, which makes sure only one instance runs it. */
     @Transactional
     public void relay() {
         List<OutboxEvent> pending = outbox.findAllByPublishedAtIsNullOrderByIdAsc(PageRequest.of(0, BATCH_SIZE));

@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.ai.AiProviderUnavailableException;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.AccessRole;
@@ -112,10 +116,15 @@ public class ImportController {
         java.util.Set.of(UploadKind.PRD_TEMPLATE);
 
     /** VYB-0630 AC1: this writes only to import_batch — nothing enters the register. VYB-0660: a failed read names the cause. */
+    // VYB-0906: the application is a request parameter; the scoped check is in the handler.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping(consumes = "multipart/form-data")
     @ResponseStatus(HttpStatus.CREATED)
     public BatchView upload(@RequestParam("file") MultipartFile file, @RequestParam UUID applicationId,
                              @RequestParam UploadKind kind, @AuthenticationPrincipal Jwt jwt) {
+        // VYB-0906: the interceptor required the role somewhere; the upload must be into an
+        // application the caller holds it on (a grant on its product counts).
+        guard.requireAnyRoleOrAdmin(jwt, CREATE_ROLES, ScopeType.APP, applicationId, "upload into this application");
         // VYB-0666: new uploads are spreadsheets only. Extracting requirements from prose
         // meant inferring which sentence was a requirement and what type it was, and those
         // inferences were guesses presented as data. Enforced here and not only in the
@@ -171,6 +180,7 @@ public class ImportController {
      * verbatim too. Both arrive at the UI as a message next to the button rather than as
      * a generic 500, because "extraction failed" tells a user nothing they can act on.
      */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.BATCH)
     @PostMapping("/batches/{id}/extract")
     public List<CandidateView> extract(@PathVariable UUID id) {
         try {
@@ -187,11 +197,13 @@ public class ImportController {
         return service.forBatch(id).stream().map(ImportController::toView).toList();
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/lint")
     public CandidateView lint(@PathVariable UUID id) {
         return toView(service.lint(id));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/propose-capability")
     public CandidateView proposeCapability(@PathVariable UUID id, @RequestParam UUID applicationId) {
         return toView(service.proposeCapability(id, applicationId));
@@ -199,6 +211,7 @@ public class ImportController {
 
     public record ConfirmType(@NotBlank String type) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/confirm-type")
     public CandidateView confirmType(@PathVariable UUID id, @RequestBody ConfirmType body) {
         return toView(service.confirmType(id, body.type()));
@@ -206,12 +219,14 @@ public class ImportController {
 
     public record ConfirmAcceptanceCriteria(List<String> criteria) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/confirm-acceptance-criteria")
     public CandidateView confirmAcceptanceCriteria(@PathVariable UUID id, @RequestBody ConfirmAcceptanceCriteria body) {
         return toView(service.confirmAcceptanceCriteria(id, body.criteria() == null ? List.of() : body.criteria()));
     }
 
     /** VYB-0630 AI enrichment: an honest failure — the reason is named, never swallowed. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/propose-trace-links")
     public CandidateView proposeTraceLinks(@PathVariable UUID id) {
         try {
@@ -224,6 +239,7 @@ public class ImportController {
     public record TraceLinkChoiceBody(@NotBlank String requirementId, @NotBlank String linkType) {}
     public record ConfirmTraceLinks(List<TraceLinkChoiceBody> links) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/confirm-trace-links")
     public CandidateView confirmTraceLinks(@PathVariable UUID id, @RequestBody ConfirmTraceLinks body) {
         List<ImportService.TraceLinkChoice> choices = (body.links() == null ? List.<TraceLinkChoiceBody>of() : body.links())
@@ -236,6 +252,7 @@ public class ImportController {
     public record EditText(@NotBlank String statement) {}
 
     /** VYB-0635/0662: edits the working copy only — {@code originalText} never moves. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PatchMapping("/candidates/{id}")
     public CandidateView edit(@PathVariable UUID id, @RequestBody EditText body) {
         return toView(service.editText(id, body.statement()));
@@ -246,11 +263,13 @@ public class ImportController {
     /** D12: at most one of the three; none clears the placement back to unplaced. */
     public record ConfirmPlacement(String productId, String applicationId, String capabilityId) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/placement")
     public CandidateView confirmPlacement(@PathVariable UUID id, @RequestBody ConfirmPlacement body) {
         return toView(service.confirmPlacement(id, placementOf(body)));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.BATCH, idVar = "batchId")
     @PostMapping("/batches/{batchId}/placement")
     public java.util.Map<String, Integer> confirmBatchPlacement(@PathVariable UUID batchId,
                                                                  @RequestBody ConfirmPlacement body) {
@@ -266,6 +285,7 @@ public class ImportController {
         return s == null || s.isBlank() ? null : UUID.fromString(s);
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/confirm-capability")
     public CandidateView confirmCapability(@PathVariable UUID id, @RequestBody ConfirmCapability body) {
         return toView(service.confirmCapability(id, UUID.fromString(body.capabilityId())));
@@ -274,6 +294,7 @@ public class ImportController {
     public record SetSelected(boolean selected) {}
 
     /** VYB-0663: accept/import-as-written both just mean "selected"; skip means leaving this false. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PostMapping("/candidates/{id}/select")
     public CandidateView select(@PathVariable UUID id, @RequestBody SetSelected body) {
         return toView(service.select(id, body.selected()));
@@ -281,6 +302,7 @@ public class ImportController {
 
     public record SetImportReason(@NotBlank String reason) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CANDIDATE)
     @PutMapping("/candidates/{id}/import-reason")
     public CandidateView setImportReason(@PathVariable UUID id, @RequestBody SetImportReason body) {
         return toView(service.setImportReason(id, body.reason()));
@@ -315,6 +337,7 @@ public class ImportController {
             a.getDismissReason());
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.BATCH)
     @PostMapping("/batches/{id}/analyse")
     public AnalysisView analyse(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         UUID actor = currentUserId(jwt);
@@ -341,6 +364,7 @@ public class ImportController {
         return analysis.history(id).stream().map(ImportController::toView).toList();
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANALYSIS)
     @PostMapping("/analysis/{id}/accept")
     public AnalysisView acceptAnalysis(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return toView(analysis.accept(id, currentUserId(jwt)));
@@ -348,6 +372,7 @@ public class ImportController {
 
     public record DismissAnalysis(@NotBlank String reason) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANALYSIS)
     @PostMapping("/analysis/{id}/dismiss")
     public AnalysisView dismissAnalysis(@PathVariable UUID id, @RequestBody DismissAnalysis body,
                                         @AuthenticationPrincipal Jwt jwt) {
