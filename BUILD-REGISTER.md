@@ -312,7 +312,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0906 | 6 | Enforce roles and make the build trustworthy | Role checks on every remaining write endpoint, driven from the roles matrix, with a test per controller [L; F02] | DONE on dev (sessions 6a, 6b, 6c; commits only, no PR yet) | S2 |
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | DONE on dev (49 integration tests passing against a real local Postgres 16 + pgvector; the Testcontainers path and CI run not verified) | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | DONE on dev (20 new integration tests, 9 new unit tests; commit only, no PR yet) | S2 |
-| VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | TODO | S2 |
+| VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | DONE on dev (26 new tests; Dockerfiles not built, no Docker daemon; commit only, no PR yet) | S2 |
 | VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
 | VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
 | VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
@@ -4861,6 +4861,30 @@ Phase 6 Sprint 2. Branch `dev`. Three changes, one register row.
 - Testcontainers path and the GitHub CI run unverified (local Postgres used).
 - `rate_limit_hit` is pruned opportunistically; a scheduled purge belongs with VYB-0910.
 - The audience mapper has to be created in Keycloak by an administrator; nothing here touches a real realm.
+
+---
+
+## Session 69 — VYB-0909 (F33–F35): Prometheus, scheduler lock, nginx limits, non-root containers
+
+Phase 6 Sprint 2. Branch `dev`. Four parts, one register row. **26 new tests** (9 + 4 integration, 13 unit). The finding texts F33–F35 are not in the repository; the scope below is the register row's wording.
+
+**1. Prometheus registry.** `micrometer-registry-prometheus` added to `vyoog-api`. `/actuator/prometheus` was already in the exposure list but there was no registry behind it (404). It stays behind a bearer token (decision with the user: keep authenticated; a scraper needs a service-account token). New counter `vyoog_scheduler_runs_total{job,outcome}`. Test: `PrometheusIT` (registry type, scrape content, 401 without a token, liveness still open). Mutation: removing the dependency fails it.
+
+**2. Scheduler lock.** Migration `V036__scheduler_lock.sql`; `SchedulerLock` (domain, `platform`): one lease row per job, taken with one atomic `INSERT ... ON CONFLICT DO UPDATE ... WHERE lapsed`, database clock, own transactions, per-acquisition token so a lapsed holder cannot release its successor's lease, `atMost` (lease) and `atLeast` (stops a late instance re-running a short nightly job). All four `@Scheduled` triggers moved out of their services into one class, `com.vyoog.api.scheduling.ScheduledJobs`: outbox relay (every 2 s), detection sweep 02:00, audit-partition maintenance 02:15, clarification escalation 02:30. **Scope note:** the row names "sweeps and outbox relay"; audit maintenance and clarification escalation have the same duplicate-on-every-instance defect (escalation notified twice) so they were included. The services' methods and transactions are unchanged; they are called through their proxies so each job commits before its lease is released. `SchedulingArchTest` fails the build if a `@Scheduled` method appears anywhere else. Tests: `SchedulerLockIT` (9: refused while held, reusable after, minimum hold, 24 racing instances with exactly one winner, failure still releases, dead holder lapses, lapsed holder cannot release successor, caller rollback, counters), `ScheduledJobsTest` (5), `SchedulingArchTest` (1). Mutation: making the acquire condition `WHERE true` fails 7 of 9.
+
+**3. nginx limits** (`deployment/nginx/frontend.conf`): 50 r/s (burst 100) per address on `/api/`, plus 5 r/s (burst 10) on `/api/v1/auth/`, 100 connections, 12 MB body (equal to the API's multipart cap), header/body/send timeouts, 120 s upstream read (document analysis waits up to 90 s), unbuffered 1 h stream for notifications, `/healthz`. 429 for rate and connection refusals. Exercised with a local nginx and a stub backend: 169 of 200 rapid calls passed and 31 got 429; auth 11 of 30 passed; a 13 MB body got 413; SPA fallback and `/healthz` worked. **Caveat recorded in the file and docs:** behind a load balancer the limits key on the balancer's address until `set_real_ip_from` is configured.
+
+**4. Containers.** Backend runs as `vyoog` (uid/gid 10001) with a `HEALTHCHECK` on `/actuator/health/liveness`. Frontend moved to `nginxinc/nginx-unprivileged` with a `/healthz` check. **The frontend now listens on 8080, not 80** (decision with the user); anything mapping port 80 to that image must change. `DeploymentHardeningTest` (7) asserts the lines that carry this.
+
+Docs: new `docs/08-architecture/deployment/running-more-than-one-instance.md`; `deployment/nginx/README.md`, `deployment/docker/README.md`, `docs/08-architecture/deployment/README.md`.
+
+**Not done / to know**
+- **Neither Dockerfile was built** (no Docker daemon in the sandbox). The `USER`, `adduser`, `wget` healthcheck and the nginx-unprivileged base are unexercised. Build both once before relying on them.
+- The nginx config was tested with nginx 1.24 locally, not the `stable-alpine` build the image uses.
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
+- The manual sweep (`POST /api/v1/findings/sweep`) still only guards against a second sweep on the same instance.
+- A scraper token and `set_real_ip_from` are deployment steps for whoever owns the environment.
+- `vyoog-worker` still has no application of its own, so the triggers stay in the API.
 
 ---
 

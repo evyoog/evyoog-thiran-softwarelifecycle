@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 453 tests cover 40 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 478 tests cover 41 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -576,3 +576,31 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC9` aProductGrantReachesEverythingBeneathItAndOnlyThat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
 - `AC9` aRequirementPlacedAtTheProductOrApplicationLevelIsFoundByAGrantOnThatLevel (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
 - `AC9` anApplicationGrantReachesItsCapabilitiesAndTheirRequirements (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SearchScopeIT.java`)
+
+## VYB-0909: Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35]
+
+- `AC1` theLivenessProbeStaysOpenForTheContainerHealthcheck (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PrometheusIT.java`)
+- `AC1` thePrometheusRegistryIsTheOneTheApplicationRecordsInto (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PrometheusIT.java`)
+- `AC1` theScrapeEndpointIsNotPublic (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PrometheusIT.java`)
+- `AC1` theScrapeEndpointServesJvmAndApplicationMetricsToAnAuthenticatedCaller (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PrometheusIT.java`)
+- `AC2` aCallerTransactionThatRollsBackDoesNotUndoOrBlockTheLease (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` aHolderWhoseLeaseLapsedCannotReleaseTheInstanceThatTookOver (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` aJobThatFailsStillReleasesTheLeaseAndTheFailureReachesTheCaller (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` aLeaseLeftBehindByADeadInstanceLapsesAndAnotherInstanceTakesOver (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` aMinimumHoldStopsALateInstanceRerunningAJobThatFinishedQuickly (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` aSecondInstanceIsRefusedWhileTheFirstIsStillRunningTheJob (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` exactlyOneOfManyRacingInstancesRunsTheJob (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` onceTheFirstFinishesAnotherInstanceMayRunTheJob (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC2` runsAndSkipsAreCountedForThePrometheusScrape (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SchedulerLockIT.java`)
+- `AC3` anInstanceThatDoesNotWinTheLeaseRunsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+- `AC3` auditMaintenanceAndClarificationEscalationEachRunUnderTheirOwnLease (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+- `AC3` theNightlySweepRunsUnderItsOwnLeaseWithAMinimumHold (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+- `AC3` theOutboxRelayRunsUnderItsOwnLeaseWithNoMinimumHold (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+- `AC3` theSchedulesAreTheOnesTheServicesHadBefore (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+- `AC4` nginxLimitsRequestRateConnectionsBodySizeAndTimeouts (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+- `AC4` nginxListensOnTheUnprivilegedPortAndAnswersTheHealthcheck (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+- `AC4` theBodyLimitMatchesTheApisOwnMultipartCap (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+- `AC4` theNotificationStreamIsNotBufferedOrCutByTheNormalReadTimeout (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+- `AC5` theBackendImageHasAHealthcheckOnTheLivenessProbe (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+- `AC5` theBackendImageRunsAsANonRootUserWithAFixedId (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+- `AC5` theFrontendImageIsTheUnprivilegedNginxOn8080WithAHealthcheck (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)

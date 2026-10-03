@@ -1,3 +1,3 @@
 # nginx
 
-`frontend.conf` is copied into the frontend image as `/etc/nginx/conf.d/default.conf`. It serves the built SPA with a client-side-route fallback and reverse-proxies `/api/` to the backend host named in the file; keep that host in step with `VITE_API_PROXY_TARGET`. Rate limits and other nginx hardening are planned in VYB-0909.
+`frontend.conf` is copied into the frontend image as `/etc/nginx/conf.d/default.conf`. It serves the built SPA with a client-side-route fallback and reverse-proxies `/api/` to the backend host named in the file; keep that host in step with `VITE_API_PROXY_TARGET`. It also sets request-rate, connection, body-size and timeout limits, listens on 8080 (the image is non-root) and answers `/healthz`; see [`docs/08-architecture/deployment/running-more-than-one-instance.md`](../../docs/08-architecture/deployment/running-more-than-one-instance.md) (VYB-0909) for the numbers and the load-balancer caveat.

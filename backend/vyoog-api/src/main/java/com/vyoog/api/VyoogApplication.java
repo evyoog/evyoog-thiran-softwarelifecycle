@@ -14,7 +14,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @SpringBootApplication(scanBasePackages = "com.vyoog")
 @EntityScan(basePackages = "com.vyoog")
 @EnableJpaRepositories(basePackages = "com.vyoog")
-@EnableScheduling // DetectionSweepService.nightlySweep — see its class doc re: vyoog-worker
+@EnableScheduling // the triggers live in com.vyoog.api.scheduling.ScheduledJobs
 @EnableAsync // RequirementEnrichmentService — post-commit detection + embedding for a new requirement
 public class VyoogApplication {
     public static void main(String[] args) {

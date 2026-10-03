@@ -16,7 +16,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,8 +100,7 @@ public class ClarificationService {
         return clarifications.findAllByStateAndBlocksTaskTrue(ClarificationState.OPEN);
     }
 
-    /** VYB-0334: escalates once per ageing clarification, never repeatedly. */
-    @Scheduled(cron = "0 30 2 * * *")
+    /** VYB-0334: escalates once per ageing clarification, never repeatedly. Daily at 02:30, triggered by {@code ScheduledJobs}. */
     @Transactional
     public void escalateAgeing() {
         Integer thresholdDays = jdbc.queryForObject(

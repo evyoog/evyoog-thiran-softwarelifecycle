@@ -11,7 +11,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,10 +36,8 @@ public class DetectionSweepService {
     private final AiUsageTracker aiUsage;
     private final MeterRegistry meters;
 
-    // VYB-0163 AC1: two sweeps for this deployment never run in parallel. A single
-    // AtomicBoolean is enough for a single-instance deployment — this would need a
-    // distributed lock (e.g. a Postgres advisory lock) if this ever runs on more than
-    // one instance at once.
+    // VYB-0163 AC1: two sweeps never run in parallel inside one instance. Across instances the
+    // nightly trigger is serialised by SchedulerLock (VYB-0909); a manual sweep is only guarded here.
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Instant lastCompletedAt;
 
@@ -64,8 +61,7 @@ public class DetectionSweepService {
         return sweep();
     }
 
-    /** VYB-0162: reconciles anything the event path (below) missed. */
-    @Scheduled(cron = "0 0 2 * * *")
+    /** VYB-0162: reconciles anything the event path (below) missed. Daily at 02:00, triggered by {@code ScheduledJobs}. */
     public void nightlySweep() {
         sweep();
     }
