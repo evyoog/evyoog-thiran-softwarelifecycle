@@ -314,7 +314,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | DONE on dev (20 new integration tests, 9 new unit tests; commit only, no PR yet) | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | DONE on dev (26 new tests; Dockerfiles not built, no Docker daemon; commit only, no PR yet) | S2 |
 | VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | DONE on dev (11 new tests; commit only, no PR yet) | S2 |
-| VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
+| VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | DONE on dev (17 new tests; commit only, no PR yet) | S2 |
 | VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
 | VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
@@ -4905,6 +4905,24 @@ Phase 6 Sprint 2. Branch `dev`. **11 new tests**: `PurgeServiceIT` 7 and `Foreig
 - Idempotency: a client retrying the same key after 7 days creates a second row.
 - Testcontainers path and the GitHub CI run unverified (local Postgres used).
 - The purge does not touch `outbox_event` (published rows also only grow), `notification`, or `finding`; not named by the row, not changed.
+
+---
+
+## Session 71 — VYB-0911 (F22, F23, F32): saved-view check, export table list, adjudicator noise
+
+Phase 6 Sprint 2. Branch `dev`. **17 new tests**: `SavedViewIT` 5 and `TenantExportIT` 6 (integration); `AiOffDetectionNoiseTest` 4 and `ConflictingRequirementsDetectorTest` +2 (unit). Two existing tests in that class were adjusted: a mocked adjudicator now has to say it is configured, and the "no adjudicator" test no longer stubs a query that is no longer made. Each fix was reproduced red first on the unchanged code. The finding texts are not in the repository; the scope is the register row's wording and what each name pointed at.
+
+**F22: `saved_view` status CHECK** (`V038__saved_view_status_check.sql`). V019 copied the requirement statuses as they were then. Nothing updated it when V026 added REVIEWED, V027 dropped VERIFIED and V028 added NEEDS_REVISION, so a view of REVIEWED or NEEDS_REVISION could not be saved (a constraint error) and VERIFIED, which has not been a status since D16, was still accepted. Fixed: backfill `VERIFIED` to `APPROVED` first (the mapping V027 used on the requirement table), then the CHECK is the six real statuses. Run on the populated local database: a seeded `VERIFIED` view became `APPROVED`. Priority and type checks were already right; a test now keeps all three in step with the requirement table and with `RequirementStatus`.
+
+**F23: the export's table list** (`TenantExportService`). A hand-written list of 56 tables, whose comment called it a complete accounting, had fallen behind by 10: `saved_view`, `team`, `team_member`, `review_comment`, `task_completion`, `import_document_analysis`, `ingested_commit`, `brief_capability`, `change_request_requirement`, `document_requirement`. It is now read from the schema. Left out on purpose and named in `NOT_EXPORTED`: `flyway_schema_history`, `rate_limit_hit`, `scheduler_lock` (not data); detached `audit_event_archive_*` tables are also skipped (retention moved them out on purpose and they can be large). Also fixed: a failing table was swallowed inside the repeatable-read transaction, after which Postgres refuses every later query, so one bad table silently emptied the rest of the manifest; a read failure now fails the export. The manifest is now in alphabetical table order (it was in a hand-picked order) and `summary()` no longer reports `-1` for a missing table, which cannot happen now.
+
+**F32: adjudicator noise with AI off.** With AI off (the default) the hashing embedder is still active, so similar pairs exist, and the conflict detector then called the always-registered OpenAI adjudicator, which threw because it is not configured. That escaped as an ordinary exception, so **every requirement write that had a similar neighbour logged an ERROR with a full stack trace** and spent a slot of the AI-call budget on a call that could not happen. Fixed: `LlmAdjudicator.isConfigured()` (default true); the detector checks it before querying or spending budget and reports the rule unavailable through a new `DetectorNotConfiguredException`, which the sweep logs at DEBUG per write and INFO per nightly sweep, with one INFO line the first time naming `AI_ENABLED`/`AI_API_KEY`. Existing conflict findings are still left untouched. A configured provider that is down is now reported as an ordinary "unavailable" warning without a stack trace. Reproduction: the four tests in `AiOffDetectionNoiseTest` all failed on the old code.
+
+**Not done / to know**
+- `TenantHardResetService` already discovers its tables from the schema (it was written because of this drift); it truncates everything except `app_config`, `audit_event` and `flyway_schema_history`, so it also clears `rate_limit_hit` and `scheduler_lock`, which is harmless. Not changed.
+- A saved view that filtered on VERIFIED is silently changed to filter on APPROVED.
+- The nightly sweep now logs the conflict rule at INFO ("not run, not configured") instead of WARN when AI is off.
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
 
 ---
 

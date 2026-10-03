@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 489 tests cover 42 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 506 tests cover 43 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -618,3 +618,23 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC2` theNightlyPurgeAlsoPrunesTheRateLimiterAndReportsWhatItDeleted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
 - `AC2` thePurgeJobsDeleteByAgeThroughAnIndex (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ForeignKeyIndexIT.java`)
 - `AC3` theNightlyPurgeRunsUnderItsOwnLease (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+
+## VYB-0911: Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32]
+
+- `AC1` aStatusThatIsNoLongerARequirementStatusIsStillRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SavedViewIT.java`)
+- `AC1` aViewCanBeSavedForEveryStatusARequirementCanHave (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SavedViewIT.java`)
+- `AC1` noSavedViewIsLeftFilteringOnTheRemovedVerifiedStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SavedViewIT.java`)
+- `AC1` thePriorityAndTypeChecksAgreeWithTheRequirementTable (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SavedViewIT.java`)
+- `AC1` theStatusCheckAllowsExactlyTheRequirementStatusesAndNotVerified (`backend/vyoog-api/src/test/java/com/vyoog/api/it/SavedViewIT.java`)
+- `AC2` aRowInAPreviouslyMissingTableIsInTheManifest (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TenantExportIT.java`)
+- `AC2` bookkeepingThatIsNotDataIsLeftOutAndSaysSo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TenantExportIT.java`)
+- `AC2` everyTableInTheSchemaIsExportedExceptTheNamedNonDataOnes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TenantExportIT.java`)
+- `AC2` theManifestTotalIsTheSumOfItsTables (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TenantExportIT.java`)
+- `AC2` theSummaryCountsTheSameTablesTheExportDumps (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TenantExportIT.java`)
+- `AC2` theTablesThatWereMissingAreNowThere (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TenantExportIT.java`)
+- `AC3` aConfiguredProviderThatIsDownIsReportedUnavailableNotAsAnUnexpectedFailure (`backend/vyoog-domain/src/test/java/com/vyoog/detection/detectors/ConflictingRequirementsDetectorTest.java`)
+- `AC3` anAdjudicatorThatIsSwitchedOffIsReportedNotConfiguredBeforeAnythingIsQueriedOrSpent (`backend/vyoog-domain/src/test/java/com/vyoog/detection/detectors/ConflictingRequirementsDetectorTest.java`)
+- `AC3` theOneNoticeThatTheFeatureIsOffIsLoggedOnceNotOnEveryWrite (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)
+- `AC3` withAiOffARequirementWriteLogsNoErrorAndNoStackTrace (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)
+- `AC3` withAiOffNoAiCallBudgetIsSpentAndNoSimilarityQueryIsRun (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)
+- `AC3` withAiOffTheNightlySweepAlsoLogsNoWarningOrErrorAndNoStackTrace (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)

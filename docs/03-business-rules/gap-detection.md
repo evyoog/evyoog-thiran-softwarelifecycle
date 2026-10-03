@@ -111,6 +111,12 @@ is a re-embed and not silent drift.
   unmapped.
 - **`conflict`** — embeddings shortlist candidate pairs above 0.80; an LLM adjudicates
   whether they genuinely contradict. Never auto-create; always a proposal.
+  **With AI off (the default) the rule is reported unavailable, quietly (VYB-0911):** the
+  detector checks that an adjudicator is configured before it queries or spends any AI-call
+  budget, existing conflict findings are left untouched (never resolved because the check
+  could not run), and it logs one INFO line the first time (`AI_ENABLED`, `AI_API_KEY`), not
+  an error per requirement write. A configured provider that is down is also reported
+  unavailable, as a warning without a stack trace.
 - **`errpath`** — a small classifier, or a rule fallback: no error/failure vocabulary
   present. The prototype's `ERR_WORDS` list is the fallback specification.
 - **`nonfr`** — a Functional requirement in a capability with no Non-Functional peer.
