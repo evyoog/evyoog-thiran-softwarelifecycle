@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.portfolio.Application;
 import com.vyoog.portfolio.ApplicationRepository;
@@ -44,6 +48,8 @@ public class ApplicationController {
             .map(ApplicationController::toView).toList();
     }
 
+    // VYB-0906: portfolio structure is administrator-only.
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApplicationView create(@PathVariable UUID productId, @RequestBody CreateApplication body) {
@@ -57,6 +63,7 @@ public class ApplicationController {
         return toView(a);
     }
 
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PatchMapping("/{id}")
     public ApplicationView update(@PathVariable UUID productId, @PathVariable UUID id,
                                    @RequestBody UpdateApplication body) {

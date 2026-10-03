@@ -80,6 +80,15 @@ public class GrantResolver {
         return false;
     }
 
+    /**
+     * VYB-0906: does the user hold this role at <em>any</em> scope. For endpoints whose target is not
+     * in the URL (the placement or the ids are in the body), this is the gate in front of the
+     * handler; the scoped check, where one matters, happens once the body is read.
+     */
+    public boolean holdsRoleAnywhere(UUID userId, AccessRole role) {
+        return grants.findAllByUserId(userId).stream().anyMatch(g -> g.isActive() && g.getRole() == role);
+    }
+
     /** Every role the user holds at or above the target scope, unioned across the whole chain. */
     public Set<AccessRole> effectiveRoles(UUID userId, ScopeType targetType, UUID targetId) {
         List<AccessGrant> active = grants.findAllByUserId(userId).stream().filter(AccessGrant::isActive).toList();

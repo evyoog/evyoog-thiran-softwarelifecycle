@@ -215,6 +215,7 @@ class Vyb0902WriteGuardsTest {
         return put("/api/v1/teams/{t}/members/{u}/role", TEAM, MEMBER).contentType(MediaType.APPLICATION_JSON)
             .content("{\"role\":\"MEMBER\"}");
     }
+    private MockHttpServletRequestBuilder addMember() { return put("/api/v1/teams/{t}/members/{u}", TEAM, MEMBER); }
     private MockHttpServletRequestBuilder removeMember() { return delete("/api/v1/teams/{t}/members/{u}", TEAM, MEMBER); }
     private MockHttpServletRequestBuilder pushBrief() { return post("/api/v1/briefs/{id}/push", BRIEF); }
 
@@ -300,6 +301,18 @@ class Vyb0902WriteGuardsTest {
         verify(teams, never()).removeMember(any(), any());
         for (String yes : new String[] {"lead", "admin"}) {
             assertThat(as(yes, removeMember())).as(yes).isEqualTo(200);
+        }
+    }
+
+    @Test
+    void VYB0906_AC7_addingATeamMember_ordinaryUserGets403_teamLeadAndAdminSucceed() throws Exception {
+        for (String no : new String[] {"ordinary", "member", "lead-of-another-team", "ba", "approver"}) {
+            assertThat(as(no, addMember())).as(no).isEqualTo(403);
+        }
+        assertThat(asServiceAccount(addMember())).isEqualTo(403);
+        verify(teams, never()).addMember(any(), any());
+        for (String yes : new String[] {"lead", "admin"}) {
+            assertThat(as(yes, addMember())).as(yes).isEqualTo(200);
         }
     }
 

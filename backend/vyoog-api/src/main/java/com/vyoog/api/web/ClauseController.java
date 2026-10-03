@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.clause.Clause;
 import com.vyoog.clause.ClauseRepository;
 import jakarta.validation.constraints.NotBlank;
@@ -36,6 +40,8 @@ public class ClauseController {
         return clauses.findAll().stream().map(ClauseController::toView).toList();
     }
 
+    // VYB-0906: the compliance clause register is administrator-managed.
+    @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ClauseView create(@RequestBody CreateClause body) {

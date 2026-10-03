@@ -31,7 +31,7 @@ class RunnersUseLocalDatabaseTest {
         }
         assertThat(runners).as("the runners found").hasSizeGreaterThanOrEqualTo(16);
         for (String name : runners) {
-            Class<?> runner = Class.forName(name);
+            Class<?> runner = Class.forName(name, false, getClass().getClassLoader()); // false: do not run the static initialiser, which starts a database
             assertThat(VerificationRunnerBase.class.isAssignableFrom(runner))
                 .as(name + " must extend VerificationRunnerBase").isTrue();
         }

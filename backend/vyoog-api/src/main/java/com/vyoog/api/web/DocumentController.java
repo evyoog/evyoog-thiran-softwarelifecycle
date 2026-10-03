@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.documents.Document;
 import com.vyoog.documents.DocumentReqIfExporter;
 import com.vyoog.documents.DocumentService;
@@ -54,6 +58,8 @@ public class DocumentController {
         return service.register().stream().map(DocumentController::toView).toList();
     }
 
+    // VYB-0906: documents compose requirements.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     public DocumentView create(@RequestBody CreateDocument body) {
         Document d = service.create(body.key(), body.title(), body.productId() == null ? null : UUID.fromString(body.productId()));
@@ -70,11 +76,13 @@ public class DocumentController {
             r.getCapabilityId() == null ? null : r.getCapabilityId().toString());
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/{id}/requirements/{requirementId}")
     public void addRequirement(@PathVariable UUID id, @PathVariable UUID requirementId) {
         service.addRequirement(id, requirementId);
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @DeleteMapping("/{id}/requirements/{requirementId}")
     public void removeRequirement(@PathVariable UUID id, @PathVariable UUID requirementId) {
         service.removeRequirement(id, requirementId);
@@ -82,6 +90,7 @@ public class DocumentController {
 
     public record Reorder(List<String> orderedRequirementIds) {}
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PutMapping("/{id}/requirements/order")
     public void reorder(@PathVariable UUID id, @RequestBody Reorder body) {
         service.reorder(id, body.orderedRequirementIds().stream().map(UUID::fromString).toList());

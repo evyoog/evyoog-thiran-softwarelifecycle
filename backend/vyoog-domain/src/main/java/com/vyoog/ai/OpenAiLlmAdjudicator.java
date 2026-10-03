@@ -64,13 +64,18 @@ public class OpenAiLlmAdjudicator implements LlmAdjudicator {
     private String model;
 
     @Override
+    public boolean isConfigured() {
+        return enabled && apiKey != null && !apiKey.isBlank();
+    }
+
+    @Override
     public String modelAndPromptVersion() {
         return model + "/" + PROMPT_VERSION;
     }
 
     @Override
     public Verdict adjudicate(String statementA, String statementB) {
-        if (!enabled || apiKey == null || apiKey.isBlank()) {
+        if (!isConfigured()) {
             throw new AiProviderUnavailableException(
                 "AI conflict adjudication is not configured (set AI_ENABLED=true and AI_API_KEY).");
         }

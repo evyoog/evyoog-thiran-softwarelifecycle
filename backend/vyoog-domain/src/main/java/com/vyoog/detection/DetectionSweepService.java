@@ -11,7 +11,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,10 +36,8 @@ public class DetectionSweepService {
     private final AiUsageTracker aiUsage;
     private final MeterRegistry meters;
 
-    // VYB-0163 AC1: two sweeps for this deployment never run in parallel. A single
-    // AtomicBoolean is enough for a single-instance deployment — this would need a
-    // distributed lock (e.g. a Postgres advisory lock) if this ever runs on more than
-    // one instance at once.
+    // VYB-0163 AC1: two sweeps never run in parallel inside one instance. Across instances the
+    // nightly trigger is serialised by SchedulerLock (VYB-0909); a manual sweep is only guarded here.
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Instant lastCompletedAt;
 
@@ -64,8 +61,7 @@ public class DetectionSweepService {
         return sweep();
     }
 
-    /** VYB-0162: reconciles anything the event path (below) missed. */
-    @Scheduled(cron = "0 0 2 * * *")
+    /** VYB-0162: reconciles anything the event path (below) missed. Daily at 02:00, triggered by {@code ScheduledJobs}. */
     public void nightlySweep() {
         sweep();
     }
@@ -85,7 +81,7 @@ public class DetectionSweepService {
         Map<String, Boolean> enabledByRule = gapRules.enabledByRuleKey();
         return detectors.stream()
             .filter(d -> enabledByRule.getOrDefault(d.ruleKey(), true))
-            .map(d -> runOne(d, () -> reconciler.reconcileOne(d.ruleKey(), objectId, d.scanOne(objectId))))
+            .map(d -> runOne(d, null, () -> reconciler.reconcileOne(d.ruleKey(), objectId, d.scanOne(objectId))))
             .toList();
     }
 
@@ -99,14 +95,18 @@ public class DetectionSweepService {
             aiUsage.beginRun(); // VYB-0620: the per-run AI-call budget resets once, here, not per detector.
             Map<String, Boolean> enabledByRule = gapRules.enabledByRuleKey();
 
+            java.util.Set<String> notConfigured = java.util.concurrent.ConcurrentHashMap.newKeySet();
             List<FindingReconciler.ReconcileResult> results = detectors.stream()
                 // VYB-0164 AC1: a disabled rule produces no findings. Absent = enabled by default.
                 .filter(d -> enabledByRule.getOrDefault(d.ruleKey(), true))
-                .map(d -> runOne(d, () -> reconciler.reconcile(d.ruleKey(), d.scan())))
+                .map(d -> runOne(d, notConfigured, () -> reconciler.reconcile(d.ruleKey(), d.scan())))
                 .toList();
 
             results.forEach(r -> {
-                if (r.unavailable()) {
+                if (r.unavailable() && notConfigured.contains(r.ruleKey())) {
+                    // VYB-0911: switched off on purpose (AI is off by default), not a fault.
+                    log.info("[detection] {}: not run, not configured — existing findings left untouched", r.ruleKey());
+                } else if (r.unavailable()) {
                     log.warn("[detection] {}: unavailable this cycle — existing findings left untouched", r.ruleKey());
                 } else {
                     log.info("[detection] {}: {} opened, {} refreshed, {} reopened, {} resolved",
@@ -130,9 +130,14 @@ public class DetectionSweepService {
      * "found nothing" as a deliberate one is.
      */
     private FindingReconciler.ReconcileResult runOne(
-            Detector d, java.util.function.Supplier<FindingReconciler.ReconcileResult> run) {
+            Detector d, java.util.Set<String> notConfigured, java.util.function.Supplier<FindingReconciler.ReconcileResult> run) {
         try {
             return run.get();
+        } catch (DetectorNotConfiguredException e) {
+            // VYB-0911: switched off on purpose (AI is off by default). Same outcome, no warning per write.
+            log.debug("[detection] {} not configured: {}", d.ruleKey(), e.getMessage());
+            if (notConfigured != null) notConfigured.add(d.ruleKey());
+            return FindingReconciler.ReconcileResult.unavailable(d.ruleKey());
         } catch (DetectorUnavailableException e) {
             log.warn("[detection] {} unavailable: {}", d.ruleKey(), e.getMessage());
             return FindingReconciler.ReconcileResult.unavailable(d.ruleKey());

@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.changerequest.ChangeRequest;
 import com.vyoog.changerequest.ChangeRequestService;
 import com.vyoog.clarification.Clarification;
@@ -78,6 +80,8 @@ public class ClarificationController {
         return service.forRequirement(requirementId).stream().map(this::toView).toList();
     }
 
+    // VYB-0906: anyone reading a requirement may ask a question.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/requirements/{requirementId}/clarifications")
     @ResponseStatus(HttpStatus.CREATED)
     public ClarificationView raise(@PathVariable UUID requirementId, @RequestBody RaiseClarification body,
@@ -93,6 +97,8 @@ public class ClarificationController {
      * succeeds. VYB-0333 AC1: {@code resultedInChangeRequestId} on the response is
      * set only when the caller opted into the change-request path.
      */
+    // VYB-0906: answered by whoever edits the requirement.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping("/clarifications/{id}/answer")
     public ClarificationView answer(@PathVariable UUID id, @RequestBody AnswerClarification body,
                                      @AuthenticationPrincipal Jwt jwt) {

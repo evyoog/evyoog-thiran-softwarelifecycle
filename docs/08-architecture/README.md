@@ -9,4 +9,5 @@
 | Frontend | [`frontend-architecture/README.md`](frontend-architecture/README.md) |
 | Backend | [`backend-architecture/README.md`](backend-architecture/README.md) |
 | Deployment and runbooks (MinIO, backup and restore, load test) | [`deployment/`](deployment/) |
+| Testing: unit, integration, runners | [`testing.md`](testing.md) |
 | How the product is built | [`development-process.md`](development-process.md) |

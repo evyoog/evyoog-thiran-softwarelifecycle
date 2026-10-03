@@ -34,7 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
  * </ul>
  *
  * <p>Every other table is discovered from {@code information_schema} at call time,
- * not hand-copied from {@code TenantExportService.TABLES} — that list has already
+ * not hand-copied from a list like the one {@code TenantExportService} used to keep (it
+ * now discovers its tables the same way, VYB-0911) — that list had already
  * drifted (missing {@code team}/{@code team_member}/{@code document_requirement}/
  * {@code change_request_requirement}/{@code ingested_commit}/{@code review_comment}
  * as of session 14), which is exactly the failure mode a "no orphans" guarantee can't

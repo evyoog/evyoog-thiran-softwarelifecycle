@@ -116,6 +116,24 @@ public class PrincipalGuard {
             roles.get(0));
     }
 
+    /**
+     * VYB-0906: a person who holds one of the rule's roles at <em>some</em> scope, or is a platform
+     * administrator. The gate for endpoints whose target is only in the request body.
+     */
+    public void requireRuleAnywhere(Jwt jwt, com.vyoog.identity.AccessRule rule, String action) {
+        requireHuman(jwt);
+        UUID userId = resolveUserId(jwt);
+        if (grantResolver.isPlatformAdministrator(userId)) return;
+        for (AccessRole role : rule.roles()) {
+            if (grantResolver.holdsRoleAnywhere(userId, role)) return;
+        }
+        String needs = rule.roles().isEmpty() ? "ADMINISTRATOR"
+            : rule.roles().stream().map(Enum::name).collect(java.util.stream.Collectors.joining(", ")) + " or ADMINISTRATOR";
+        throw new GrantRequiredException(
+            "To %s you need one of: %s".formatted(action, needs),
+            rule.roles().isEmpty() ? AccessRole.ADMINISTRATOR : rule.roles().get(0));
+    }
+
     /** VYB-0902: a platform ADMINISTRATOR, or a person for whom {@code otherwise} holds (e.g. leads this team). */
     public void requireAdministratorOr(Jwt jwt, java.util.function.Predicate<UUID> otherwise, String message) {
         requireHuman(jwt);

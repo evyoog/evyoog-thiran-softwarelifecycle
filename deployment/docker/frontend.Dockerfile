@@ -31,7 +31,11 @@ ENV VITE_API_BASE=$VITE_API_BASE \
 RUN npm run build
 
 # Stage 2: Production Stage
-FROM nginx:stable-alpine
+# VYB-0909 (F33-F35): the unprivileged nginx build runs as uid 101 (user "nginx"), keeps its pid and
+# temp files under /tmp, and cannot bind a port below 1024 — so the container listens on 8080, not 80.
+# Anything that mapped port 80 to this image (a load balancer target, an ECS port mapping) must
+# point at 8080.
+FROM nginxinc/nginx-unprivileged:stable-alpine
 
 # Copy the React build from the build stage
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -40,7 +44,11 @@ COPY --from=build /app/dist /usr/share/nginx/html
 COPY deployment/nginx/frontend.conf /etc/nginx/conf.d/default.conf
 
 # Expose the port
-EXPOSE 80
+EXPOSE 8080
+
+# /healthz is answered by nginx itself (frontend.conf); it does not depend on the API being up.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

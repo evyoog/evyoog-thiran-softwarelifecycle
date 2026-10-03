@@ -1,9 +1,12 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.ai.AiProviderUnavailableException;
 import com.vyoog.ai.RequirementRewriteAdvisor;
 import com.vyoog.changerequest.ChangeRequestService;
 import com.vyoog.evidence.TestCaseSuggestionService;
+import com.vyoog.api.config.AccessScopeResolver;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.AccessRole;
 import com.vyoog.identity.ScopeType;
@@ -226,10 +229,21 @@ public class RequirementController {
 
     private static final String CREATE_ENDPOINT = "POST /requirements";
 
+    // VYB-0906: the placement is in the body, so the scoped check is in the handler.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public RequirementView create(@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
                                    @RequestBody CreateRequirement body, @AuthenticationPrincipal Jwt jwt) {
+        // VYB-0906: the interceptor already required the role somewhere; with a placement given, it must
+        // be held at (or above) that placement. An unplaced requirement belongs to no scope, so the
+        // "somewhere" gate is all there is to check.
+        if (body.capabilityId() != null || body.applicationId() != null || body.productId() != null) {
+            var scope = AccessScopeResolver.ofPlacement(
+                uuidOrNull(body.capabilityId()), uuidOrNull(body.applicationId()), uuidOrNull(body.productId()));
+            guard.requireAnyRoleOrAdmin(jwt, AccessRule.CREATE_EDIT_REQ.roles(), scope.type(), scope.id(),
+                "create a requirement here");
+        }
         // VYB-0132 AC1/AC2: a repeat with the same key returns the first response,
         // not a second row.
         if (idempotencyKey != null) {
@@ -298,6 +312,8 @@ public class RequirementController {
         service.delete(id, reason, currentUserId(jwt));
     }
 
+    // VYB-0906: the per-edge role and separation-of-duties checks are RequirementTransitionAuthorizer, in the service.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/{id}/transition")
     public RequirementView transition(@PathVariable UUID id, @RequestParam int revision,
                                        @RequestBody TransitionRequest body,
@@ -312,12 +328,14 @@ public class RequirementController {
         return acceptanceCriteria.list(id).stream().map(RequirementController::toView).toList();
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.REQUIREMENT)
     @PostMapping("/{id}/acceptance-criteria")
     @ResponseStatus(HttpStatus.CREATED)
     public CriterionView addCriterion(@PathVariable UUID id, @RequestBody AddCriterion body) {
         return toView(acceptanceCriteria.add(id, body.text()));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.REQUIREMENT)
     @PutMapping("/{id}/acceptance-criteria/order")
     public List<CriterionView> reorderCriteria(@PathVariable UUID id, @RequestBody ReorderCriteria body) {
         List<UUID> ids = body.orderedIds().stream().map(UUID::fromString).toList();
@@ -325,6 +343,7 @@ public class RequirementController {
     }
 
     /** VYB-0191: editing existing criterion text in place, alongside add/reorder/remove. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.CRITERION, idVar = "criterionId")
     @PatchMapping("/acceptance-criteria/{criterionId}")
     public CriterionView editCriterion(@PathVariable UUID criterionId, @RequestBody AddCriterion body) {
         return toView(acceptanceCriteria.edit(criterionId, body.text()));
@@ -369,6 +388,8 @@ public class RequirementController {
      * classes would fire — called on every debounced keystroke while authoring, the
      * same pattern {@code /lint} and {@code /requirements/similar} already use.
      */
+    // VYB-0906: computes advice, stores nothing.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/authoring-signals")
     public AuthoringSignalsView authoringSignals(@RequestBody AuthoringSignalsRequest body) {
         var score = qualityScore.score(body.statement(), body.criteriaCount(), body.hasUpstream());
@@ -390,6 +411,8 @@ public class RequirementController {
      * Save-nothing, same as {@code authoringSignals} — a rewrite is a suggestion
      * shown to a human, never a requirement mutated on its own.
      */
+    // VYB-0906: an AI proposal; a person applies it.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/rewrite-suggestion")
     public RewriteSuggestionView rewriteSuggestion(@RequestBody RewriteSuggestionRequest body) {
         var score = qualityScore.score(body.statement(), body.criteriaCount(), body.hasUpstream());
@@ -410,6 +433,8 @@ public class RequirementController {
      * trace-linked requirements the DEPENDENCY suggestions are grounded in, not just
      * that some exist.
      */
+    // VYB-0906: an AI proposal; nothing is stored.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/{id}/test-case-suggestions")
     public TestCaseSuggestionsView testCaseSuggestions(@PathVariable UUID id) {
         var result = testCaseSuggestions.suggest(id);
@@ -436,6 +461,8 @@ public class RequirementController {
      * than implying it was picked directly. Same save-nothing discipline as the
      * single-requirement endpoint above: nothing here ever creates a test case.
      */
+    // VYB-0906: an AI proposal; nothing is stored.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/test-case-suggestions/bulk")
     public BulkTestCaseSuggestionsView testCaseSuggestionsBulk(@RequestBody BulkTestCaseSuggestionsRequest body) {
         var result = testCaseSuggestions.suggestBulk(body.requirementIds());
@@ -465,6 +492,8 @@ public class RequirementController {
      * for exactly this same set; calling this first is how a caller sees it before
      * committing.
      */
+    // VYB-0906: read-only analysis.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/dependency-cluster")
     public DependencyClusterView dependencyCluster(@RequestBody DependencyClusterRequest body) {
         var cluster = testCaseSuggestions.dependencyCluster(body.requirementIds());

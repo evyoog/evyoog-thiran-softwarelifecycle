@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.savedview.SavedView;
 import com.vyoog.savedview.SavedViewService;
@@ -41,6 +45,8 @@ public class SavedViewController {
     public record SaveView(@NotBlank String name, String status, String priority, String type,
                             String titleContains, String capabilityId) {}
 
+    // VYB-0906: the caller's own saved view.
+    @RequiresAccess(value = AccessRule.PERSON)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public SavedViewView save(@RequestBody SaveView body, @AuthenticationPrincipal Jwt jwt) {
@@ -50,6 +56,8 @@ public class SavedViewController {
                 ? null : UUID.fromString(body.capabilityId())));
     }
 
+    // VYB-0906: the service only deletes the caller's own view.
+    @RequiresAccess(value = AccessRule.PERSON)
     @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         service.delete(id, currentUserId(jwt));

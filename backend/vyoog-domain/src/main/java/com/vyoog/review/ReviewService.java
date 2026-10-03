@@ -188,7 +188,8 @@ public class ReviewService {
             boolean isOwner = userId.equals(r.getOwnerId());
             boolean isAuthor = userId.equals(r.getCreatedBy());
             if (isOwner || isAuthor) {
-                audit.record(actor, "review.approval_refused_separation_of_duties", "REVIEW", reviewId,
+                // Independent of this transaction: the throw below rolls it back, and the refusal must stay on record.
+                audit.recordIndependently(actor, "review.approval_refused_separation_of_duties", "REVIEW", reviewId,
                     null, Map.of("requirementId", reqId.toString(), "reason", isOwner ? "owner" : "author"));
                 throw new IllegalStateException(
                     "You cannot approve %s — you are its %s".formatted(r.getKey(), isOwner ? "owner" : "author"));

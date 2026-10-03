@@ -1,5 +1,7 @@
 package com.vyoog.api.web;
 
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.changerequest.ChangeRequest;
 import com.vyoog.changerequest.ChangeRequestRepository;
@@ -64,6 +66,8 @@ public class ChangeRequestController {
         return toView(changeRequests.findById(id).orElseThrow(NoSuchElementException::new));
     }
 
+    // VYB-0906: requirements are in the body; deciding and applying are guarded separately.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ChangeRequestView raise(@RequestBody RaiseChangeRequest body, @AuthenticationPrincipal Jwt jwt) {
@@ -72,6 +76,8 @@ public class ChangeRequestController {
     }
 
     /** VYB-0391/0393 AC1: called before the approve action, so impact is on screen first. */
+    // VYB-0906: read-only impact analysis.
+    @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/{id}/impact")
     public ImpactView impact(@PathVariable UUID id) {
         var summary = service.computeImpact(id);

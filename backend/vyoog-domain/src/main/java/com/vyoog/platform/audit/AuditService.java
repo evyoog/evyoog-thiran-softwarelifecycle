@@ -37,6 +37,19 @@ public class AuditService {
         record(actorId, "USER", action, objectType, objectId, before, after);
     }
 
+    /**
+     * An audit event that must survive the caller's transaction rolling back: for a refusal, where
+     * the caller records what was refused and then throws. With {@link #record} the event would be
+     * rolled back along with everything else and the refusal would leave no trace. Runs in its own
+     * transaction, so it must be called through the Spring proxy (from another bean).
+     */
+    @org.springframework.transaction.annotation.Transactional(
+        propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void recordIndependently(UUID actorId, String action, String objectType, UUID objectId,
+                                     Map<String, ?> before, Map<String, ?> after) {
+        record(actorId, "USER", action, objectType, objectId, before, after);
+    }
+
     /** VYB-0313: something the system did, not a person — no actor id. */
     public void recordSystem(String action, String objectType, UUID objectId, Map<String, ?> after) {
         record(null, "SYSTEM", action, objectType, objectId, null, after);

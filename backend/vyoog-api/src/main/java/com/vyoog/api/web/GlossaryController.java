@@ -1,5 +1,9 @@
 package com.vyoog.api.web;
 
+import com.vyoog.identity.AccessRule;
+
+import com.vyoog.api.config.RequiresAccess;
+
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.portfolio.GlossaryService;
 import com.vyoog.portfolio.GlossaryTerm;
@@ -49,12 +53,15 @@ public class GlossaryController {
         return terms.findAllByOrderByTermAsc().stream().map(GlossaryController::toView).toList();
     }
 
+    // VYB-0906: glossary terms are authored content.
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TermView create(@RequestBody CreateTerm body, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.createTerm(body.term(), body.definition(), currentUserId(jwt)));
     }
 
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
     @PutMapping("/{termId}/usage/{applicationId}")
     public void recordUsage(@PathVariable UUID termId, @PathVariable UUID applicationId, @RequestBody RecordUsage body) {
         service.recordUsage(termId, applicationId, body.definition());
