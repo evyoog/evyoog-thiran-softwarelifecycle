@@ -88,6 +88,7 @@ Optional:
 | `ATTACHMENT_MAX_BYTES` | `10485760` | largest single attachment upload |
 | `AI_ENABLED`, `AI_API_KEY` | off | OpenAI-backed advisory features; each reports itself unconfigured without a key |
 | `AUTH_COOKIE_SECURE` | `true` | set `false` only for plain-HTTP development on a non-localhost host |
+| `CONNECTOR_MAX_ATTEMPTS`, `CONNECTOR_INITIAL_DELAY_MS`, `CONNECTOR_MAX_DELAY_MS`, `CONNECTOR_REQUEST_TIMEOUT_MS`, `CONNECTOR_SYNC_LOG_RETENTION_DAYS` | `4`, `500`, `30000`, `10000`, `90` | how outbound connector calls are retried and timed out, and how long the sync log is kept ([`connector-framework.md`](docs/09-integrations/connector-framework.md)) |
 | `JWT_AUDIENCE` | empty (not enforced) | required `aud` value, normally `vyoog-api`; set it once the Keycloak audience mapper exists ([`audience.md`](docs/08-architecture/security/audience.md)) |
 | `IDEMPOTENCY_RETENTION_DAYS`, `WEBHOOK_DELIVERY_RETENTION_DAYS` | `7`, `90` | how long idempotency keys and webhook delivery ids are kept before the nightly purge; the webhook value is also the replay-protection window. Minimum 1 |
 

@@ -316,7 +316,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | DONE on dev (11 new tests; commit only, no PR yet) | S2 |
 | VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | DONE on dev (17 new tests; commit only, no PR yet) | S2 |
 | VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | DONE on dev (6 new tests; hand-written client types not migrated, see log; commit only, no PR yet) | S2 |
-| VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
+| VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | DONE on dev (44 new tests; generic part only, no connector uses it yet; D24 still open; commit only, no PR yet) | S3 |
 | VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
 | VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
 | VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | TODO | S3 |
@@ -4941,6 +4941,32 @@ Phase 6 Sprint 2, last row. Branch `dev`. **6 new tests**: `OpenApiDocumentIT` 2
 - The 10 remaining warnings are real hook-dependency questions (for example `useMemo` over `useQueries` results); each needs deciding in its screen.
 - The CI frontend job and the Node 22 change have not run on GitHub.
 - The OpenAPI document is large (about 290 KB) and will appear in every API-changing diff, which is the point.
+
+---
+
+## Session 73 — VYB-0913 (F40): the generic connector framework
+
+Phase 6 Sprint 3, first row. Branch `dev`. **44 new tests**: `ConnectorExecutorIT` 25 (real PostgreSQL and real HTTP against a stub server in the test JVM), `ConnectorConfigTest` 8, `RetryPolicyTest` 5, `ConnectorOperationTest` 3, `ConnectorRegistryTest` 2 and `PurgeServiceIT` +1. The finding text F40 is not in the repository; scope is the register row.
+
+**Decisions with the product owner this session.** (1) D24 is still **Open** and `docs/09-integrations` said the connector rows could not start without the Agile Planner contract and a test instance. This row is the generic part and needs neither, so it was built, with no Agile Planner field, endpoint or payload invented; D24 still gates VYB-0914 to VYB-0917, which need the contract. The "can start" line in `docs/09-integrations/README.md` now says so. (2) The row is L; the offer to split it into two sessions was declined, so it was built in one.
+
+**What exists** (`com.vyoog.integration.connector`, full description in `docs/09-integrations/connector-framework.md`): `Connector` (a bean bound to one registry connection) and `ConnectorRegistry`; `ConnectorOperation` (validated: no header injection, no path leaving the host); `ConnectorExecutor`; `ConnectorConfig` and `ConnectorAuth` (API key, bearer, HMAC signature, or an explicit NONE); `RetryPolicy`; `ConnectorSyncLog` and migration `V039__connector_sync_log.sql`; `ConnectorHealthService`. It reuses the existing `integration_connection` registry: no new connection table.
+- **Authentication:** schemes listed in `config.auth`, several at once (the existing planning push sends both a key and a signature). HMAC is over the exact body bytes (`WebhookSignatureVerifier.sign` gained a `byte[]` overload; the String one delegates).
+- **Retries and backoff:** up to 4 attempts; connection failures, timeouts and `408 425 429 500 502 503 504` only; exponential backoff from 500 ms with equal jitter, capped at 30 s; `Retry-After` honoured up to the cap. Every other response and every redirect is final.
+- **Idempotency key:** claimed in the sync log before sending, enforced by a partial unique index so it holds across instances: a succeeded key is not resent (`ALREADY_DONE`), a key being sent right now is not sent twice (`IN_PROGRESS_ELSEWHERE`), a failed key may be retried, an `IN_PROGRESS` row older than 15 minutes (its instance died) is marked failed. The same key goes out as `Idempotency-Key` on every attempt.
+- **Sync log:** one row per operation: attempts, last HTTP status, a short single-line reason, payload size and SHA-256. No payload, no secret; a secret the receiver echoes back is replaced with `[redacted]` before it can reach the log or the registry's `last_error`.
+- **Health:** the registry's existing counters, updated atomically once per operation (not per attempt). NOT_CONNECTED, HEALTHY, DEGRADED (3 failed operations in a row, the existing rule). Becoming degraded or recovering writes one audit event (`connector.degraded`, `connector.recovered`). An unconfigured connection throws `ConnectorNotConfiguredException` and is not counted as a failure.
+- **Safety defaults that are my choice, not the spec's:** `baseUrl` must be https (plain http only for localhost); `auth` must be stated (an absent list is "not configured"); redirects are never followed; responses are read to 64 KB. These make the framework refuse some configurations the old planning push would have accepted (for example an http URL); the old push is untouched.
+- **Purge and settings:** `connector_sync_log` is purged nightly after 90 days (`vyoog.retention.connector-sync-log-days`; **90 is my default, not a recorded decision**) and the retry numbers are `vyoog.connector.*`. Metrics `vyoog_connector_operations_total` and `vyoog_connector_attempts_total`.
+
+**Evidence.** All 25 integration tests passed on the first full run apart from one bad assertion in the test itself (`containsOnly` on a list that need not contain both values), fixed. Then five deliberate breaks, each reverted: no `Idempotency-Key` header (1 test failed), redirects followed (1), a receiver's echoed secret not redacted (1), degrading one failure too late (1), and ignoring the claim and sending regardless (4). Migrations 1 to 39 apply on the populated local database; `ForeignKeyIndexIT` still passes (the new foreign key is indexed); no endpoint changed, so the committed OpenAPI document is unchanged.
+
+**Not done / to know**
+- **Nothing uses it yet.** No `Connector` bean exists; `BriefPushService` and `SignalsExportService` still push on their own with no retries, no idempotency key and no log, and `BriefPushService` makes its HTTP call inside a database transaction. Replacing them is VYB-0916; moving network calls out of transactions in general is VYB-0940.
+- **No endpoint or screen:** health is a service method; the Administration screen is VYB-0917. So there is nothing to see in the UI from this row, and no new write endpoint, so no new access rule.
+- **Secrets stay in the database** (`config` JSON and `webhook_secret`, the registry's existing pattern), in plain text. Not changed here; worth a decision before real connector credentials go in.
+- Only HTTP(S) request/response connectors; no pull or polling, no streaming.
+- Tested on the local Postgres; the Testcontainers path and the GitHub CI run are unverified.
 
 ---
 

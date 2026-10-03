@@ -23,6 +23,9 @@ import org.springframework.stereotype.Service;
  *       {@code vyoog.retention.webhook-delivery-days} (default 90). After that, a captured and
  *       correctly signed delivery with an old id would be accepted again, so this is a security
  *       setting as much as a storage one. Both defaults were set by the product owner.
+ *   <li>{@code connector_sync_log} (V039, VYB-0913): one row per outbound connector operation. Kept
+ *       {@code vyoog.retention.connector-sync-log-days} (default 90, an operational default chosen
+ *       with the log, not a decision recorded elsewhere). It holds no payload and no secret.
  *   <li>{@code rate_limit_hit} (V035): pruned by {@link RateLimiter#prune()}, which is run here too
  *       so that it does not depend on the occasional prune that rides on a successful call.
  * </ul>
@@ -47,15 +50,20 @@ public class PurgeService {
     private final MeterRegistry meters;
     private final int idempotencyDays;
     private final int webhookDeliveryDays;
+    private final int connectorSyncLogDays;
 
     public PurgeService(JdbcTemplate jdbc, RateLimiter rateLimiter, AuditService audit, MeterRegistry meters,
                         @Value("${vyoog.retention.idempotency-days:7}") int idempotencyDays,
-                        @Value("${vyoog.retention.webhook-delivery-days:90}") int webhookDeliveryDays) {
+                        @Value("${vyoog.retention.webhook-delivery-days:90}") int webhookDeliveryDays,
+                        @Value("${vyoog.retention.connector-sync-log-days:90}") int connectorSyncLogDays) {
         if (idempotencyDays < 1) {
             throw new IllegalArgumentException("vyoog.retention.idempotency-days must be at least 1, got " + idempotencyDays);
         }
         if (webhookDeliveryDays < 1) {
             throw new IllegalArgumentException("vyoog.retention.webhook-delivery-days must be at least 1, got " + webhookDeliveryDays);
+        }
+        if (connectorSyncLogDays < 1) {
+            throw new IllegalArgumentException("vyoog.retention.connector-sync-log-days must be at least 1, got " + connectorSyncLogDays);
         }
         this.jdbc = jdbc;
         this.rateLimiter = rateLimiter;
@@ -63,6 +71,7 @@ public class PurgeService {
         this.meters = meters;
         this.idempotencyDays = idempotencyDays;
         this.webhookDeliveryDays = webhookDeliveryDays;
+        this.connectorSyncLogDays = connectorSyncLogDays;
     }
 
     /** @return rows deleted, by table. */
@@ -70,6 +79,7 @@ public class PurgeService {
         Map<String, Integer> deleted = new LinkedHashMap<>();
         deleted.put("idempotency_key", purgeIdempotencyKeys());
         deleted.put("webhook_delivery", purgeWebhookDeliveries());
+        deleted.put("connector_sync_log", purgeConnectorSyncLog());
         deleted.put("rate_limit_hit", rateLimiter.prune());
 
         int total = deleted.values().stream().mapToInt(Integer::intValue).sum();
@@ -87,6 +97,10 @@ public class PurgeService {
 
     public int purgeWebhookDeliveries() {
         return deleteOlderThan("webhook_delivery", "received_at", webhookDeliveryDays);
+    }
+
+    public int purgeConnectorSyncLog() {
+        return deleteOlderThan("connector_sync_log", "started_at", connectorSyncLogDays);
     }
 
     /** Table and column are constants of this class, never input, so they are safe to concatenate. */

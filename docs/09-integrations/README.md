@@ -10,6 +10,7 @@ What Vyoog talks to, today and planned. Requirements for the built ones are in [
 | Planning / delivery tool | out | briefs and scope signals pushed as signed payloads (the "planning" connection) | Delivery requirements |
 | Object storage (MinIO / S3) | out | requirement attachments | [`../08-architecture/deployment/running-minio-locally.md`](../08-architecture/deployment/running-minio-locally.md) |
 | OpenAI | out | optional advisory AI (off by default; AI proposes, a human decides) | `CLAUDE.md` rule 6 |
-| Agile Planner, Macro Planner | both | **planned**: a connector framework replacing the generic planning push, and hierarchy sync (rows VYB-0913 to VYB-0935) | D24 (open), [`phase-6-planned.md`](../02-requirements/functional-requirements/phase-6-planned.md) |
+| Connector framework | out | **built (VYB-0913)**: the generic engine every outbound connector will use: authentication, retries with backoff, idempotency key, sync log, health state. No connector uses it yet | [`connector-framework.md`](connector-framework.md) |
+| Agile Planner, Macro Planner | both | **planned**: a connector replacing the generic planning push (VYB-0914 to VYB-0917), inbound sync (S4) and hierarchy sync (S7) | D24 (open), [`phase-6-planned.md`](../02-requirements/functional-requirements/phase-6-planned.md) |
 
-The Agile Planner API or event contract and a test instance are still needed before those rows can start (D24).
+The Agile Planner API or event contract and a test instance are still needed before the Planner-specific rows (VYB-0914 onward) can start (D24). VYB-0913 was built first because it is the generic part and needs neither.

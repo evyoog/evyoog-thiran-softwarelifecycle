@@ -67,6 +67,7 @@ The 03:00 job (`PurgeService`) deletes, in batches of 5,000 with one transaction
 |---|---|---|
 | `idempotency_key` | 7 days | `IDEMPOTENCY_RETENTION_DAYS` |
 | `webhook_delivery` | 90 days | `WEBHOOK_DELIVERY_RETENTION_DAYS` |
+| `connector_sync_log` | 90 days | `CONNECTOR_SYNC_LOG_RETENTION_DAYS` |
 | `rate_limit_hit` | 1 hour | fixed |
 
 Values below 1 stop the application at startup. When a run deletes anything it writes one `retention.purged` system audit event with the counts, and `vyoog_purge_deleted_total{table}` counts rows for the scrape.

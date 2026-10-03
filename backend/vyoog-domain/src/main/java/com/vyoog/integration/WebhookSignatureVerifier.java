@@ -18,10 +18,15 @@ public final class WebhookSignatureVerifier {
     private WebhookSignatureVerifier() {}
 
     public static String sign(String secret, String rawBody) {
+        return sign(secret, rawBody.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** VYB-0913: the same signature over the exact bytes sent, for bodies that are not text (a file upload). */
+    public static String sign(String secret, byte[] rawBody) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] digest = mac.doFinal(rawBody.getBytes(StandardCharsets.UTF_8));
+            byte[] digest = mac.doFinal(rawBody);
             StringBuilder hex = new StringBuilder(digest.length * 2);
             for (byte b : digest) hex.append(String.format("%02x", b));
             return hex.toString();

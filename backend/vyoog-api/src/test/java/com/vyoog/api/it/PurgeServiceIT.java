@@ -64,6 +64,21 @@ class PurgeServiceIT extends IntegrationTestBase {
     }
 
     @Test
+    void VYB0913_AC4_aConnectorSyncLogRowOlderThanNinetyDaysIsDeletedAndANewerOneIsKept() {
+        String connection = unique("pc");
+        jdbc.update("INSERT INTO integration_connection (key, connected) VALUES (?, false)", connection);
+        jdbc.update("""
+            INSERT INTO connector_sync_log (connection_key, operation, idempotency_key, status, payload_bytes, payload_sha256, started_at)
+            VALUES (?, 'x.y', 'old', 'FAILED', 0, 'x', clock_timestamp() - interval '91 days'),
+                   (?, 'x.y', 'recent', 'SUCCEEDED', 0, 'x', clock_timestamp() - interval '89 days')""", connection, connection);
+
+        purge.purgeConnectorSyncLog();
+
+        assertThat(jdbc.queryForList("SELECT idempotency_key FROM connector_sync_log WHERE connection_key = ?", String.class, connection))
+            .containsExactly("recent");
+    }
+
+    @Test
     void VYB0910_AC2_aKeptDeliveryIdStillRefusesAReplay() {
         // The purpose of the table: a delivery id seen once is refused the second time.
         String id = unique("dlv");
@@ -100,7 +115,7 @@ class PurgeServiceIT extends IntegrationTestBase {
         Map<String, Integer> deleted = purge.purgeExpired();
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM rate_limit_hit WHERE key = ?", Integer.class, key)).isZero();
-        assertThat(deleted).containsKeys("idempotency_key", "webhook_delivery", "rate_limit_hit");
+        assertThat(deleted).containsKeys("idempotency_key", "webhook_delivery", "connector_sync_log", "rate_limit_hit");
         assertThat(deleted.get("idempotency_key")).isGreaterThanOrEqualTo(1);
         assertThat(deleted.get("rate_limit_hit")).isGreaterThanOrEqualTo(1);
     }
@@ -121,9 +136,11 @@ class PurgeServiceIT extends IntegrationTestBase {
 
     @Test
     void VYB0910_AC2_aRetentionOfZeroOrLessIsRefusedBecauseItWouldDeleteEverything() {
-        assertThatThrownBy(() -> new PurgeService(jdbc, null, null, new SimpleMeterRegistry(), 0, 90))
+        assertThatThrownBy(() -> new PurgeService(jdbc, null, null, new SimpleMeterRegistry(), 7, 90, 0))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("connector-sync-log-days");
+        assertThatThrownBy(() -> new PurgeService(jdbc, null, null, new SimpleMeterRegistry(), 0, 90, 90))
             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("idempotency-days");
-        assertThatThrownBy(() -> new PurgeService(jdbc, null, null, new SimpleMeterRegistry(), 7, -1))
+        assertThatThrownBy(() -> new PurgeService(jdbc, null, null, new SimpleMeterRegistry(), 7, -1, 90))
             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("webhook-delivery-days");
     }
 }

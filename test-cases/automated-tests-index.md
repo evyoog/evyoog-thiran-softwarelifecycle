@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 512 tests cover 44 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 556 tests cover 45 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -647,3 +647,50 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC2` noCheckedTypeNamesAFieldTheApiDoesNotSend (`frontend/src/shared/api/apiContract.test.ts`)
 - `AC2` theCommittedOpenApiDocumentMatchesWhatTheRunningApiPublishes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/OpenApiDocumentIT.java`)
 - `AC2` theDocumentCoversTheApiAndKeepsItsErrorShape (`backend/vyoog-api/src/test/java/com/vyoog/api/it/OpenApiDocumentIT.java`)
+
+## VYB-0913: Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40]
+
+- `AC1` aSuccessfulOperationIsSentOnceAndRecordedAndTheConnectionIsConnected (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC1` connectorsAreFoundByTheirConnectionKeyAndListedInOrder (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorRegistryTest.java`)
+- `AC1` twoConnectorsOnOneConnectionIsAStartupError (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorRegistryTest.java`)
+- `AC2` aDefiniteRefusalIsNotRetried (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aFailedOperationMayBeRetriedLaterUnderTheSameKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aHugeOrHostileErrorBodyIsReducedToAShortPrintableExcerpt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aLongerRetryAfterIsHonouredButCapped (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/RetryPolicyTest.java`)
+- `AC2` aPolicyThatCouldNotWorkIsRefused (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/RetryPolicyTest.java`)
+- `AC2` aReceiverThatAnswersTooSlowlyIsATimeoutAndIsRetried (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aReceiverThatCannotBeReachedIsRetriedThenReportedWithoutStackTraceOrHost (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aReceiversRetryAfterIsHonouredWhenItIsLongerThanTheBackoff (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aRedirectIsNotFollowedSoCredentialsCannotBeBouncedToAnotherHost (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aSendLeftInProgressByAnInstanceThatDiedIsAbandonedAndDoesNotBlockTheKeyForever (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aSendThatIsStillRecentlyInProgressIsNotSentASecondTime (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` aTransientFailureIsRetriedWithBackoffAndTheSameIdempotencyKeyEveryTime (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` anOperationThatAlreadySucceededIsNotSentAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` everyAttemptFailingEndsFailedAfterTheConfiguredNumberOfAttempts (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` exactlyOneOfManyInstancesRacingOnTheSameKeySendsIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` onlyTheStatusesThatMeanNotNowAreRetried (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/RetryPolicyTest.java`)
+- `AC2` theClaimIsVisibleToOtherConnectionsWhileTheRequestIsInFlight (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC2` theWaitGrowsExponentiallyAndStaysInsideItsJitterBand (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/RetryPolicyTest.java`)
+- `AC2` theWaitIsNeverLongerThanTheCapHoweverManyAttemptsHaveFailed (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/RetryPolicyTest.java`)
+- `AC3` aCompleteConfigurationIsUsable (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC3` aSecretTheReceiverEchoesBackNeverReachesTheSyncLog (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC3` anUnconfiguredConnectionSendsNothingRecordsNothingAndIsNotCountedAsAFailure (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC3` deliberatelyNoAuthMustBeWrittenDown (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC3` missingPiecesAreNamedAndNothingIsSent (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC3` theConfiguredSchemesAreAppliedAndASignatureVerifiesOverTheExactBody (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC3` withAuthNoneNoCredentialHeaderIsSent (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC4` aBaseUrlCannotCarryCredentialsOrAQuery (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC4` aConnectorSyncLogRowOlderThanNinetyDaysIsDeletedAndANewerOneIsKept (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC4` aPathCannotPointTheRequestAtAnotherHost (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorOperationTest.java`)
+- `AC4` aSecretTheReceiverEchoesBackIsRemovedBeforeItCanBeLogged (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC4` anIdempotencyKeyWithALineBreakCannotInjectAHeader (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorOperationTest.java`)
+- `AC4` credentialsNeverTravelOverPlainHttpToARemoteHost (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC4` methodAndContentTypeAreCheckedAndDefaultSensibly (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorOperationTest.java`)
+- `AC4` noSecretAppearsInToStringOrInTheNotConfiguredMessage (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC4` theApiKeyHeaderNameIsChecked (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC4` theLogIsWrittenInItsOwnTransactionSoACallersRollbackDoesNotEraseIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC4` theSyncLogRecordsWhatHappenedWithoutThePayloadOrAnySecret (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC5` aConnectionNeverUsedOrNotConfiguredReportsNotConnectedWithTheReason (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC5` failuresAreCountedPerOperationNotPerAttempt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC5` theMetricsCountOperationsByOutcome (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+- `AC5` threeFailedOperationsInARowDegradeTheConnectionOnceAndASuccessRecoversIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
