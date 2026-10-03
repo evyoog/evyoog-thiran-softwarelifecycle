@@ -59,6 +59,13 @@ spring:
           # once it exists — see docs/vyoog-getting-started.md.
 
 vyoog:
+  # VYB-0910: how long the bookkeeping tables keep rows before the nightly purge deletes them.
+  # Both must be at least 1; the application refuses to start otherwise (0 would delete everything).
+  # webhook-delivery-days is also the window in which a replayed, correctly signed webhook is refused:
+  # the signed payload has no timestamp, the stored delivery id is the only replay protection.
+  retention:
+    idempotency-days: ${IDEMPOTENCY_RETENTION_DAYS:7}
+    webhook-delivery-days: ${WEBHOOK_DELIVERY_RETENTION_DAYS:90}
   # CORS allowlist (comma-separated). No wildcard default: browsers send credentials
   # (the refresh-token cookie), so an origin is allowed only if it is listed here.
   # cors-allowed-origins matches exactly; cors-allowed-origin-patterns is for

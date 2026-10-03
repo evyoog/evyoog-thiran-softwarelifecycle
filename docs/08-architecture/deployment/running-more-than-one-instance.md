@@ -20,6 +20,7 @@ Every scheduled trigger is in one class, `com.vyoog.api.scheduling.ScheduledJobs
 | `detection-sweep` | 02:00 | 2 h / 10 min |
 | `audit-retention` | 02:15 | 1 h / 10 min |
 | `clarification-escalation` | 02:30 | 1 h / 10 min |
+| `purge-expired-records` | 03:00 | 1 h / 10 min |
 
 How the lease works (`scheduler_lock`, migration V036):
 
@@ -57,3 +58,17 @@ Refusals are `429` (rate, connections) or `413` (body).
 - **Frontend**: `nginxinc/nginx-unprivileged` (uid 101), so it **listens on 8080, not 80**. Whatever maps a port to this image (load balancer target group, ECS port mapping) must point at 8080. `HEALTHCHECK` calls `/healthz`, answered by nginx itself.
 
 Neither image has been built in the environment that made this change (no Docker daemon). The nginx config was loaded and exercised with a local nginx (rate limits, 413, health, SPA fallback); the Dockerfiles were not.
+
+## Purge of bookkeeping tables (VYB-0910)
+
+The 03:00 job (`PurgeService`) deletes, in batches of 5,000 with one transaction per batch:
+
+| Table | Kept | Setting |
+|---|---|---|
+| `idempotency_key` | 7 days | `IDEMPOTENCY_RETENTION_DAYS` |
+| `webhook_delivery` | 90 days | `WEBHOOK_DELIVERY_RETENTION_DAYS` |
+| `rate_limit_hit` | 1 hour | fixed |
+
+Values below 1 stop the application at startup. When a run deletes anything it writes one `retention.purged` system audit event with the counts, and `vyoog_purge_deleted_total{table}` counts rows for the scrape.
+
+Two things to know when changing the numbers. A client that retries a create with the same idempotency key after the window gets a second row, not the first response. And the webhook window is the replay-protection window: the signed payload has no timestamp, so once a delivery id is purged a captured delivery with that id would be accepted again.

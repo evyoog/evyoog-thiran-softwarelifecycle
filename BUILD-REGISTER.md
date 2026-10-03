@@ -313,7 +313,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0907 | 6 | Enforce roles and make the build trustworthy | Testcontainers integration tests for requirements, trace, release, review, baseline and the change-request apply path [L; F11] | DONE on dev (49 integration tests passing against a real local Postgres 16 + pgvector; the Testcontainers path and CI run not verified) | S2 |
 | VYB-0908 | 6 | Enforce roles and make the build trustworthy | Audience check, grant-scoped search, shared rate limiter [M; F09] | DONE on dev (20 new integration tests, 9 new unit tests; commit only, no PR yet) | S2 |
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | DONE on dev (26 new tests; Dockerfiles not built, no Docker daemon; commit only, no PR yet) | S2 |
-| VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | TODO | S2 |
+| VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | DONE on dev (11 new tests; commit only, no PR yet) | S2 |
 | VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | TODO | S2 |
 | VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
@@ -4885,6 +4885,26 @@ Docs: new `docs/08-architecture/deployment/running-more-than-one-instance.md`; `
 - The manual sweep (`POST /api/v1/findings/sweep`) still only guards against a second sweep on the same instance.
 - A scraper token and `set_real_ip_from` are deployment steps for whoever owns the environment.
 - `vyoog-worker` still has no application of its own, so the triggers stay in the API.
+
+---
+
+## Session 70 — VYB-0910 (F36): foreign-key indexes and purge jobs
+
+Phase 6 Sprint 2. Branch `dev`. **11 new tests**: `PurgeServiceIT` 7 and `ForeignKeyIndexIT` 3 (integration), `ScheduledJobsTest` +1 (unit). The finding text F36 is not in the repository; scope is the register row.
+
+**1. Foreign-key indexes** (`V037__foreign_key_indexes.sql`). A catalog query on the real schema found **68 foreign keys with no index**. **49 are now indexed** (a partial `WHERE col IS NOT NULL` index on nullable columns): every key to a non-user parent (`requirement_id`, `flow_id`, `release_id`, ...) and the `app_user` columns that are owners, assignees, memberships or filtered on (`owner_id`, `developer_id`, `tester_id`, `assigned_to`, `user_id`, `manager_id`, `delegate_id`, `requirement.created_by`). **19 are left unindexed on purpose** — the "who did it" columns pointing at `app_user` (`granted_by`, `updated_by`, `changed_by`, `decided_by`, `raised_by`, ...): nothing filters on them and `app_user` rows are never deleted, so an index would only slow writes (on `requirement` alone it avoids 2 extra indexes). Scope decided with the product owner (the alternative was all 68). `ForeignKeyIndexIT` fails when a migration adds a foreign key that is neither indexed nor on that reasoned list. Plain `CREATE INDEX` (Flyway runs a migration in one transaction, so not `CONCURRENTLY`): a short write lock per table; run on a large database in a quiet period.
+
+**2. Purge jobs.** `PurgeService` + a 03:00 trigger `purge-expired-records` in `ScheduledJobs` (behind `SchedulerLock`). `idempotency_key` kept **7 days**, `webhook_delivery` kept **90 days** (both chosen by the product owner; `vyoog.retention.*`, env `IDEMPOTENCY_RETENTION_DAYS` / `WEBHOOK_DELIVERY_RETENTION_DAYS`, below 1 stops startup). Also prunes `rate_limit_hit` (session 68's follow-up). Batches of 5,000, one transaction each, database clock; indexes on `idempotency_key.created_at` and `webhook_delivery.received_at` so the delete is not a scan. One `retention.purged` SYSTEM audit event per run that deleted anything; counter `vyoog_purge_deleted_total{table}`.
+
+**The webhook window is a security setting.** The signed payload has no timestamp; the stored delivery id is the only replay protection. After 90 days a captured, correctly signed delivery with a purged id would be accepted again. The old migration comment called this table "never delete this kind of row"; the row's wording and the owner's choice of 90 days supersede that, and the trade-off is written in `PurgeService`, `application.yml` and the docs.
+
+**Evidence.** Added an unindexed foreign key by hand → `ForeignKeyIndexIT` failed, then dropped it. Flipped the purge cutoff → 5 of 7 `PurgeServiceIT` tests failed. Both restored. Migrations 1–37 applied to an **empty database** (`fresh_it`) and `ForeignKeyIndexIT`, `PurgeServiceIT`, `SchedulerLockIT` passed there; V037 also applied to the populated local database.
+
+**Not done / to know**
+- No index was measured under load; the choice is by what the code queries and what the foreign-key check needs, not by `EXPLAIN` on production-sized data.
+- Idempotency: a client retrying the same key after 7 days creates a second row.
+- Testcontainers path and the GitHub CI run unverified (local Postgres used).
+- The purge does not touch `outbox_event` (published rows also only grow), `notification`, or `finding`; not named by the row, not changed.
 
 ---
 

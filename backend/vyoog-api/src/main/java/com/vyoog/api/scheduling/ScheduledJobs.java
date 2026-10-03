@@ -3,6 +3,7 @@ package com.vyoog.api.scheduling;
 import com.vyoog.api.notify.NotificationRelayService;
 import com.vyoog.clarification.ClarificationService;
 import com.vyoog.detection.DetectionSweepService;
+import com.vyoog.platform.PurgeService;
 import com.vyoog.platform.SchedulerLock;
 import com.vyoog.platform.audit.AuditRetentionService;
 import java.time.Duration;
@@ -31,14 +32,17 @@ public class ScheduledJobs {
     private final DetectionSweepService sweep;
     private final AuditRetentionService auditRetention;
     private final ClarificationService clarifications;
+    private final PurgeService purge;
 
     public ScheduledJobs(SchedulerLock locks, NotificationRelayService relay, DetectionSweepService sweep,
-                         AuditRetentionService auditRetention, ClarificationService clarifications) {
+                         AuditRetentionService auditRetention, ClarificationService clarifications,
+                         PurgeService purge) {
         this.locks = locks;
         this.relay = relay;
         this.sweep = sweep;
         this.auditRetention = auditRetention;
         this.clarifications = clarifications;
+        this.purge = purge;
     }
 
     /** VYB-0791: outbox to live SSE connections, every 2 seconds. */
@@ -63,5 +67,11 @@ public class ScheduledJobs {
     @Scheduled(cron = "0 30 2 * * *")
     public void clarificationEscalation() {
         locks.runExclusive("clarification-escalation", Duration.ofHours(1), NIGHTLY_MIN_HOLD, clarifications::escalateAgeing);
+    }
+
+    /** VYB-0910: 03:00 purge of expired idempotency keys, webhook delivery ids and rate-limit rows. */
+    @Scheduled(cron = "0 0 3 * * *")
+    public void purgeExpiredRecords() {
+        locks.runExclusive("purge-expired-records", Duration.ofHours(1), NIGHTLY_MIN_HOLD, purge::purgeExpired);
     }
 }

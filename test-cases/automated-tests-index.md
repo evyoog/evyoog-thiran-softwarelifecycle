@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 478 tests cover 41 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 489 tests cover 42 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -604,3 +604,17 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` theBackendImageHasAHealthcheckOnTheLivenessProbe (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
 - `AC5` theBackendImageRunsAsANonRootUserWithAFixedId (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
 - `AC5` theFrontendImageIsTheUnprivilegedNginxOn8080WithAHealthcheck (`backend/vyoog-api/src/test/java/com/vyoog/api/DeploymentHardeningTest.java`)
+
+## VYB-0910: Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36]
+
+- `AC1` everyForeignKeyIsIndexedExceptTheReasonedAuditStyleOnes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ForeignKeyIndexIT.java`)
+- `AC1` theColumnsTheApplicationFiltersOnAreIndexed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ForeignKeyIndexIT.java`)
+- `AC2` aBacklogLargerThanOneBatchIsDeletedCompletely (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` aKeptDeliveryIdStillRefusesAReplay (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` aPurgeThatDeletedSomethingLeavesOneSystemAuditEvent (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` aRetentionOfZeroOrLessIsRefusedBecauseItWouldDeleteEverything (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` aWebhookDeliveryIdOlderThanNinetyDaysIsDeletedAndANewerOneIsKept (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` anIdempotencyKeyOlderThanSevenDaysIsDeletedAndANewerOneIsKept (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` theNightlyPurgeAlsoPrunesTheRateLimiterAndReportsWhatItDeleted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PurgeServiceIT.java`)
+- `AC2` thePurgeJobsDeleteByAgeThroughAnIndex (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ForeignKeyIndexIT.java`)
+- `AC3` theNightlyPurgeRunsUnderItsOwnLease (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)

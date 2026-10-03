@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.vyoog.api.notify.NotificationRelayService;
 import com.vyoog.clarification.ClarificationService;
 import com.vyoog.detection.DetectionSweepService;
+import com.vyoog.platform.PurgeService;
 import com.vyoog.platform.SchedulerLock;
 import com.vyoog.platform.audit.AuditRetentionService;
 import java.lang.reflect.Method;
@@ -26,6 +27,7 @@ class ScheduledJobsTest {
     DetectionSweepService sweep = mock(DetectionSweepService.class);
     AuditRetentionService audit = mock(AuditRetentionService.class);
     ClarificationService clarifications = mock(ClarificationService.class);
+    PurgeService purge = mock(PurgeService.class);
     ScheduledJobs jobs;
 
     @BeforeEach
@@ -35,7 +37,7 @@ class ScheduledJobsTest {
             ((Runnable) inv.getArgument(3)).run();
             return true;
         });
-        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications);
+        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge);
     }
 
     @Test
@@ -63,13 +65,21 @@ class ScheduledJobsTest {
     }
 
     @Test
+    void VYB0910_AC3_theNightlyPurgeRunsUnderItsOwnLease() {
+        jobs.purgeExpiredRecords();
+        verify(locks).runExclusive(eq("purge-expired-records"), any(Duration.class), eq(ScheduledJobs.NIGHTLY_MIN_HOLD), any());
+        verify(purge).purgeExpired();
+    }
+
+    @Test
     void VYB0909_AC3_anInstanceThatDoesNotWinTheLeaseRunsNothing() {
         org.mockito.Mockito.doReturn(false).when(locks).runExclusive(any(), any(), any(), any());
         jobs.outboxRelay();
         jobs.detectionSweep();
         jobs.auditRetention();
         jobs.clarificationEscalation();
-        org.mockito.Mockito.verifyNoInteractions(relay, sweep, audit, clarifications);
+        jobs.purgeExpiredRecords();
+        org.mockito.Mockito.verifyNoInteractions(relay, sweep, audit, clarifications, purge);
     }
 
     @Test
@@ -78,6 +88,7 @@ class ScheduledJobsTest {
         assertThat(scheduled("detectionSweep").cron()).isEqualTo("0 0 2 * * *");
         assertThat(scheduled("auditRetention").cron()).isEqualTo("0 15 2 * * *");
         assertThat(scheduled("clarificationEscalation").cron()).isEqualTo("0 30 2 * * *");
+        assertThat(scheduled("purgeExpiredRecords").cron()).isEqualTo("0 0 3 * * *");
     }
 
     private static Scheduled scheduled(String method) throws Exception {
