@@ -4,7 +4,7 @@ spring:
   datasource:
     # Shared company RDS instance, Vyoog's own schema on it (see docs/DECISIONS.md D3).
     # The schema already exists: CREATE SCHEMA vyg_requirement AUTHORIZATION postgres.
-    # D22 (proposed, supersedes D9): NO credential has a real default here. DB_URL,
+    # D22 (accepted 2026-10-03, supersedes D9): NO credential has a real default here. DB_URL,
     # DB_USER and DB_PASSWORD come from the environment (local: .env + docker-compose;
     # deployed: the secrets manager). The defaults are deliberately empty, and
     # RequiredSecretsEnvironmentPostProcessor stops startup with a message naming the

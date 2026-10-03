@@ -73,7 +73,7 @@ Platform → Product → App → Capability → Requirement
 9. **No real credentials in the repo.** Database, Keycloak client and SSO secrets come
    from environment variables. Defaults in `application.yml` are empty or obviously
    fake. The app must fail at startup with a clear message when a required secret is
-   missing (D22, proposed; it supersedes D9 and D20, which committed real defaults).
+   missing (D22, accepted 2026-10-03; it supersedes D9 and D20, which committed real defaults).
 
 ## Definition of Done — a task is not finished until all of these hold
 

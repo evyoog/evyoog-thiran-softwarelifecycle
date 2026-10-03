@@ -18,7 +18,7 @@ The repository is the single source of truth: requirements, rules, workflows, co
 | **The requirements** | [`docs/02-requirements/`](docs/02-requirements/README.md): every requirement by feature, with status and its automated tests; [planned Phase 6](docs/02-requirements/functional-requirements/phase-6-planned.md); the [build specification by section](docs/02-requirements/SPECIFICATION-INDEX.md). All of `docs/` is indexed in [`docs/README.md`](docs/README.md). |
 | **The plan and status** | [`BUILD-REGISTER.md`](BUILD-REGISTER.md): the source of every requirement, one line each, with session logs below the table. Phases 0 to 5 are built (a few rows are `PARTIAL`); **Phase 6 (VYB-0900 onwards) is the current plan**. |
 | **Rules for coding agents** | [`CLAUDE.md`](CLAUDE.md): the non-negotiable rules, the Definition of Done, where each kind of thing lives, how sprint sessions work. |
-| **Decisions** | [`docs/DECISIONS.md`](docs/DECISIONS.md). D22 to D27 are proposed or open. |
+| **Decisions** | [`docs/DECISIONS.md`](docs/DECISIONS.md). D22 is accepted (2026-10-03); D23 to D27 are proposed or open. |
 | **Database schema** | [`database/migrations/`](database/migrations): Flyway migrations, forward-only. |
 | **Test cases** | Automated: next to the code, indexed by requirement in [`test-cases/automated-tests-index.md`](test-cases/automated-tests-index.md). Manual and UAT: [`test-cases/`](test-cases/README.md). |
 | **Deployment** | [`deployment/`](deployment/README.md) (Dockerfiles, nginx, environments); local services in [`docker-compose.yml`](docker-compose.yml). |
