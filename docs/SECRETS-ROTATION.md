@@ -8,7 +8,7 @@ D22 (`docs/DECISIONS.md`) is still *Proposed*. Get the product owner's yes befor
 
 | # | Secret | Where it lives now | Owner (who rotates) | New value goes to |
 |---|---|---|---|---|
-| 1 | Database password for user `postgres` on the shared RDS instance (`vyg-batch-1…rds.amazonaws.com`, database `vygmicroservice`) | was the `DB_PASSWORD` default in `application.yml` | Database administrator | `DB_PASSWORD` in the secrets manager, for Vyoog **and** every other app sharing that login (vyg-pms, the pricing tool) |
+| 1 | Database password for user `postgres` on the shared RDS instance (`vyg-batch-1…rds.amazonaws.com`, database `sandbox`) | was the `DB_PASSWORD` default in `application.yml` | Database administrator | `DB_PASSWORD` in the secrets manager, for Vyoog **and** every other app sharing that login (vyg-pms, the pricing tool) |
 | 2 | Client secret of the `vyg-devops-ui` client, realm `eVyoog` | was the `KEYCLOAK_ROPC_CLIENT_SECRET` default | Keycloak administrator | `KEYCLOAK_ROPC_CLIENT_SECRET` |
 | 3 | Client secret of the `eVyoog` client, realm `eVyoog` | was the `KEYCLOAK_IMPERSONATION_CLIENT_SECRET` default | Keycloak administrator | `KEYCLOAK_IMPERSONATION_CLIENT_SECRET`, **and** the same secret in vyg-pms, eis-platform and vyg-ticket, which share this client |
 | 4 | SSO shared secret (`local-dev-only-shared-secret-change-me` was only the default; check what production actually uses) | `INTERNAL_SSO_SHARED_SECRET` | Whoever owns the SSO mesh | `INTERNAL_SSO_SHARED_SECRET` on **every** backend in the mesh at the same time |

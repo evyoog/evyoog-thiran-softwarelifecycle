@@ -13,7 +13,7 @@ rehearsal, run once real infrastructure existed to run it against.
 
 ## What was rehearsed
 
-A full logical backup and restore of the `vygmicroservice` database (schema
+A full logical backup and restore of the `sandbox` database (schema
 `vyg_requirement`, 65 tables, all three extensions), simulating "the original is gone,
 stand up a working replacement from the backup alone" — then proving the replacement is
 not just SQL that applied cleanly, but a database the real application actually boots
@@ -29,26 +29,26 @@ all.
 
 **2. Take the backup.**
 ```
-pg_dump -h localhost -p 5433 -U postgres -d vygmicroservice -Fc \
-  -f vygmicroservice.dump
+pg_dump -h localhost -p 5433 -U postgres -d sandbox -Fc \
+  -f sandbox.dump
 ```
 Result: **0.153s**, 145,958-byte custom-format dump.
 
 **3. Simulate the disaster and create a fresh target.** A *new*, empty database
-(`vygmicroservice_restored`) — never touching the original — so the drill proves
+(`sandbox_restored`) — never touching the original — so the drill proves
 restore-from-nothing, not restore-over-itself:
 ```
-psql -U postgres -c "CREATE DATABASE vygmicroservice_restored;"
+psql -U postgres -c "CREATE DATABASE sandbox_restored;"
 ```
 
 **4. Restore into it.**
 ```
-pg_restore -h localhost -p 5433 -U postgres -d vygmicroservice_restored -Fc \
-  vygmicroservice.dump
+pg_restore -h localhost -p 5433 -U postgres -d sandbox_restored -Fc \
+  sandbox.dump
 ```
 Result: **12.83s**, zero errors, zero warnings.
 
-(First attempt used `--create`, which tried to `CREATE DATABASE vygmicroservice` — the
+(First attempt used `--create`, which tried to `CREATE DATABASE sandbox` — the
 *original* name embedded in the dump header, not the target name passed via `-d` — and
 collided with the live database. Documenting the mistake here since it's the one every
 real runbook for this exact tool hits: `--create` recreates the source's own name: for
@@ -64,10 +64,10 @@ a same-instance side-by-side restore, pre-create the target and omit `--create`.
 | Seeded row | `id=83e14e71-…`, key=`BACKUP-DRILL` | same `id`, byte-identical | ✅ |
 
 **6. The real proof: boot the actual application against the restored copy.**
-A second instance of the real `vyoog-api` jar, pointed at `vygmicroservice_restored` on
+A second instance of the real `vyoog-api` jar, pointed at `sandbox_restored` on
 port 8081:
 ```
-DB_URL=jdbc:postgresql://localhost:5433/vygmicroservice_restored?currentSchema=vyg_requirement,public \
+DB_URL=jdbc:postgresql://localhost:5433/sandbox_restored?currentSchema=vyg_requirement,public \
   java -jar vyoog-api-0.1.0-SNAPSHOT.jar --server.port=8081
 ```
 Log evidence:
@@ -81,7 +81,7 @@ Started VyoogApplication in 9.749 seconds
 schema — it recognized it as **exactly** current, meaning nothing about the restore
 process left the schema in a state Hibernate/Flyway would object to.
 
-**7. Teardown.** The 8081 instance was stopped, `vygmicroservice_restored` was dropped,
+**7. Teardown.** The 8081 instance was stopped, `sandbox_restored` was dropped,
 and the seeded `BACKUP-DRILL` row was deleted from the original — the live database was
 left exactly as it was before the drill, with no residue.
 

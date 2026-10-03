@@ -10,7 +10,7 @@ services:
       POSTGRES_DB: sandbox
       POSTGRES_USER: sandboxadmin
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env (copy .env.example)}
-    ports: ["5433:5432"]
+    ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
@@ -31,7 +31,7 @@ services:
     ports: ["6379:6379"]
 
   minio:
-    image: quay.io/minio/minio
+    image: minio/minio
     container_name: vyoog-minio
     command: server /data --console-address ":9001"
     environment:

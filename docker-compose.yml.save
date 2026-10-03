@@ -1,4 +1,9 @@
-services:
+
+# 2. Start PostgreSQL
+docker compose up -d postgres
+
+# 3. Check
+docker compose psservices:
   # Local Postgres for fast dev iteration, shaped like the shared RDS instance
   # (same db name, same schema). The password comes from DB_PASSWORD in .env
   # (copy .env.example to .env); compose refuses to start without it. Use the same

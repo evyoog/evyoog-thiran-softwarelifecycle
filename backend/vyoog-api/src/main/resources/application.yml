@@ -15,7 +15,7 @@ spring:
     # the session's search_path entirely, breaking pgvector's `<=>` operator and
     # pg_trgm's operator classes, both registered unqualified in `public` by their
     # migrations. See BUILD-REGISTER.md Session 14 for the first time this bit us.
-    # Example: jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public
+    # Example: jdbc:postgresql://localhost:5432/sandbox?currentSchema=vyg_requirement,public
     url: ${DB_URL:}
     username: ${DB_USER:}
     password: ${DB_PASSWORD:}
