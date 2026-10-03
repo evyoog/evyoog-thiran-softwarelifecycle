@@ -317,7 +317,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | DONE on dev (17 new tests; commit only, no PR yet) | S2 |
 | VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | DONE on dev (6 new tests; hand-written client types not migrated, see log; commit only, no PR yet) | S2 |
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | DONE on dev (44 new tests; generic part only, no connector uses it yet; D24 still open; commit only, no PR yet) | S3 |
-| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
+| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | BLOCKED: the Agile Planner repository has no field-level table and a different contract from this plan; decisions needed, see docs/09-integrations/agile-planner-contract-analysis.md | S3 |
 | VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
 | VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | TODO | S3 |
 | VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | TODO | S3 |
@@ -4967,6 +4967,24 @@ Phase 6 Sprint 3, first row. Branch `dev`. **44 new tests**: `ConnectorExecutorI
 - **Secrets stay in the database** (`config` JSON and `webhook_secret`, the registry's existing pattern), in plain text. Not changed here; worth a decision before real connector credentials go in.
 - Only HTTP(S) request/response connectors; no pull or polling, no streaming.
 - Tested on the local Postgres; the Testcontainers path and the GitHub CI run are unverified.
+
+---
+
+## Session 74 — VYB-0914 (F40): analysed the Agile Planner repository; row blocked, nothing built
+
+Phase 6 Sprint 3. Branch `dev`. **No code and no tests.** One analysis document, `docs/09-integrations/agile-planner-contract-analysis.md`. The row is **not done**; its status is now BLOCKED.
+
+**What happened.** The row asks for a field-level ownership table for Feature and Function against Agile Planner backlog items. Nothing in this repository defines Feature, Function, a backlog item, or who owns which field, so I asked. The product owner pointed at `git@github.com:evyoog/evyoog-thittam-agile.git` ("analyse by yourself"). I attached it read-only, cloned `main` at `c5b497b` to `/home/user/evyoog-thittam-agile` (outside this repository, not modified) and read its docs and code.
+
+**Findings** (details and citations in the analysis):
+1. The Planner's integration with this application is a **design in documents, not code**: "Missing: No ALM integration"; its backend has only `Ticket`, `TicketItems`, `TicketWorkSession`, `Board*`, `Tag`; there are no `Feature` or `Function` entities and no tests.
+2. Its documented flow is the **reverse of what rows 0915 to 0919 assume**. The Planner pushes a Function into this application as a Requirement seed (`POST /v1/requirements`, `Idempotency-Key`), and this application sends back four signed webhooks (`requirement.status_changed`, `design_artifact.created`, `test_case.created`, `test_result.recorded`). The names `function.upserted`, `backlog_item.status_changed` and `sprint.reassigned` appear **nowhere** in the Planner repository. No row in the register covers receiving `POST /v1/requirements`.
+3. **There is no field-level ownership table** there. Ownership is stated per system only: the Planner owns execution, Macro Planner owns strategy, this application owns requirements, designs, tests and results (back-references only on the other side). The seven field-level rules a table would need (does a later edit of a Function overwrite the Requirement text; may a person here edit a seeded requirement; priority, acceptance-criteria and status mapping; Feature has no counterpart here; 1:1 versus N:1) are not stated, and some are the Planner's own open questions.
+4. The connector framework from VYB-0913 does not yet match the documented contract: signature header `X-ALM-Signature: hmac-sha256=<hex>` (it fixes `X-Vyoog-Signature` with bare hex), `X-TENANT-ID` on every call, OAuth2 client-credentials tokens (only a static bearer today). Its retries, idempotency, sync log and health are usable for the outbound events.
+
+**Why nothing was built.** Building the table now would mean inventing business rules (CLAUDE.md: never guess at a business rule) on top of a contract that conflicts with the plan's own event names. D24 stays Open.
+
+**Needed from the product owner:** (A) whose direction and vocabulary win; (B) the field-level rules, at least "after the first push, who owns the Requirement's title and text"; (C) answers to the Planner's open questions 1 to 3 (they are asked of this application's team). Until then VYB-0914, VYB-0915, VYB-0918 and VYB-0919 cannot be built as written. VYB-0916 (replace the old planning push with the connector) and VYB-0917 (health screen) do not need the Planner contract.
 
 ---
 

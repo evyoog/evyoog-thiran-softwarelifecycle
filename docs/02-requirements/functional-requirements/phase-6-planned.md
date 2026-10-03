@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: DONE 13, PARTIAL 1, TODO 46.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 1, DONE 13, PARTIAL 1, TODO 45.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -34,7 +34,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | DONE on dev (44 new tests; generic part only, no connector uses it yet; D24 still open; commit only, no PR yet) | S3 |
-| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
+| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | BLOCKED: the Agile Planner repository has no field-level table and a different contract from this plan; decisions needed, see docs/09-integrations/agile-planner-contract-analysis.md | S3 |
 | VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
 | VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | TODO | S3 |
 | VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | TODO | S3 |
