@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 506 tests cover 43 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 512 tests cover 44 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -638,3 +638,12 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC3` withAiOffARequirementWriteLogsNoErrorAndNoStackTrace (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)
 - `AC3` withAiOffNoAiCallBudgetIsSpentAndNoSimilarityQueryIsRun (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)
 - `AC3` withAiOffTheNightlySweepAlsoLogsNoWarningOrErrorAndNoStackTrace (`backend/vyoog-domain/src/test/java/com/vyoog/detection/AiOffDetectionNoiseTest.java`)
+
+## VYB-0912: ESLint, and generated API types from the OpenAPI document [S; F12]
+
+- `AC1` theGeneratedSchemaTypesAreUsableFromTheSharedEntryPoint (`frontend/src/shared/api/apiContract.test.ts`)
+- `AC2` aDriftedFieldWouldBeCaught (`frontend/src/shared/api/apiContract.test.ts`)
+- `AC2` enoughOfTheHandWrittenTypesAreCheckedAgainstTheDocument (`frontend/src/shared/api/apiContract.test.ts`)
+- `AC2` noCheckedTypeNamesAFieldTheApiDoesNotSend (`frontend/src/shared/api/apiContract.test.ts`)
+- `AC2` theCommittedOpenApiDocumentMatchesWhatTheRunningApiPublishes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/OpenApiDocumentIT.java`)
+- `AC2` theDocumentCoversTheApiAndKeepsItsErrorShape (`backend/vyoog-api/src/test/java/com/vyoog/api/it/OpenApiDocumentIT.java`)

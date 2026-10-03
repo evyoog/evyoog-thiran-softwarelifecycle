@@ -315,7 +315,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0909 | 6 | Enforce roles and make the build trustworthy | Add Prometheus registry, scheduler lock for sweeps and outbox relay, nginx limits, non-root container with healthcheck [M; F33–F35] | DONE on dev (26 new tests; Dockerfiles not built, no Docker daemon; commit only, no PR yet) | S2 |
 | VYB-0910 | 6 | Enforce roles and make the build trustworthy | Index migration for unindexed foreign keys; purge jobs for idempotency and webhook tables [S; F36] | DONE on dev (11 new tests; commit only, no PR yet) | S2 |
 | VYB-0911 | 6 | Enforce roles and make the build trustworthy | Fix saved_view check, tenant export table list, adjudicator noise when AI is off [S; F22, F23, F32] | DONE on dev (17 new tests; commit only, no PR yet) | S2 |
-| VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | TODO | S2 |
+| VYB-0912 | 6 | Enforce roles and make the build trustworthy | ESLint, and generated API types from the OpenAPI document [S; F12] | DONE on dev (6 new tests; hand-written client types not migrated, see log; commit only, no PR yet) | S2 |
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | TODO | S3 |
 | VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | TODO | S3 |
 | VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
@@ -4923,6 +4923,24 @@ Phase 6 Sprint 2. Branch `dev`. **17 new tests**: `SavedViewIT` 5 and `TenantExp
 - A saved view that filtered on VERIFIED is silently changed to filter on APPROVED.
 - The nightly sweep now logs the conflict rule at INFO ("not run, not configured") instead of WARN when AI is off.
 - Testcontainers path and the GitHub CI run unverified (local Postgres used).
+
+---
+
+## Session 72 — VYB-0912 (F12): ESLint and generated API types (Sprint 2 complete)
+
+Phase 6 Sprint 2, last row. Branch `dev`. **6 new tests**: `OpenApiDocumentIT` 2 (backend) and `apiContract.test.ts` 4 (frontend, one of them a type-level check of the generated types). The finding text F12 is not in the repository; scope is the register row.
+
+**ESLint.** `package.json` already had `"lint": "eslint ."` but ESLint was not a dependency and there was no config, so `npm run lint` could not run. Added `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals` (no existing package changed version; checked against the old lockfile) and `eslint.config.js`: ESLint recommended, typescript-eslint recommended, and the two classic hooks rules. First run: 61 problems. Triage: the React Compiler rules that `eslint-plugin-react-hooks` 7 ships (refs, set-state-in-effect, purity, ...) account for 38 of them; they are **off**, because this app does not use the React Compiler and "fixing" them means restructuring components that cannot be verified without a browser (turning them on is its own decision). `no-unused-vars` is configured for the `_`-prefixed omit-keys idiom (5) and `no-unused-expressions` allows the `set.has(k) ? set.delete(k) : set.add(k)` toggle (5). Two real edits: `interface Node extends GraphNode {}` became `type Node = GraphNode`, and one unused `eslint-disable` comment was removed from `AuthProvider.tsx` (the first attempt removed the wrong one and lint showed it; reverted and redone). Result: **0 errors, 10 warnings**, all `react-hooks/exhaustive-deps` on `useMemo`/`useEffect`; `npm run lint` is `eslint . --max-warnings 10`, so a new warning fails it. Evidence: a probe file with a conditional hook call and an unused variable made `npm run lint` fail with 2 errors, removed afterwards.
+
+**Generated API types.** The backend's OpenAPI document (223 paths, 228 schemas, springdoc) is committed at `docs/06-api/openapi/openapi.json` (keys sorted, `servers` removed so it is stable). `OpenApiDocumentIT` fails if it differs from what the running application publishes (a stale copy made it fail; the message says how to regenerate) and `-Dopenapi.write=true` rewrites it. `npm run generate-api` (openapi-typescript 7.13) writes `frontend/src/shared/api/generated/schema.d.ts` (11,172 lines, byte-identical on a second run); `src/shared/api/schema.ts` is the import point (`Schemas['RequirementView']`). CI (`ci.yml`, frontend job) now runs lint and fails if the generated file is not current; the frontend job moved from Node 20 to 22 (ESLint 10 needs Node 20.19+ or 22.13+, and the frontend image already uses Node 22).
+
+**Not done, on purpose: the screens still use the hand-written types in `client.ts`.** The generated types mark every field optional and every enum a `string` (the DTOs carry no required or enum information), so replacing the hand-written ones now would loosen the types the screens depend on. Instead `apiContract.test.ts` compares the hand-written interfaces with the document: of 127, 60 match a schema by name (the same, plus `View` or `Response`) and all 60 name only fields the API sends; the other 67 (untyped map responses or differently named schemas) are not covered, and a floor of 55 stops coverage shrinking silently. Adding a made-up field to `Requirement` made it fail. **A follow-up row is needed** to annotate the DTOs (`@NotNull`, enum types) so the generated types can replace `client.ts`; CLAUDE.md's "API types are generated, never hand-written" is therefore not yet true of the screens.
+
+**Not done / to know**
+- Nothing was run in a browser; only `tsc`, 620 frontend tests and lint. The two source edits are type-level or comment-only.
+- The 10 remaining warnings are real hook-dependency questions (for example `useMemo` over `useQueries` results); each needs deciding in its screen.
+- The CI frontend job and the Node 22 change have not run on GitHub.
+- The OpenAPI document is large (about 290 KB) and will appear in every API-changing diff, which is the point.
 
 ---
 

@@ -82,7 +82,8 @@ Platform → Product → App → Capability → Requirement
 - [ ] Flyway migration is forward-only, targets the `vyg_requirement` schema, and runs
       against a populated database
 - [ ] `cd backend && ./mvnw -B verify` is green
-- [ ] OpenAPI regenerated; frontend types regenerated (once `generate-api` exists, Sprint 2, VYB-0912)
+- [ ] OpenAPI regenerated and frontend types regenerated when an endpoint or DTO changed: the backend test `OpenApiDocumentIT` fails on a stale `docs/06-api/openapi/openapi.json`, CI fails on stale `frontend/src/shared/api/generated` (`npm run generate-api`)
+- [ ] `cd frontend && npm run lint` has no errors and no new warnings
 - [ ] An audit event is emitted for every state change
 - [ ] Commit trailer present: `Requirement: VYB-nnnn`
 - [ ] Test named `VYBnnnn_ACn_shortDescription`
@@ -102,7 +103,9 @@ cd backend && ./mvnw -B -pl vyoog-api spring-boot:build-image
 docker compose up -d                 # (repository root) local postgres, redis, minio (Keycloak is the shared eVyoog realm — no local instance)
 cd frontend && npm run dev
 cd frontend && npm run test
-# `npm run generate-api` (OpenAPI → TypeScript) does not exist yet; Sprint 2 adds it (VYB-0912).
+cd frontend && npm run lint          # ESLint; errors fail it, and so does a new warning (see package.json)
+cd frontend && npm run generate-api  # docs/06-api/openapi/openapi.json → src/shared/api/generated/schema.d.ts
+# after an API change, regenerate the document first: see the Javadoc of OpenApiDocumentIT (-Dopenapi.write=true)
 ```
 
 Integration tests are named `*IT.java` and run under Failsafe, not Surefire. A test that

@@ -179,7 +179,7 @@ function useAutoDesignCoverage(
 
 // ---------------------------------------------------------------------------
 
-interface Node extends GraphNode {}
+type Node = GraphNode
 interface Group { nodes: Node[]; edges: GraphEdge[] }
 
 /** Connected components by union-find — a link anywhere in the chain puts both ends in the same group. */

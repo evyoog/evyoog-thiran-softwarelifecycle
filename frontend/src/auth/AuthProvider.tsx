@@ -139,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       checkInFlightRef.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptSessionCheck])
 
   // Runs once, before the sign-in screen ever gets a chance to render, then

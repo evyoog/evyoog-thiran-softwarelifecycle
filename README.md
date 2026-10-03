@@ -97,7 +97,7 @@ The full list, with comments, is `.env.example`.
 
 ```bash
 cd backend  && ./mvnw -B verify                          # compile, unit tests, ArchUnit
-cd frontend && npx tsc -b && npm test                    # type check and unit tests
+cd frontend && npm run lint && npx tsc -b && npm test   # lint, type check and unit tests
 python3 scripts/generate-requirements-docs.py --check    # docs/02-requirements matches the register
 ```
 

@@ -39,4 +39,6 @@ DB_USER=postgres DB_PASSWORD=... \
 
 `FoundationSmokeIT` (migrations applied, extensions, search path), `RequirementIT` (keys, revisions, optimistic concurrency, the state machine and who may move it, soft delete), `TraceIT` (links, closure table, traversal and cycles, suspect links, coverage), `ReleaseIT` (scope, one release at a time, movements, readiness, blocked, notes), `ReviewIT` (frozen revisions, participants, signing, separation of duties, closing), `BaselineIT` (freeze, immutability, diff), `ChangeRequestApplyIT` (raise, impact, decide, edit through the change request, apply, suspect links).
 
+`OpenApiDocumentIT` (the committed OpenAPI document equals what the running API publishes; `-Dopenapi.write=true` rewrites it), and, among others from VYB-0908 to VYB-0911, `SchedulerLockIT`, `PrometheusIT`, `PurgeServiceIT`, `ForeignKeyIndexIT`, `SavedViewIT` and `TenantExportIT`.
+
 Not covered yet: briefs, import, design, defects and test cases, detection sweeps end to end, the HTTP layer with a real database. Add an `*IT` for any new SQL.
