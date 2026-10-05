@@ -1,8 +1,8 @@
 # Test management: plans, suites, steps and runs
 
-Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run), VYB-0924b (evidence, retest) and VYB-0925 (verification records), the last three below (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
+Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run), VYB-0924b (evidence, retest), VYB-0925 (verification records) and VYB-0926 (defects from a failed step), the last four below (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
 
-VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence and retest are VYB-0924b, verification records bound to a requirement revision are VYB-0925 (both below), raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here ever writes `requirement.status` (CLAUDE.md rule 3).
+VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence and retest are VYB-0924b, verification records bound to a requirement revision are VYB-0925 (both below), raising a defect from a failed step is VYB-0926 (below) and the Quality screen is VYB-0927. Nothing here ever writes `requirement.status` (CLAUDE.md rule 3).
 
 ## Model
 
@@ -83,10 +83,20 @@ Migration `V043__test_run_requirement_revisions.sql`.
 - **A manual PASS verifies a requirement** the same way a CI PASS does: `is_verified` is "any PASS at the current revision" (V001). A FAIL does not cancel a PASS from another case or run; that predicate is unchanged.
 - `requirement.status` is never written (CLAUDE.md rule 3).
 
+## Defects from a failed step (VYB-0926)
+
+Migration `V044__defect_raised_from_run.sql`: `defect.raised_from_run_step_id` and `defect.raised_from_run_case_id` (at most one set), each with a unique partial index, so **one defect per failed step** is a database rule. There is no new text field on a defect: the test, run, expected and actual result are read through the link.
+
+- A step whose result is FAIL (for a case with no steps, a case whose own result is FAIL) can raise a defect, once the run has been started; a completed run still allows it. BLOCKED, PASS and unrecorded cannot.
+- `GET /test-runs/{id}/steps/{stepId}/defect-draft` (and `.../cases/{caseId}/defect-draft`) returns what the defect would be prefilled with: title `<case key> step <n> failed: <action>`, severity MEDIUM, found in QA, the requirement, plus the test, step, expected and actual result, run, build, plan and suite, and any existing defect. `POST .../defects` raises it; anything sent in the body wins over the draft.
+- The requirement is one the case verified when the run **started** (the frozen set of VYB-0925): the only one is chosen, several must be chosen between, none leaves the defect untraced (which defects allow).
+- It goes through `DefectService.raise`, so routing, notifications and the `defect.raised` audit event are the usual ones; the run also records `test-run.defect-raised`. The run detail shows the defect on the step or case.
+- Write access is Verify (Tester), like raising any defect; the drafts are readable by any signed-in person.
+
 ## Audit events
 
 `test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created|started|step-recorded|case-recorded|completed|evidence-added|retest-created`.
 
 ## Tests
 
-`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `TestVerificationIT` (`VYB0925_AC1` to `AC6`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.
+`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `TestVerificationIT` (`VYB0925_AC1` to `AC6`), `TestDefectFromRunIT` (`VYB0926_AC1` to `AC9`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.

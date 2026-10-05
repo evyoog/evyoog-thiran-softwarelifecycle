@@ -1,6 +1,7 @@
 package com.vyoog.api.web;
 
 import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.evidence.TestDefectService;
 import com.vyoog.evidence.TestExecutionService;
 import com.vyoog.evidence.TestManagementService;
 import com.vyoog.identity.AccessRule;
@@ -27,12 +28,14 @@ public class TestManagementController {
 
     private final TestManagementService service;
     private final TestExecutionService execution;
+    private final TestDefectService runDefects;
     private final UserProvisioningService provisioning;
 
     public TestManagementController(TestManagementService service, TestExecutionService execution,
-                                     UserProvisioningService provisioning) {
+                                     TestDefectService runDefects, UserProvisioningService provisioning) {
         this.service = service;
         this.execution = execution;
+        this.runDefects = runDefects;
         this.provisioning = provisioning;
     }
 
@@ -186,12 +189,14 @@ public class TestManagementController {
                                 String filename, String contentType, Long sizeBytes, String addedBy, String addedAt) {}
 
     public record RunStepView(String id, int position, String action, String expectedResult, String result,
-                               String actualResult, String executedBy, String executedAt, List<EvidenceView> evidence) {}
+                               String actualResult, String executedBy, String executedAt, List<EvidenceView> evidence,
+                               String defectId, String defectKey) {}
 
     /** {@code result} is derived (PASS, FAIL, BLOCKED or NOT_RUN); the other result fields are set only for a case with no steps. */
     public record RunCaseView(String id, int position, String testCaseId, String key, String title, String description,
                                List<RunStepView> steps, String result, String actualResult, String executedBy,
-                               String executedAt, List<EvidenceView> evidence, List<TestedRequirementView> requirements) {}
+                               String executedAt, List<EvidenceView> evidence, List<TestedRequirementView> requirements,
+                               String defectId, String defectKey) {}
 
     /** A requirement the case verifies, frozen at run start; currentRevision above testedRevision means it was edited since. */
     public record TestedRequirementView(String requirementId, String key, int testedRevision, int currentRevision) {}
@@ -218,10 +223,12 @@ public class TestManagementController {
         return new TestRunDetailView(view(d.run()), d.cases().stream().map(c -> new RunCaseView(
             s(c.id()), c.position(), s(c.testCaseId()), c.key(), c.title(), c.description(),
             c.steps().stream().map(st -> new RunStepView(s(st.id()), st.position(), st.action(), st.expectedResult(),
-                st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()), evidence(st.evidence()))).toList(),
+                st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()), evidence(st.evidence()),
+                st.defect() == null ? null : s(st.defect().id()), st.defect() == null ? null : st.defect().key())).toList(),
             c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()), evidence(c.evidence()),
             c.requirements().stream().map(q -> new TestedRequirementView(s(q.requirementId()), q.key(), q.testedRevision(),
-                q.currentRevision())).toList())).toList(),
+                q.currentRevision())).toList(),
+            c.defect() == null ? null : s(c.defect().id()), c.defect() == null ? null : c.defect().key())).toList(),
             new RunSummaryView(d.summary().total(), d.summary().passed(), d.summary().failed(), d.summary().blocked(),
                 d.summary().notRun(), d.summary().verificationsRecorded()));
     }
@@ -324,5 +331,67 @@ public class TestManagementController {
                                         @AuthenticationPrincipal Jwt jwt) {
         RetestRun b = body == null ? new RetestRun(null, null) : body;
         return view(execution.retest(id, b.assignedTo(), b.buildLabel(), currentUserId(jwt)));
+    }
+
+    // ------------------------------------------------------ defects (0926)
+
+    public record RaiseRunDefect(String title, String severity, String foundIn, UUID requirementId) {}
+
+    public record DefectDraftView(String title, String severity, String foundIn, String requirementId,
+                                   List<TestedRequirementView> candidates, String runId, String buildLabel, String planName,
+                                   String suiteName, String testKey, String testTitle, Integer stepPosition, String action,
+                                   String expectedResult, String actualResult, String existingDefectId, String existingDefectKey) {}
+
+    public record RaisedDefectView(String id, String key, String title, String severity, String requirementId, boolean untraced,
+                                    String foundIn, String state, String runId, String runStepId, String runCaseId) {}
+
+    private static DefectDraftView view(TestDefectService.DefectDraft d) {
+        return new DefectDraftView(d.title(), d.severity(), d.foundIn(), s(d.requirementId()),
+            d.candidates().stream().map(q -> new TestedRequirementView(s(q.requirementId()), q.key(), q.testedRevision(),
+                q.currentRevision())).toList(),
+            s(d.runId()), d.buildLabel(), d.planName(), d.suiteName(), d.testKey(), d.testTitle(), d.stepPosition(), d.action(),
+            d.expectedResult(), d.actualResult(), d.existingDefect() == null ? null : s(d.existingDefect().id()),
+            d.existingDefect() == null ? null : d.existingDefect().key());
+    }
+
+    private static RaisedDefectView view(TestDefectService.Raised r) {
+        var d = r.defect();
+        return new RaisedDefectView(s(d.getId()), d.getKey(), d.getTitle(), d.getSeverity().name(), s(d.getRequirementId()),
+            d.isUntraced(), d.getFoundIn().name(), d.getState().name(), s(r.runId()), s(r.runStepId()), s(r.runCaseId()));
+    }
+
+    /** What a defect raised from this failed step would be prefilled with: the test, the step, the run and the candidate requirements. */
+    @GetMapping("/test-runs/{id}/steps/{stepId}/defect-draft")
+    public DefectDraftView defectDraftForStep(@PathVariable UUID id, @PathVariable UUID stepId) {
+        return view(runDefects.draftFromStep(id, stepId));
+    }
+
+    /** As {@link #defectDraftForStep}, for a failed case that has no steps. */
+    @GetMapping("/test-runs/{id}/cases/{caseId}/defect-draft")
+    public DefectDraftView defectDraftForCase(@PathVariable UUID id, @PathVariable UUID caseId) {
+        return view(runDefects.draftFromCase(id, caseId));
+    }
+
+    /**
+     * Raises a defect from a failed step. Anything omitted takes the draft's value (title, severity MEDIUM, found in QA,
+     * the requirement when the case verified exactly one). Refused unless the step failed, and once per step.
+     */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/test-runs/{id}/steps/{stepId}/defects")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RaisedDefectView raiseDefectFromStep(@PathVariable UUID id, @PathVariable UUID stepId,
+                                                 @RequestBody(required = false) RaiseRunDefect body, @AuthenticationPrincipal Jwt jwt) {
+        RaiseRunDefect b = body == null ? new RaiseRunDefect(null, null, null, null) : body;
+        return view(runDefects.raiseFromStep(id, stepId, b.title(), b.severity(), b.foundIn(), b.requirementId(), currentUserId(jwt)));
+    }
+
+    /** As {@link #raiseDefectFromStep}, for a failed case that has no steps. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/test-runs/{id}/cases/{caseId}/defects")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RaisedDefectView raiseDefectFromCase(@PathVariable UUID id, @PathVariable UUID caseId,
+                                                 @RequestBody(required = false) RaiseRunDefect body, @AuthenticationPrincipal Jwt jwt) {
+        RaiseRunDefect b = body == null ? new RaiseRunDefect(null, null, null, null) : body;
+        return view(runDefects.raiseFromCase(id, caseId, b.title(), b.severity(), b.foundIn(), b.requirementId(), currentUserId(jwt)));
     }
 }

@@ -55,8 +55,12 @@ public class TestManagementService {
     public record Evidence(UUID id, UUID attachmentId, int version, UUID requirementId, String requirementKey,
                             String filename, String contentType, Long sizeBytes, UUID addedBy, Instant addedAt) {}
 
+    /** The defect raised from a failed step or case (VYB-0926), if any. */
+    public record DefectRef(UUID id, String key) {}
+
     public record RunStep(UUID id, int position, String action, String expectedResult, String result,
-                           String actualResult, UUID executedBy, Instant executedAt, List<Evidence> evidence) {}
+                           String actualResult, UUID executedBy, Instant executedAt, List<Evidence> evidence,
+                           DefectRef defect) {}
 
     /**
      * {@code result} is derived, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else
@@ -65,7 +69,7 @@ public class TestManagementService {
      */
     public record RunCase(UUID id, int position, UUID testCaseId, String key, String title, String description,
                            List<RunStep> steps, String result, String actualResult, UUID executedBy, Instant executedAt,
-                           List<Evidence> evidence, List<TestedRequirement> requirements) {}
+                           List<Evidence> evidence, List<TestedRequirement> requirements, DefectRef defect) {}
 
     /**
      * A requirement the case verifies, frozen when the run was started (VYB-0925): {@code testedRevision} is what the
@@ -399,6 +403,17 @@ public class TestManagementService {
                     .add(new TestedRequirement(rs.getObject("requirement_id", UUID.class), rs.getString("key"),
                         rs.getInt("requirement_revision"), rs.getInt("current_revision")));
             }, id);
+        Map<UUID, DefectRef> defectByOwner = new LinkedHashMap<>(); // keyed by run step id or run case id
+        jdbc.query("""
+            SELECT d.id, d.key, coalesce(d.raised_from_run_step_id, d.raised_from_run_case_id) AS owner_id
+              FROM defect d
+              LEFT JOIN test_run_step rs ON rs.id = d.raised_from_run_step_id
+              JOIN test_run_case rc ON rc.id = coalesce(rs.run_case_id, d.raised_from_run_case_id)
+             WHERE rc.run_id = ?
+            """, rs -> {
+                defectByOwner.put(rs.getObject("owner_id", UUID.class),
+                    new DefectRef(rs.getObject("id", UUID.class), rs.getString("key")));
+            }, id);
         Map<UUID, List<RunStep>> stepsByCase = new LinkedHashMap<>();
         jdbc.query("""
             SELECT rs.id, rs.run_case_id, rs.position, rs.action, rs.expected_result, rs.result, rs.actual_result,
@@ -410,7 +425,8 @@ public class TestManagementService {
                     .add(new RunStep(rs.getObject("id", UUID.class), rs.getInt("position"), rs.getString("action"),
                         rs.getString("expected_result"), rs.getString("result"), rs.getString("actual_result"),
                         rs.getObject("executed_by", UUID.class), instant(rs.getTimestamp("executed_at")),
-                        evidenceByOwner.getOrDefault(rs.getObject("id", UUID.class), List.of())));
+                        evidenceByOwner.getOrDefault(rs.getObject("id", UUID.class), List.of()),
+                        defectByOwner.get(rs.getObject("id", UUID.class))));
             }, id);
         List<RunCase> cases = jdbc.query("""
             SELECT id, position, test_case_id, case_key, title, description, result, actual_result, executed_by, executed_at
@@ -423,7 +439,7 @@ public class TestManagementService {
                     rs.getString("case_key"), rs.getString("title"), rs.getString("description"), steps,
                     caseResult(steps, own), rs.getString("actual_result"), rs.getObject("executed_by", UUID.class),
                     instant(rs.getTimestamp("executed_at")), evidenceByOwner.getOrDefault(caseId, List.of()),
-                    requirementsByCase.getOrDefault(caseId, List.of()));
+                    requirementsByCase.getOrDefault(caseId, List.of()), defectByOwner.get(caseId));
             }, id);
         int passed = 0, failed = 0, blocked = 0, notRun = 0;
         for (RunCase c : cases) {

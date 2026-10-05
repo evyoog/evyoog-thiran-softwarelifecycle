@@ -329,7 +329,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | DONE on dev, in two sessions (0924a execute, 0924b evidence and retest; 25 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | DONE on dev (9 new tests; backend only, no screen; commit only, no PR yet) | S5 |
-| VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
+| VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | DONE on dev (12 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
 | VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | TODO | S6 |
 | VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | TODO | S6 |
@@ -5136,6 +5136,31 @@ Phase 6 Sprint 5. Branch `dev`. **9 new tests**: `TestVerificationIT` (`VYB0925_
 
 **Not done / to know**
 - No screen: the pass rate per requirement is VYB-0927.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 81 — VYB-0926 (F14, F15): raise a defect from a failed step
+
+Phase 6 Sprint 5. Branch `dev`. **12 new tests**: `TestDefectFromRunIT` (`VYB0926_AC1` to `AC9`, real PostgreSQL, service calls and HTTP with real tokens). Backend only, no screen (VYB-0927). The finding texts F14 and F15 are not in the repository; scope is the register row.
+
+**Decisions with the product owner this session.** (1) The defect **carries the test and run by a link to the failed step, with no new text field**: the test, run, expected and actual result are read through the link, so they stay accurate. A description column was offered and declined. VYB-0931 (Sprint 6) adds the wider links from a defect to test, run and release; this does not pre-empt it. (2) **One defect per failed step**, refused with 409 naming the existing one.
+
+**Database.** `V044__defect_raised_from_run.sql`: `defect.raised_from_run_step_id` and `defect.raised_from_run_case_id` (at most one set), each with a unique partial index, which is both the one-per-step rule and the foreign-key index. Existing defects are unaffected (both null).
+
+**Backend.** `TestDefectService`: a draft (prefilled values and read-only context) and the raise, for a step and for a failed case that has no steps. The defect is raised through the existing `DefectService.raise`, so routing to the developer and tester, notifications and the `defect.raised` audit event are exactly those of any other defect; this adds the link and a `test-run.defect-raised` audit event on the run. The run detail now shows the defect (id and key) on the step or case. Four endpoints: `GET .../steps/{stepId}/defect-draft`, `GET .../cases/{caseId}/defect-draft` (any signed-in person), `POST .../steps/{stepId}/defects`, `POST .../cases/{caseId}/defects`. OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Prefill.** Title `<case key> step <n> failed: <action>` (case: `<case key> failed: <title>`), cut to 200 characters; severity MEDIUM; found in QA; the requirement when the case verified exactly one. Anything the caller sends wins. The draft also returns the test key and title, step action, expected and actual result, run id, build label, plan and suite names, and any existing defect.
+
+**Access.** The two raise endpoints are `VERIFY` (Tester), scope ANYWHERE, the same rule as raising any defect, registered in `AccessPolicyTest`; a test proves 403 for a Business Analyst and a Viewer.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Only a step whose result is FAIL (a case with no steps: whose own result is FAIL) can raise a defect; BLOCKED cannot. (2) The run must have been started; a completed run still allows it. (3) The requirement must be one the case verified when the run started (the frozen set, VYB-0925): one is chosen for the caller, several must be chosen between (400), none leaves the defect untraced, which defects already allow. A requirement linked after the run started is not offered. (4) A step of a retest is a different step and can have its own defect. (5) Severity and found-in default to MEDIUM and QA because the tester is expected to review them; the endpoints do not force a choice.
+
+**Evidence.** Removing the "only a failed step" check failed 3 tests, then restored. A test confirms raising changes neither a run's results nor a requirement's status.
+
+**Not done / to know**
+- No screen to show the draft or the button (VYB-0927).
+- The defect list and the defect view (`GET /defects`) do not yet show the link back to the run; that is VYB-0931.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

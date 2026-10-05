@@ -3428,6 +3428,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/test-runs/{id}/cases/{caseId}/defect-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["defectDraftForCase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/cases/{caseId}/defects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["raiseDefectFromCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/test-runs/{id}/cases/{caseId}/evidence": {
         parameters: {
             query?: never;
@@ -3502,6 +3534,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/steps/{stepId}/defect-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["defectDraftForStep"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/steps/{stepId}/defects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["raiseDefectFromStep"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4389,6 +4453,26 @@ export interface components {
         DecideRequest: {
             approve?: boolean;
         };
+        DefectDraftView: {
+            action?: string;
+            actualResult?: string;
+            buildLabel?: string;
+            candidates?: components["schemas"]["TestedRequirementView"][];
+            existingDefectId?: string;
+            existingDefectKey?: string;
+            expectedResult?: string;
+            foundIn?: string;
+            planName?: string;
+            requirementId?: string;
+            runId?: string;
+            severity?: string;
+            /** Format: int32 */
+            stepPosition?: number;
+            suiteName?: string;
+            testKey?: string;
+            testTitle?: string;
+            title?: string;
+        };
         DefectView: {
             developerId?: string;
             foundIn?: string;
@@ -4996,6 +5080,26 @@ export interface components {
             severity: string;
             title: string;
         };
+        RaiseRunDefect: {
+            foundIn?: string;
+            /** Format: uuid */
+            requirementId?: string;
+            severity?: string;
+            title?: string;
+        };
+        RaisedDefectView: {
+            foundIn?: string;
+            id?: string;
+            key?: string;
+            requirementId?: string;
+            runCaseId?: string;
+            runId?: string;
+            runStepId?: string;
+            severity?: string;
+            state?: string;
+            title?: string;
+            untraced?: boolean;
+        };
         ReachabilityView: {
             /** Format: int32 */
             depth?: number;
@@ -5202,6 +5306,8 @@ export interface components {
         };
         RunCaseView: {
             actualResult?: string;
+            defectId?: string;
+            defectKey?: string;
             description?: string;
             evidence?: components["schemas"]["EvidenceView"][];
             executedAt?: string;
@@ -5219,6 +5325,8 @@ export interface components {
         RunStepView: {
             action?: string;
             actualResult?: string;
+            defectId?: string;
+            defectKey?: string;
             evidence?: components["schemas"]["EvidenceView"][];
             executedAt?: string;
             executedBy?: string;
@@ -11478,6 +11586,56 @@ export interface operations {
             };
         };
     };
+    defectDraftForCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectDraftView"];
+                };
+            };
+        };
+    };
+    raiseDefectFromCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RaiseRunDefect"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RaisedDefectView"];
+                };
+            };
+        };
+    };
     addCaseEvidence: {
         parameters: {
             query?: {
@@ -11603,6 +11761,56 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    defectDraftForStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectDraftView"];
+                };
+            };
+        };
+    };
+    raiseDefectFromStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RaiseRunDefect"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RaisedDefectView"];
                 };
             };
         };

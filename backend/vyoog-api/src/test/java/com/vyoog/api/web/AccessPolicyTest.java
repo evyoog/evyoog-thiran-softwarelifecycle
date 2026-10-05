@@ -151,6 +151,8 @@ class AccessPolicyTest {
         Map.entry("TestManagementController#addStepEvidence", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TestManagementController#addCaseEvidence", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TestManagementController#retestRun", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("TestManagementController#raiseDefectFromStep", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("TestManagementController#raiseDefectFromCase", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         // 6c: administrator-only
         Map.entry("EnvironmentController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("TeamController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),

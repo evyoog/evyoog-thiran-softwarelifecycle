@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 666 tests cover 51 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 678 tests cover 52 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -822,3 +822,18 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` aRetestRecordsAtItsOwnStartRevisionAndTheEarlierFailStaysOnRecord (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
 - `AC6` theRecordSurvivesTheLiveCaseBeingDeletedWithoutTheTestCaseId (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
 - `AC6` theRecordsAreWrittenOnceThenTheRunIsFinalAndNothingAboutCiChanges (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+
+## VYB-0926: Raise a defect from a failed step, prefilled with the test and run [S; F14, F15]
+
+- `AC1` theDraftIsPrefilledWithTheTestTheStepTheRunAndTheRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC2` aFailedStepRaisesAnOpenDefectLinkedToTheStepWithTheDraftsValuesAndShownOnTheRun (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC2` anythingTheCallerSuppliesWinsOverTheDraft (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC3` aStepWithNoResultYetCannotRaiseOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC3` onlyAFailedStepOfAStartedRunCanRaiseADefect (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC4` oneDefectPerFailedStepASecondAttemptNamesTheFirst (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC5` severalVerifiedRequirementsMustBeChosenBetweenAndNoneLeavesTheDefectUntraced (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC5` whichRequirementTheDefectIsAgainstIsOnlyOneTheCaseVerifiedWhenTheRunStarted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC6` aFailedCaseWithNoStepsRaisesFromTheCaseAndACaseWithStepsOnlyFromItsSteps (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC7` aCompletedRunStillAllowsItAndARetestsFailureIsItsOwn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC8` raisingNeverChangesARunsResultsOrARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+- `AC9` raisingIsRefusedWith403ToANonTesterAndWorksForATesterWhileTheDraftIsReadableByAnySignedInPerson (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)

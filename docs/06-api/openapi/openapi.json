@@ -1470,6 +1470,66 @@
         },
         "type" : "object"
       },
+      "DefectDraftView" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "actualResult" : {
+            "type" : "string"
+          },
+          "buildLabel" : {
+            "type" : "string"
+          },
+          "candidates" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TestedRequirementView"
+            },
+            "type" : "array"
+          },
+          "existingDefectId" : {
+            "type" : "string"
+          },
+          "existingDefectKey" : {
+            "type" : "string"
+          },
+          "expectedResult" : {
+            "type" : "string"
+          },
+          "foundIn" : {
+            "type" : "string"
+          },
+          "planName" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "type" : "string"
+          },
+          "runId" : {
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "stepPosition" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "suiteName" : {
+            "type" : "string"
+          },
+          "testKey" : {
+            "type" : "string"
+          },
+          "testTitle" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "DefectView" : {
         "properties" : {
           "developerId" : {
@@ -3198,6 +3258,62 @@
         "required" : [ "foundIn", "severity", "title" ],
         "type" : "object"
       },
+      "RaiseRunDefect" : {
+        "properties" : {
+          "foundIn" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RaisedDefectView" : {
+        "properties" : {
+          "foundIn" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "type" : "string"
+          },
+          "runCaseId" : {
+            "type" : "string"
+          },
+          "runId" : {
+            "type" : "string"
+          },
+          "runStepId" : {
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "untraced" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "ReachabilityView" : {
         "properties" : {
           "depth" : {
@@ -3776,6 +3892,12 @@
           "actualResult" : {
             "type" : "string"
           },
+          "defectId" : {
+            "type" : "string"
+          },
+          "defectKey" : {
+            "type" : "string"
+          },
           "description" : {
             "type" : "string"
           },
@@ -3831,6 +3953,12 @@
             "type" : "string"
           },
           "actualResult" : {
+            "type" : "string"
+          },
+          "defectId" : {
+            "type" : "string"
+          },
+          "defectKey" : {
             "type" : "string"
           },
           "evidence" : {
@@ -12440,6 +12568,85 @@
         "tags" : [ "test-management-controller" ]
       }
     },
+    "/api/v1/test-runs/{id}/cases/{caseId}/defect-draft" : {
+      "get" : {
+        "operationId" : "defectDraftForCase",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "caseId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectDraftView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/cases/{caseId}/defects" : {
+      "post" : {
+        "operationId" : "raiseDefectFromCase",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "caseId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RaiseRunDefect"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RaisedDefectView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
     "/api/v1/test-runs/{id}/cases/{caseId}/evidence" : {
       "post" : {
         "operationId" : "addCaseEvidence",
@@ -12629,6 +12836,85 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/steps/{stepId}/defect-draft" : {
+      "get" : {
+        "operationId" : "defectDraftForStep",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "stepId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectDraftView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/steps/{stepId}/defects" : {
+      "post" : {
+        "operationId" : "raiseDefectFromStep",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "stepId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RaiseRunDefect"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RaisedDefectView"
+                }
+              }
+            },
+            "description" : "Created"
           }
         },
         "tags" : [ "test-management-controller" ]
