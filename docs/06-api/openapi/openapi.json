@@ -1824,6 +1824,43 @@
         },
         "type" : "object"
       },
+      "EvidenceView" : {
+        "properties" : {
+          "addedAt" : {
+            "type" : "string"
+          },
+          "addedBy" : {
+            "type" : "string"
+          },
+          "attachmentId" : {
+            "type" : "string"
+          },
+          "contentType" : {
+            "type" : "string"
+          },
+          "filename" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "type" : "string"
+          },
+          "requirementKey" : {
+            "type" : "string"
+          },
+          "sizeBytes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "version" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "ExpiringGrantView" : {
         "properties" : {
           "expiresAt" : {
@@ -3559,6 +3596,18 @@
         "required" : [ "result", "testKey" ],
         "type" : "object"
       },
+      "RetestRun" : {
+        "properties" : {
+          "assignedTo" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "buildLabel" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ReviewView" : {
         "properties" : {
           "closedAt" : {
@@ -3730,6 +3779,12 @@
           "description" : {
             "type" : "string"
           },
+          "evidence" : {
+            "items" : {
+              "$ref" : "#/components/schemas/EvidenceView"
+            },
+            "type" : "array"
+          },
           "executedAt" : {
             "type" : "string"
           },
@@ -3771,6 +3826,12 @@
           },
           "actualResult" : {
             "type" : "string"
+          },
+          "evidence" : {
+            "items" : {
+              "$ref" : "#/components/schemas/EvidenceView"
+            },
+            "type" : "array"
           },
           "executedAt" : {
             "type" : "string"
@@ -4619,6 +4680,9 @@
             "type" : "string"
           },
           "planName" : {
+            "type" : "string"
+          },
+          "retestOf" : {
             "type" : "string"
           },
           "startedAt" : {
@@ -12347,6 +12411,65 @@
         "tags" : [ "test-management-controller" ]
       }
     },
+    "/api/v1/test-runs/{id}/cases/{caseId}/evidence" : {
+      "post" : {
+        "operationId" : "addCaseEvidence",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "caseId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "requirementId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
     "/api/v1/test-runs/{id}/cases/{caseId}/result" : {
       "put" : {
         "operationId" : "recordCaseResult",
@@ -12419,6 +12542,42 @@
         "tags" : [ "test-management-controller" ]
       }
     },
+    "/api/v1/test-runs/{id}/retest" : {
+      "post" : {
+        "operationId" : "retestRun",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RetestRun"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
     "/api/v1/test-runs/{id}/start" : {
       "post" : {
         "operationId" : "startRun",
@@ -12441,6 +12600,65 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/steps/{stepId}/evidence" : {
+      "post" : {
+        "operationId" : "addStepEvidence",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "stepId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "requirementId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "Created"
           }
         },
         "tags" : [ "test-management-controller" ]

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 643 tests cover 49 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 657 tests cover 50 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -793,3 +793,20 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` executingARunNeverWritesVerificationOrChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 - `AC5` theDatabaseItselfRefusesAFailWithNoActualResultAndAResultWithNoWho (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 - `AC6` everyExecutionWriteIsRefusedWith403ToANonTesterAndAllowedToATester (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+
+## VYB-0924b (not in the register)
+
+- `AC1` aCaseWithNoStepsTakesItsEvidenceOnTheCaseAndACaseWithStepsOnlyOnItsSteps (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC1` aStepsEvidenceIsStoredAsAnAttachmentOfTheRequirementItsCaseVerifiesAndShownOnTheStep (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC1` evidencePointsAtTheExactVersionSoReUploadingTheSameNameNeverChangesAnEarlierOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC2` aCaseThatVerifiesNothingHasNowhereToPutEvidence (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC2` whichRequirementTheFileAttachesToIsOnlyEverOneTheCaseVerifies (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC3` evidenceCannotBeAddedBeforeTheRunIsStarted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC3` evidenceFollowsTheAttachmentRulesAndTheRunsLifecycle (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC4` aBlockedCaseIsRetestedToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC4` aRetestIsANewPlannedRunOfTheFailedAndBlockedCasesWithEveryResultBlank (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC4` theRetestKeepsTheSnapshotNotTheLiveCase (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC5` onlyACompletedRunWithSomethingToRetestCanBeRetestedAndOnlyOneRetestAtATime (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC5` retestingWritesNoVerificationAndChangesNoRequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC5` theDatabaseRefusesEvidenceOnBothAStepAndACaseOrOnNeither (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC6` evidenceAndRetestWritesAreRefusedWith403ToANonTesterAndWorkForATester (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)

@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 1, DONE 16, PARTIAL 2, TODO 41.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 1, DONE 17, PARTIAL 1, TODO 41.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -54,7 +54,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
-| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | PARTIAL: split in two at the owner's choice; 0924a (start, per-step result and actual result, complete) done on dev, 0924b (evidence attachment, retest) TODO | S5 |
+| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | DONE on dev, in two sessions (0924a execute, 0924b evidence and retest; 25 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |

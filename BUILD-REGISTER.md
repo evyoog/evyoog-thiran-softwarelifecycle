@@ -327,7 +327,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0921 | 6 | Agile Planner inbound and reconciliation | Webhook hardening: timestamp window, rate limit, constant-time compare, real payload processing [S; F08] | TODO | S4 |
 | VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
 | VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
-| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | PARTIAL: split in two at the owner's choice; 0924a (start, per-step result and actual result, complete) done on dev, 0924b (evidence attachment, retest) TODO | S5 |
+| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | DONE on dev, in two sessions (0924a execute, 0924b evidence and retest; 25 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
@@ -5084,6 +5084,35 @@ Phase 6 Sprint 5. Branch `dev`. **11 new tests**: `TestExecutionIT` (`VYB0924_AC
 - 0924b: evidence attachments and retest.
 - Nothing yet turns a completed run into verification records (VYB-0925), so a passed run still does not count as verification of any requirement.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 79 — VYB-0924b (F14): evidence on a run's results, and retest
+
+Phase 6 Sprint 5. Branch `dev`. **14 new tests**: `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`, real PostgreSQL, service calls and HTTP with real tokens). Backend only, no screen (VYB-0927). Second half of the row split at the owner's choice in session 78; with this the row is done.
+
+**Decisions with the product owner (session 78).** Evidence **reuses the requirement attachments** (the owner chose that over a new evidence table). Retest is a **new run of the failed or blocked cases** of a completed run, copied from its snapshot and linked back; the original is never changed.
+
+**Database.** `V042__test_run_evidence_and_retest.sql`: `test_run_evidence` (links one exact `attachment_version` to a run step, or to a run case that has no steps; the database requires exactly one of the two) and `test_run.retest_of`. Every new foreign key is indexed; `test_run_evidence.added_by` is audit-style in `ForeignKeyIndexIT`.
+
+**Backend.** `TestExecutionService.addStepEvidence`, `addCaseEvidence` and `retest`; run detail now returns each step's (and a step-less case's) evidence and the run's `retestOf`. Three new write endpoints in `TestManagementController`: `POST /test-runs/{id}/steps/{stepId}/evidence` and `POST /test-runs/{id}/cases/{caseId}/evidence` (multipart, optional `requirementId`) and `POST /test-runs/{id}/retest`. Downloading evidence uses the existing requirement attachment endpoints (the response carries requirementId, attachmentId and version). OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Which requirement the file attaches to (the open point from session 78).** The file becomes a normal attachment of a requirement the step's test case verifies (a `TEST --VERIFIES--> REQUIREMENT` trace link). If the case verifies exactly one, `requirementId` may be omitted; if several, it must be named (400 otherwise); if none, or the one named is not verified by the case, it is refused (409). The attachment filename is prefixed `run-<8 chars of the run id>-<case key>-step<n>-` so it cannot collide with, or be mistaken for, the requirement's own files; **it will still appear in that requirement's file list**, which is the cost of the chosen design. The link points at the exact attachment version, so a later upload of the same name never changes what an earlier result was backed by. Existing attachment rules apply (size, type, name).
+
+**Access.** The three writes are `VERIFY` (Tester), scope ANYWHERE, registered in `AccessPolicyTest`; a test proves 403 for a Business Analyst and a Viewer.
+
+**Audit.** `test-run.evidence-added`, `test-run.retest-created`.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Evidence only while the run is IN_PROGRESS, like results; a case with steps takes evidence on its steps only. (2) Evidence cannot be removed or replaced (it is a record; adding a newer file is possible). (3) A retest copies the whole failed or blocked case (all its steps, results blank), numbered from 1; passed cases are left out. (4) Only a COMPLETED run can be retested, and only while no earlier retest of the same run is still open (409); a retest of a retest is allowed and the chain is kept. (5) A retest keeps the suite and takes the source's build label unless one is given; the assignee is not carried over. (6) If the requirement is deleted, its attachments and therefore this evidence go with it.
+
+**A defect found by the tests, fixed.** The first run failed 7 tests: the new evidence row (raw SQL) referenced an attachment version that Hibernate had not yet written. Fixed with a flush after the upload, the same JPA-then-JDBC ordering `TestCaseService.draft` already handles.
+
+**Evidence.** Making the retest copy every case instead of only failed and blocked ones failed 4 tests, then restored.
+
+**Not done / to know**
+- Nothing yet turns a completed run into verification records (VYB-0925); evidence and retest write none and never change a requirement's status (tested).
+- No screen to attach, view or download evidence (VYB-0927); the file is already downloadable through the requirement's attachment endpoints.
+- Object-store failures are not tested (the store is stubbed, as in every integration test); testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

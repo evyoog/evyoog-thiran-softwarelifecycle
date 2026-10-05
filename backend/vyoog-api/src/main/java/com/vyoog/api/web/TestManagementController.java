@@ -179,15 +179,19 @@ public class TestManagementController {
 
     public record TestRunView(String id, String suiteId, String suiteName, String planId, String planName, String kind,
                                String status, String buildLabel, String assignedTo, String createdAt, String startedAt,
-                               String completedAt, long caseCount) {}
+                               String completedAt, long caseCount, String retestOf) {}
+
+    /** One file backing a result: download it through the requirement's attachment endpoints (requirementId, attachmentId, version). */
+    public record EvidenceView(String id, String attachmentId, int version, String requirementId, String requirementKey,
+                                String filename, String contentType, Long sizeBytes, String addedBy, String addedAt) {}
 
     public record RunStepView(String id, int position, String action, String expectedResult, String result,
-                               String actualResult, String executedBy, String executedAt) {}
+                               String actualResult, String executedBy, String executedAt, List<EvidenceView> evidence) {}
 
     /** {@code result} is derived (PASS, FAIL, BLOCKED or NOT_RUN); the other result fields are set only for a case with no steps. */
     public record RunCaseView(String id, int position, String testCaseId, String key, String title, String description,
                                List<RunStepView> steps, String result, String actualResult, String executedBy,
-                               String executedAt) {}
+                               String executedAt, List<EvidenceView> evidence) {}
 
     public record RunSummaryView(int total, int passed, int failed, int blocked, int notRun) {}
 
@@ -199,15 +203,20 @@ public class TestManagementController {
 
     private static TestRunView view(TestManagementService.Run r) {
         return new TestRunView(s(r.id()), s(r.suiteId()), r.suiteName(), s(r.planId()), r.planName(), r.kind(), r.status(),
-            r.buildLabel(), s(r.assignedTo()), s(r.createdAt()), s(r.startedAt()), s(r.completedAt()), r.caseCount());
+            r.buildLabel(), s(r.assignedTo()), s(r.createdAt()), s(r.startedAt()), s(r.completedAt()), r.caseCount(), s(r.retestOf()));
+    }
+
+    private static List<EvidenceView> evidence(List<TestManagementService.Evidence> list) {
+        return list.stream().map(e -> new EvidenceView(s(e.id()), s(e.attachmentId()), e.version(), s(e.requirementId()),
+            e.requirementKey(), e.filename(), e.contentType(), e.sizeBytes(), s(e.addedBy()), s(e.addedAt()))).toList();
     }
 
     private static TestRunDetailView view(TestManagementService.RunDetail d) {
         return new TestRunDetailView(view(d.run()), d.cases().stream().map(c -> new RunCaseView(
             s(c.id()), c.position(), s(c.testCaseId()), c.key(), c.title(), c.description(),
             c.steps().stream().map(st -> new RunStepView(s(st.id()), st.position(), st.action(), st.expectedResult(),
-                st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()))).toList(),
-            c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()))).toList(),
+                st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()), evidence(st.evidence()))).toList(),
+            c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()), evidence(c.evidence()))).toList(),
             new RunSummaryView(d.summary().total(), d.summary().passed(), d.summary().failed(), d.summary().blocked(),
                 d.summary().notRun()));
     }
@@ -265,5 +274,50 @@ public class TestManagementController {
     @PostMapping("/test-runs/{id}/complete")
     public TestRunDetailView completeRun(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return view(execution.complete(id, currentUserId(jwt)));
+    }
+
+    private static byte[] bytesOf(org.springframework.web.multipart.MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Could not read the uploaded file");
+        }
+    }
+
+    /**
+     * Backs a step's result with a file. It is stored as an attachment of a requirement the step's test case verifies:
+     * {@code requirementId} is needed only when the case verifies more than one.
+     */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping(value = "/test-runs/{id}/steps/{stepId}/evidence", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public TestRunDetailView addStepEvidence(@PathVariable UUID id, @PathVariable UUID stepId,
+                                              @RequestParam org.springframework.web.multipart.MultipartFile file,
+                                              @RequestParam(required = false) UUID requirementId, @AuthenticationPrincipal Jwt jwt) {
+        return view(execution.addStepEvidence(id, stepId, requirementId, file.getOriginalFilename(), file.getContentType(),
+            bytesOf(file), currentUserId(jwt)));
+    }
+
+    /** For a case with no steps only. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping(value = "/test-runs/{id}/cases/{caseId}/evidence", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public TestRunDetailView addCaseEvidence(@PathVariable UUID id, @PathVariable UUID caseId,
+                                              @RequestParam org.springframework.web.multipart.MultipartFile file,
+                                              @RequestParam(required = false) UUID requirementId, @AuthenticationPrincipal Jwt jwt) {
+        return view(execution.addCaseEvidence(id, caseId, requirementId, file.getOriginalFilename(), file.getContentType(),
+            bytesOf(file), currentUserId(jwt)));
+    }
+
+    public record RetestRun(UUID assignedTo, String buildLabel) {}
+
+    /** A new PLANNED run of the failed and blocked cases of this completed run; the original is not changed. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/test-runs/{id}/retest")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TestRunDetailView retestRun(@PathVariable UUID id, @RequestBody(required = false) RetestRun body,
+                                        @AuthenticationPrincipal Jwt jwt) {
+        RetestRun b = body == null ? new RetestRun(null, null) : body;
+        return view(execution.retest(id, b.assignedTo(), b.buildLabel(), currentUserId(jwt)));
     }
 }

@@ -3428,6 +3428,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/test-runs/{id}/cases/{caseId}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addCaseEvidence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/test-runs/{id}/cases/{caseId}/result": {
         parameters: {
             query?: never;
@@ -3460,6 +3476,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/test-runs/{id}/retest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retestRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/test-runs/{id}/start": {
         parameters: {
             query?: never;
@@ -3470,6 +3502,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/steps/{stepId}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addStepEvidence"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4459,6 +4507,20 @@ export interface components {
             occurredAt?: string;
             requestId?: string;
         };
+        EvidenceView: {
+            addedAt?: string;
+            addedBy?: string;
+            attachmentId?: string;
+            contentType?: string;
+            filename?: string;
+            id?: string;
+            requirementId?: string;
+            requirementKey?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            /** Format: int32 */
+            version?: number;
+        };
         ExpiringGrantView: {
             expiresAt?: string;
             grantId?: string;
@@ -5076,6 +5138,11 @@ export interface components {
             testKey: string;
             title?: string;
         };
+        RetestRun: {
+            /** Format: uuid */
+            assignedTo?: string;
+            buildLabel?: string;
+        };
         ReviewView: {
             closedAt?: string;
             closesAt?: string;
@@ -5136,6 +5203,7 @@ export interface components {
         RunCaseView: {
             actualResult?: string;
             description?: string;
+            evidence?: components["schemas"]["EvidenceView"][];
             executedAt?: string;
             executedBy?: string;
             id?: string;
@@ -5150,6 +5218,7 @@ export interface components {
         RunStepView: {
             action?: string;
             actualResult?: string;
+            evidence?: components["schemas"]["EvidenceView"][];
             executedAt?: string;
             executedBy?: string;
             expectedResult?: string;
@@ -5456,6 +5525,7 @@ export interface components {
             kind?: string;
             planId?: string;
             planName?: string;
+            retestOf?: string;
             startedAt?: string;
             status?: string;
             suiteId?: string;
@@ -11397,6 +11467,38 @@ export interface operations {
             };
         };
     };
+    addCaseEvidence: {
+        parameters: {
+            query?: {
+                requirementId?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
     recordCaseResult: {
         parameters: {
             query?: never;
@@ -11446,6 +11548,32 @@ export interface operations {
             };
         };
     };
+    retestRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetestRun"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
     startRun: {
         parameters: {
             query?: never;
@@ -11459,6 +11587,38 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    addStepEvidence: {
+        parameters: {
+            query?: {
+                requirementId?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

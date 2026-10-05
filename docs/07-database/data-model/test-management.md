@@ -1,8 +1,8 @@
 # Test management: plans, suites, steps and runs
 
-Added by VYB-0923 (entities, run creation) and VYB-0924a (executing a run, below) (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
+Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run) and VYB-0924b (evidence, retest), both below (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
 
-VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence attachments and retest are VYB-0924b, turning results into verification records bound to a requirement revision is VYB-0925, raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here records a result, writes a `verification` row, or touches `requirement.status` (CLAUDE.md rule 3).
+VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence and retest are VYB-0924b (below), turning results into verification records bound to a requirement revision is VYB-0925, raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here records a result, writes a `verification` row, or touches `requirement.status` (CLAUDE.md rule 3).
 
 ## Model
 
@@ -46,6 +46,7 @@ Reads need only a signed-in person. Every write is the matrix's **Verify** colum
 | `GET/PUT /api/v1/test-cases/{id}/steps` | A case's steps; `PUT` replaces them with `{"steps": [{"action", "expectedResult"}]}`, an empty list clears |
 | `POST /api/v1/test-suites/{suiteId}/runs` | Create a PLANNED manual run (optional `assignedTo`, `buildLabel`); returns the run and its snapshot |
 | `POST /api/v1/test-runs/{id}/start`, `PUT .../steps/{stepId}/result`, `PUT .../cases/{caseId}/result`, `POST .../complete` | Execute a run (VYB-0924a, below) |
+| `POST .../steps/{stepId}/evidence`, `POST .../cases/{caseId}/evidence` (multipart), `POST /api/v1/test-runs/{id}/retest` | Evidence and retest (VYB-0924b, below) |
 | `GET /api/v1/test-runs`, `GET /api/v1/test-runs/{id}` | Manual runs (filters `suiteId`, `planId`, `status`) and one run with its cases and steps. CI runs are not listed. |
 
 ## Executing a run (VYB-0924a)
@@ -56,13 +57,25 @@ Migration `V041__test_run_results.sql`; service `TestExecutionService`. PLANNED,
 - A case's result is **derived**, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else NOT_RUN if any step has no result, else PASS. A case with **no steps** is judged on `test_run_case` itself; recording on a case that has steps is refused.
 - The run must be started before anything is recorded; it can be completed only when every case has a result; after that nothing can be recorded.
 - The run detail returns each step's result, the case results and a summary (total, passed, failed, blocked, not run).
-- Execution writes **no** `verification` row and never touches `requirement.status` (VYB-0925 creates verification records from a completed run).
+- Execution (and evidence and retest) writes **no** `verification` row and never touches `requirement.status` (VYB-0925 creates verification records from a completed run).
 - Not decided here: any Tester may execute any run (`assigned_to` is informational), and there is no cancel.
+
+## Evidence and retest (VYB-0924b)
+
+Migration `V042__test_run_evidence_and_retest.sql`.
+
+**Evidence** reuses the requirement attachment store. `test_run_evidence` links one exact `attachment_version` to a run step (or to a run case that has no steps; the database requires exactly one).
+- The file is stored as an attachment of a requirement the step's test case verifies (a `TEST --VERIFIES--> REQUIREMENT` link). One verified requirement: `requirementId` may be omitted. Several: it must be named. None, or a requirement the case does not verify: refused (409).
+- The attachment filename is prefixed `run-<8 chars of run id>-<case key>-step<n>-`. **It appears in that requirement's file list** (the cost of reusing attachments). Existing attachment rules (size, type, name) apply.
+- The link is to the version, so uploading the same name again adds version 2 and leaves what an earlier result pointed at unchanged. Download uses the existing requirement attachment endpoints.
+- Only while the run is IN_PROGRESS; a case with steps takes evidence on its steps. Evidence cannot be removed. Deleting the requirement deletes its attachments and so this evidence.
+
+**Retest** `POST /test-runs/{id}/retest` makes a new PLANNED run (`test_run.retest_of` = the source) of the **failed and blocked cases** of a COMPLETED run, copied from its snapshot (not the live cases), with every result and evidence blank. Cases are renumbered from 1; the suite is kept; the build label is the source's unless given. Refused while an earlier retest of the same run is open; a retest of a retest is allowed. The original run is never changed.
 
 ## Audit events
 
-`test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created|started|step-recorded|case-recorded|completed`.
+`test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created|started|step-recorded|case-recorded|completed|evidence-added|retest-created`.
 
 ## Tests
 
-`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.
+`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.

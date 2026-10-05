@@ -1,6 +1,8 @@
 package com.vyoog.evidence;
 
+import com.vyoog.attachments.AttachmentService;
 import com.vyoog.platform.audit.AuditService;
+import jakarta.persistence.EntityManager;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
  * (the audit event keeps the before and after). A case with no steps is judged on the case itself.
  * A run can be completed only when every case has a result.
  *
+ * <p>VYB-0924b: {@link #addStepEvidence}/{@link #addCaseEvidence} back a result with a file, stored as an
+ * attachment of a requirement the test case verifies; {@link #retest} makes a new run of the failed and
+ * blocked cases of a completed one.
+ *
  * <p>This writes no {@code verification} row and never touches {@code requirement.status}:
- * turning results into verification records is VYB-0925 (CLAUDE.md rule 3). Evidence attachments
- * and retest are VYB-0924b.
+ * turning results into verification records is VYB-0925 (CLAUDE.md rule 3).
  */
 @Service
 public class TestExecutionService {
@@ -33,11 +38,16 @@ public class TestExecutionService {
     private final JdbcTemplate jdbc;
     private final AuditService audit;
     private final TestManagementService mgmt;
+    private final AttachmentService attachments;
+    private final EntityManager entityManager;
 
-    public TestExecutionService(JdbcTemplate jdbc, AuditService audit, TestManagementService mgmt) {
+    public TestExecutionService(JdbcTemplate jdbc, AuditService audit, TestManagementService mgmt,
+                                 AttachmentService attachments, EntityManager entityManager) {
+        this.entityManager = entityManager;
         this.jdbc = jdbc;
         this.audit = audit;
         this.mgmt = mgmt;
+        this.attachments = attachments;
     }
 
     @Transactional
@@ -102,6 +112,126 @@ public class TestExecutionService {
             auditMap("status", "COMPLETED", "passed", String.valueOf(summary.passed()), "failed", String.valueOf(summary.failed()),
                 "blocked", String.valueOf(summary.blocked())));
         return mgmt.getRun(runId);
+    }
+
+    // -------------------------------------------------------- evidence (0924b)
+
+    /**
+     * Backs a step's result with a file while the run is IN_PROGRESS. The file is stored as an attachment of a
+     * requirement the step's test case verifies (a {@code TEST --VERIFIES--> REQUIREMENT} link): {@code requirementId}
+     * names which when there are several, may be omitted when there is exactly one, and is refused when there is none.
+     * The attachment's filename is prefixed with the run, case and step so it cannot collide with, or be mistaken for,
+     * the requirement's own files, and the link points at the exact attachment version.
+     */
+    @Transactional
+    public TestManagementService.RunDetail addStepEvidence(UUID runId, UUID runStepId, UUID requirementId, String filename,
+                                                            String contentType, byte[] bytes, UUID actorId) {
+        requireInProgress(runId);
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT rc.test_case_id, rc.case_key, rs.position FROM test_run_step rs JOIN test_run_case rc ON rc.id = rs.run_case_id
+             WHERE rs.id = ? AND rc.run_id = ?
+            """, runStepId, runId);
+        if (rows.isEmpty()) throw new NoSuchElementException("No such step in this run: " + runStepId);
+        Map<String, Object> row = rows.get(0);
+        String label = row.get("case_key") + "-step" + row.get("position");
+        UUID version = store(runId, (UUID) row.get("test_case_id"), requirementId, label, filename, contentType, bytes, actorId);
+        jdbc.update("INSERT INTO test_run_evidence (run_step_id, attachment_version_id, added_by) VALUES (?, ?, ?)",
+            runStepId, version, actorId);
+        audit.record(actorId, "test-run.evidence-added", "TEST_RUN", runId, null,
+            auditMap("stepId", runStepId.toString(), "attachmentVersionId", version.toString()));
+        return mgmt.getRun(runId);
+    }
+
+    /** As {@link #addStepEvidence}, for a case that has no steps. */
+    @Transactional
+    public TestManagementService.RunDetail addCaseEvidence(UUID runId, UUID runCaseId, UUID requirementId, String filename,
+                                                            String contentType, byte[] bytes, UUID actorId) {
+        requireInProgress(runId);
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT rc.test_case_id, rc.case_key, (SELECT count(*) FROM test_run_step rs WHERE rs.run_case_id = rc.id) AS steps
+              FROM test_run_case rc WHERE rc.id = ? AND rc.run_id = ?
+            """, runCaseId, runId);
+        if (rows.isEmpty()) throw new NoSuchElementException("No such case in this run: " + runCaseId);
+        Map<String, Object> row = rows.get(0);
+        if (((Number) row.get("steps")).longValue() > 0) {
+            throw new IllegalStateException("This case has steps; attach the evidence to the step it backs");
+        }
+        UUID version = store(runId, (UUID) row.get("test_case_id"), requirementId, (String) row.get("case_key"), filename,
+            contentType, bytes, actorId);
+        jdbc.update("INSERT INTO test_run_evidence (run_case_id, attachment_version_id, added_by) VALUES (?, ?, ?)",
+            runCaseId, version, actorId);
+        audit.record(actorId, "test-run.evidence-added", "TEST_RUN", runId, null,
+            auditMap("caseId", runCaseId.toString(), "attachmentVersionId", version.toString()));
+        return mgmt.getRun(runId);
+    }
+
+    private UUID store(UUID runId, UUID testCaseId, UUID requirementId, String label, String filename, String contentType,
+                       byte[] bytes, UUID actorId) {
+        if (filename == null || filename.isBlank()) throw new IllegalArgumentException("The uploaded file has no name");
+        List<UUID> verified = testCaseId == null ? List.of() : jdbc.queryForList("""
+            SELECT to_id FROM trace_link WHERE from_type = 'TEST' AND from_id = ? AND to_type = 'REQUIREMENT' AND link_type = 'VERIFIES'
+            """, UUID.class, testCaseId);
+        UUID target;
+        if (requirementId != null) {
+            if (!verified.contains(requirementId)) {
+                throw new IllegalStateException("This test case does not verify that requirement, so evidence cannot be attached to it");
+            }
+            target = requirementId;
+        } else if (verified.isEmpty()) {
+            throw new IllegalStateException("This test case verifies no requirement, so there is nowhere to attach evidence");
+        } else if (verified.size() > 1) {
+            throw new IllegalArgumentException("This test case verifies " + verified.size() + " requirements; say which one the evidence belongs to");
+        } else {
+            target = verified.get(0);
+        }
+        String name = "run-" + runId.toString().substring(0, 8) + "-" + label + "-" + filename;
+        UUID version = attachments.upload(target, name, contentType, bytes, actorId).version().getId();
+        // The attachment version is a JPA entity whose INSERT is still unflushed; the evidence row that follows is raw
+        // SQL with a foreign key to it (the same JPA-then-JDBC ordering TestCaseService.draft flushes for).
+        entityManager.flush();
+        return version;
+    }
+
+    // ------------------------------------------------------------ retest (0924b)
+
+    /**
+     * A new PLANNED run of the failed and blocked cases of a completed run, copied from that run's snapshot (not the
+     * live cases) with every result blank, linked back through {@code retest_of}. The original run is never changed.
+     * Refused while an earlier retest of the same run is still open, so one failure is not retested twice at once.
+     */
+    @Transactional
+    public TestManagementService.RunDetail retest(UUID runId, UUID assignedTo, String buildLabel, UUID actorId) {
+        String status = lock(runId);
+        if (!"COMPLETED".equals(status)) throw new IllegalStateException("Only a completed run can be retested; this one is " + status);
+        TestManagementService.RunDetail source = mgmt.getRun(runId);
+        List<TestManagementService.RunCase> failed = source.cases().stream()
+            .filter(c -> "FAIL".equals(c.result()) || "BLOCKED".equals(c.result())).toList();
+        if (failed.isEmpty()) throw new IllegalStateException("Nothing failed or was blocked in this run, so there is nothing to retest");
+        Long open = jdbc.queryForObject("SELECT count(*) FROM test_run WHERE retest_of = ? AND status <> 'COMPLETED'", Long.class, runId);
+        if (open != null && open > 0) throw new IllegalStateException("A retest of this run is already open");
+        if (assignedTo != null) {
+            Long n = jdbc.queryForObject("SELECT count(*) FROM app_user WHERE id = ?", Long.class, assignedTo);
+            if (n == null || n == 0) throw new NoSuchElementException("No such user: " + assignedTo);
+        }
+        String label = buildLabel == null || buildLabel.isBlank() ? source.run().buildLabel() : buildLabel.strip();
+        UUID retestId = jdbc.queryForObject("""
+            INSERT INTO test_run (kind, status, suite_id, build_label, assigned_to, created_by, retest_of)
+            VALUES ('MANUAL', 'PLANNED', ?, ?, ?, ?, ?) RETURNING id
+            """, UUID.class, source.run().suiteId(), label, assignedTo, actorId, runId);
+        int position = 1;
+        for (TestManagementService.RunCase c : failed) {
+            UUID newCase = jdbc.queryForObject("""
+                INSERT INTO test_run_case (run_id, position, test_case_id, case_key, title, description)
+                VALUES (?, ?, ?, ?, ?, ?) RETURNING id
+                """, UUID.class, retestId, position++, c.testCaseId(), c.key(), c.title(), c.description());
+            for (TestManagementService.RunStep st : c.steps()) {
+                jdbc.update("INSERT INTO test_run_step (run_case_id, position, action, expected_result) VALUES (?, ?, ?, ?)",
+                    newCase, st.position(), st.action(), st.expectedResult());
+            }
+        }
+        audit.record(actorId, "test-run.retest-created", "TEST_RUN", retestId, null,
+            auditMap("retestOf", runId.toString(), "caseCount", String.valueOf(failed.size())));
+        return mgmt.getRun(retestId);
     }
 
     /** Locks the run row so a result and a completion cannot interleave; returns its status. */

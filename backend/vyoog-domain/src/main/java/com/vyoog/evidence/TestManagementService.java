@@ -45,11 +45,18 @@ public class TestManagementService {
 
     public record Run(UUID id, UUID suiteId, String suiteName, UUID planId, String planName, String kind, String status,
                        String buildLabel, UUID assignedTo, UUID createdBy, Instant createdAt, Instant startedAt,
-                       Instant completedAt, long caseCount) {}
+                       Instant completedAt, long caseCount, UUID retestOf) {}
 
     /** {@code result} is null until recorded (VYB-0924a); then PASS, FAIL or BLOCKED. */
+    /**
+     * One file backing a result (VYB-0924b): an exact version of an attachment of {@code requirementId}, which is
+     * downloaded through that requirement's attachment endpoints.
+     */
+    public record Evidence(UUID id, UUID attachmentId, int version, UUID requirementId, String requirementKey,
+                            String filename, String contentType, Long sizeBytes, UUID addedBy, Instant addedAt) {}
+
     public record RunStep(UUID id, int position, String action, String expectedResult, String result,
-                           String actualResult, UUID executedBy, Instant executedAt) {}
+                           String actualResult, UUID executedBy, Instant executedAt, List<Evidence> evidence) {}
 
     /**
      * {@code result} is derived, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else
@@ -57,7 +64,8 @@ public class TestManagementService {
      * {@code actualResult}, {@code executedBy} and {@code executedAt} hold that judgement and are null for a case that has steps.
      */
     public record RunCase(UUID id, int position, UUID testCaseId, String key, String title, String description,
-                           List<RunStep> steps, String result, String actualResult, UUID executedBy, Instant executedAt) {}
+                           List<RunStep> steps, String result, String actualResult, UUID executedBy, Instant executedAt,
+                           List<Evidence> evidence) {}
 
     public record RunSummary(int total, int passed, int failed, int blocked, int notRun) {}
 
@@ -298,7 +306,7 @@ public class TestManagementService {
 
     private static final String RUN_SELECT = """
         SELECT r.id, r.suite_id, s.name AS suite_name, s.plan_id, p.name AS plan_name, r.kind, r.status, r.build_label,
-               r.assigned_to, r.created_by, r.created_at, r.started_at, r.completed_at,
+               r.assigned_to, r.created_by, r.created_at, r.started_at, r.completed_at, r.retest_of,
                (SELECT count(*) FROM test_run_case c WHERE c.run_id = r.id) AS cases
           FROM test_run r
           LEFT JOIN test_suite s ON s.id = r.suite_id
@@ -312,7 +320,7 @@ public class TestManagementService {
             rs.getTimestamp("created_at").toInstant(),
             rs.getTimestamp("started_at") == null ? null : rs.getTimestamp("started_at").toInstant(),
             rs.getTimestamp("completed_at") == null ? null : rs.getTimestamp("completed_at").toInstant(),
-            rs.getLong("cases"));
+            rs.getLong("cases"), rs.getObject("retest_of", UUID.class));
     }
 
     /**
@@ -353,6 +361,24 @@ public class TestManagementService {
     public RunDetail getRun(UUID id) {
         List<Run> rows = jdbc.query(RUN_SELECT + " WHERE r.id = ?", (rs, i) -> run(rs), id);
         if (rows.isEmpty()) throw new NoSuchElementException("No such test run: " + id);
+        Map<UUID, List<Evidence>> evidenceByOwner = new LinkedHashMap<>(); // keyed by run step id or run case id
+        jdbc.query("""
+            SELECT e.id, coalesce(e.run_step_id, e.run_case_id) AS owner_id, a.id AS attachment_id, v.version, a.requirement_id,
+                   r.key AS requirement_key, a.filename, v.content_type, v.size_bytes, e.added_by, e.added_at
+              FROM test_run_evidence e
+              JOIN attachment_version v ON v.id = e.attachment_version_id
+              JOIN attachment a ON a.id = v.attachment_id
+              JOIN requirement r ON r.id = a.requirement_id
+              LEFT JOIN test_run_step rs ON rs.id = e.run_step_id
+              JOIN test_run_case rc ON rc.id = coalesce(rs.run_case_id, e.run_case_id)
+             WHERE rc.run_id = ? ORDER BY e.added_at, e.id
+            """, rs -> {
+                evidenceByOwner.computeIfAbsent(rs.getObject("owner_id", UUID.class), k -> new ArrayList<>())
+                    .add(new Evidence(rs.getObject("id", UUID.class), rs.getObject("attachment_id", UUID.class),
+                        rs.getInt("version"), rs.getObject("requirement_id", UUID.class), rs.getString("requirement_key"),
+                        rs.getString("filename"), rs.getString("content_type"), (Long) rs.getObject("size_bytes"),
+                        rs.getObject("added_by", UUID.class), instant(rs.getTimestamp("added_at"))));
+            }, id);
         Map<UUID, List<RunStep>> stepsByCase = new LinkedHashMap<>();
         jdbc.query("""
             SELECT rs.id, rs.run_case_id, rs.position, rs.action, rs.expected_result, rs.result, rs.actual_result,
@@ -363,7 +389,8 @@ public class TestManagementService {
                 stepsByCase.computeIfAbsent(rs.getObject("run_case_id", UUID.class), k -> new ArrayList<>())
                     .add(new RunStep(rs.getObject("id", UUID.class), rs.getInt("position"), rs.getString("action"),
                         rs.getString("expected_result"), rs.getString("result"), rs.getString("actual_result"),
-                        rs.getObject("executed_by", UUID.class), instant(rs.getTimestamp("executed_at"))));
+                        rs.getObject("executed_by", UUID.class), instant(rs.getTimestamp("executed_at")),
+                        evidenceByOwner.getOrDefault(rs.getObject("id", UUID.class), List.of())));
             }, id);
         List<RunCase> cases = jdbc.query("""
             SELECT id, position, test_case_id, case_key, title, description, result, actual_result, executed_by, executed_at
@@ -375,7 +402,7 @@ public class TestManagementService {
                 return new RunCase(caseId, rs.getInt("position"), rs.getObject("test_case_id", UUID.class),
                     rs.getString("case_key"), rs.getString("title"), rs.getString("description"), steps,
                     caseResult(steps, own), rs.getString("actual_result"), rs.getObject("executed_by", UUID.class),
-                    instant(rs.getTimestamp("executed_at")));
+                    instant(rs.getTimestamp("executed_at")), evidenceByOwner.getOrDefault(caseId, List.of()));
             }, id);
         int passed = 0, failed = 0, blocked = 0, notRun = 0;
         for (RunCase c : cases) {
