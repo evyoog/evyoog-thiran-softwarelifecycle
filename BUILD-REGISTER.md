@@ -326,7 +326,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0920 | 6 | Agile Planner inbound and reconciliation | Orphan and reconciliation handling, conflict queue where both sides changed a field [M; F40] | TODO | S4 |
 | VYB-0921 | 6 | Agile Planner inbound and reconciliation | Webhook hardening: timestamp window, rate limit, constant-time compare, real payload processing [S; F08] | TODO | S4 |
 | VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
-| VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | TODO | S5 |
+| VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | TODO | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
@@ -5033,6 +5033,32 @@ Phase 6 Sprint 3. Branch `dev`. **33 new tests**: `ConnectorHealthControllerIT` 
 - Inbound connections show "receives only" and no History; their last success is the last verified delivery, which is only recorded for deliveries that pass signature and replay checks.
 - No new write endpoint, so no new access rule to register; reads are guarded in code and tested for 401, 403 and the service account.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
+
+---
+
+## Session 77 — VYB-0923 (F14): test plan, suite and run entities; structured steps and expected results
+
+Phase 6 Sprint 5. Branch `dev`. **16 new tests**: `TestManagementIT` (`VYB0923_AC1` to `AC7`, real PostgreSQL, service calls and HTTP with real tokens). Backend only, by the product owner's choice: **no screen** (the Quality screen is VYB-0927), so there is nothing to see in the UI from this row. The finding text F14 is not in the repository; scope is the register row.
+
+**Decisions with the product owner this session.** (1) Model: plans, suites, cases, runs. A plan has suites; a suite is an ordered group of existing test cases; a run is an execution of one suite, created PLANNED. `test_run` is extended (kind MANUAL or CI, suite, status, who) so CI ingestion keeps working untouched. Per-step results are VYB-0924. (2) Steps: new `test_step` rows beside the existing free-text `test_case.description` (nothing migrated); creating a run copies the suite's cases and steps (a snapshot). (3) Scope: backend only. Sprint 4 (VYB-0918 to VYB-0922) was skipped at the owner's instruction; CLAUDE.md says not to start later-sprint rows, and the owner asked for this one explicitly.
+
+**Database.** `V040__test_plans_suites_runs_steps.sql`: `test_plan` (key `TP-n`), `test_suite`, `test_suite_case`, `test_step`, the extension of `test_run`, and the snapshot tables `test_run_case` and `test_run_step`. Every existing `test_run` row stays a CI run (`kind = 'CI'`, `status = 'COMPLETED'`). Every new foreign key is indexed; the two audit-style ones (`test_plan.created_by`, `test_run.created_by`) are listed in `ForeignKeyIndexIT` with the reason. Details: `docs/07-database/data-model/test-management.md`.
+
+**Backend.** `TestManagementService` (plans, suites, a suite's ordered cases, steps, run creation and reads) and `TestManagementController` (14 endpoints, 9 of them writes), `TestRun` entity adjusted (`started_at` nullable). OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Access.** The nine writes are `VERIFY` (Tester), scope ANYWHERE, all listed in `AccessPolicyTest.EXPECTED`. **The matrix has no column for test planning; Verify is the nearest and is the same rule test cases use. Say so if you want planning to be a different role.** Reads: any signed-in person. A test proves 403 for a Business Analyst and a Viewer on every write.
+
+**Audit.** `test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set`, `test-run.created`.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A step needs both an action and an expected result, because VYB-0924 judges each step pass or fail. (2) Plans have no status; a plan or suite that has been run cannot be deleted (409), one that has not can. (3) Replacing a suite's cases or a case's steps is one call with the whole ordered list; a refused list changes nothing. (4) A suite with no cases cannot be run. (5) The snapshot does not bind to a requirement revision; VYB-0925 does that when it creates verification records.
+
+**Evidence.** Making the run snapshot skip the steps failed 3 tests, then restored. The "snapshot is immutable" test edits the case, replaces its steps, empties the suite and deletes the live case, and the run still shows the original.
+
+**Not done / to know**
+- No way to start, complete or cancel a run, and no result columns: a run stays PLANNED. That is VYB-0924.
+- Nothing links a manual run to requirements or verification yet (VYB-0925); a manual run writes no `verification` row and never changes a requirement's status (tested).
+- Plans cannot be reordered across suites, and suites cannot be reordered after creation (no row asks for it).
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

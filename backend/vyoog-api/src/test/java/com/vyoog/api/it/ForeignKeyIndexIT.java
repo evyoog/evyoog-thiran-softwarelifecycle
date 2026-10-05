@@ -30,7 +30,8 @@ class ForeignKeyIndexIT extends IntegrationTestBase {
         "clarification.escalated_to", "clarification.raised_by", "finding.actioned_by",
         "import_batch.uploaded_by", "import_document_analysis.decided_by", "requirement.changed_by",
         "requirement.updated_by", "requirement_comment.author_id", "requirement_revision.changed_by",
-        "review_comment.author_id", "scope_movement.moved_by", "test_case.created_by");
+        "review_comment.author_id", "scope_movement.moved_by", "test_case.created_by",
+        "test_plan.created_by", "test_run.created_by");
 
     private Set<String> unindexedForeignKeys() {
         List<Map<String, Object>> rows = jdbc.queryForList("""

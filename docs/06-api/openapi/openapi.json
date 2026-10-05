@@ -1356,6 +1356,50 @@
         "required" : [ "definition", "term" ],
         "type" : "object"
       },
+      "CreateTestPlan" : {
+        "properties" : {
+          "applicationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "releaseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "applicationId", "name" ],
+        "type" : "object"
+      },
+      "CreateTestRun" : {
+        "properties" : {
+          "assignedTo" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "buildLabel" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CreateTestSuite" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
       "CreateUser" : {
         "properties" : {
           "displayName" : {
@@ -3667,6 +3711,51 @@
         },
         "type" : "object"
       },
+      "RunCaseView" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "steps" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RunStepView"
+            },
+            "type" : "array"
+          },
+          "testCaseId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RunStepView" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "expectedResult" : {
+            "type" : "string"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "SaveView" : {
         "properties" : {
           "capabilityId" : {
@@ -3920,6 +4009,29 @@
         "required" : [ "status" ],
         "type" : "object"
       },
+      "SetSteps" : {
+        "properties" : {
+          "steps" : {
+            "items" : {
+              "$ref" : "#/components/schemas/StepBody"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "SetSuiteCases" : {
+        "properties" : {
+          "testCaseIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "SetTargetDate" : {
         "properties" : {
           "targetDate" : {
@@ -4051,6 +4163,35 @@
           "thresholdDays" : {
             "format" : "int32",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "StepBody" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "expectedResult" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SuiteCaseView" : {
+        "properties" : {
+          "key" : {
+            "type" : "string"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "testCaseId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -4304,6 +4445,40 @@
         },
         "type" : "object"
       },
+      "TestPlanView" : {
+        "properties" : {
+          "applicationId" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "releaseId" : {
+            "type" : "string"
+          },
+          "runCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "suiteCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "TestRunBody" : {
         "properties" : {
           "buildLabel" : {
@@ -4322,6 +4497,20 @@
         "required" : [ "results" ],
         "type" : "object"
       },
+      "TestRunDetailView" : {
+        "properties" : {
+          "cases" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RunCaseView"
+            },
+            "type" : "array"
+          },
+          "run" : {
+            "$ref" : "#/components/schemas/TestRunView"
+          }
+        },
+        "type" : "object"
+      },
       "TestRunResponse" : {
         "properties" : {
           "outcomes" : {
@@ -4332,6 +4521,91 @@
           },
           "runId" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TestRunView" : {
+        "properties" : {
+          "assignedTo" : {
+            "type" : "string"
+          },
+          "buildLabel" : {
+            "type" : "string"
+          },
+          "caseCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "completedAt" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "planId" : {
+            "type" : "string"
+          },
+          "planName" : {
+            "type" : "string"
+          },
+          "startedAt" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "suiteId" : {
+            "type" : "string"
+          },
+          "suiteName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TestStepView" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "expectedResult" : {
+            "type" : "string"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "TestSuiteView" : {
+        "properties" : {
+          "caseCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "planId" : {
+            "type" : "string"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -4538,6 +4812,22 @@
           }
         },
         "required" : [ "title" ],
+        "type" : "object"
+      },
+      "UpdateTestPlan" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "releaseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
         "type" : "object"
       },
       "UserView" : {
@@ -11640,6 +11930,539 @@
           }
         },
         "tags" : [ "test-case-controller" ]
+      }
+    },
+    "/api/v1/test-cases/{id}/steps" : {
+      "get" : {
+        "operationId" : "steps",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TestStepView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "put" : {
+        "operationId" : "setSteps",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetSteps"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TestStepView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-plans" : {
+      "get" : {
+        "operationId" : "listPlans",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "applicationId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "releaseId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TestPlanView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "post" : {
+        "operationId" : "createPlan",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateTestPlan"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestPlanView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-plans/{id}" : {
+      "delete" : {
+        "operationId" : "deletePlan",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "get" : {
+        "operationId" : "getPlan",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestPlanView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "put" : {
+        "operationId" : "updatePlan",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateTestPlan"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestPlanView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-plans/{planId}/suites" : {
+      "get" : {
+        "operationId" : "listSuites",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "planId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TestSuiteView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "post" : {
+        "operationId" : "createSuite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "planId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateTestSuite"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestSuiteView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs" : {
+      "get" : {
+        "operationId" : "listRuns",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "suiteId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "planId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TestRunView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}" : {
+      "get" : {
+        "operationId" : "getRun",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-suites/{id}" : {
+      "delete" : {
+        "operationId" : "deleteSuite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "get" : {
+        "operationId" : "getSuite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestSuiteView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "put" : {
+        "operationId" : "updateSuite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateTestSuite"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestSuiteView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-suites/{id}/cases" : {
+      "get" : {
+        "operationId" : "suiteCases",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SuiteCaseView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      },
+      "put" : {
+        "operationId" : "setSuiteCases",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetSuiteCases"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SuiteCaseView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-suites/{suiteId}/runs" : {
+      "post" : {
+        "operationId" : "createRun",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "suiteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateTestRun"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
       }
     },
     "/api/v1/trace/coverage-matrix/{applicationId}" : {

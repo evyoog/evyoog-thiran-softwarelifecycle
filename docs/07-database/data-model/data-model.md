@@ -189,7 +189,9 @@ and the graph. Postgres wins on every axis that matters here.
 `requirement_embedding` (pgvector)
 
 **Quality** — `review`, `review_item`, `review_participant`, `review_comment`,
-`test_case`, `test_run`, `test_result`, `verification`, `defect`
+`test_case`, `test_run`, `test_result`, `verification`, `defect`; manual test management
+(VYB-0923, see [`test-management.md`](test-management.md)): `test_plan`, `test_suite`,
+`test_suite_case`, `test_step`, `test_run_case`, `test_run_step`
 
 **Delivery** — `brief`, `brief_requirement`, `brief_target`
 

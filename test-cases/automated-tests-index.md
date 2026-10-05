@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 616 tests cover 47 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 632 tests cover 48 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -760,3 +760,22 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` oneConnectionIsSingularAndNoneSaysSo (`frontend/src/features/admin/connectorHealth.test.ts`)
 - `AC6` sortingDoesNotChangeTheListItWasGiven (`frontend/src/features/admin/connectorHealth.test.ts`)
 - `AC6` syncStatusesSaySuccessRetriedSuccessAndFailureAfterHowManyAttempts (`frontend/src/features/admin/connectorHealth.test.ts`)
+
+## VYB-0923: Test plan, suite and run entities; structured steps and expected results [L; F14]
+
+- `AC1` aPlanBelongsToAnApplicationGetsAKeyAndMayHaveARelease (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC1` aPlanCanBeRenamedAndMovedToAnotherRelease (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC1` aPlanNeedsANameAnExistingApplicationAndAnExistingRelease (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC2` aCaseCannotBeInASuiteTwiceAndMustExist (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC2` aSuiteIsAnOrderedGroupOfExistingTestCasesReplacedAsAWhole (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC2` suitesAreNamedOrderedAndUniqueWithinTheirPlan (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC3` aCaseHasOrderedStepsEachWithAnActionAndAnExpectedResultBesideItsDescription (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC3` aStepWithNoActionOrNoExpectedResultIsRefusedAndNothingIsChanged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC4` aSuiteWithNoCasesCannotBeRunAndAnAssigneeMustExist (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC4` creatingARunCopiesTheSuitesCasesAndStepsIntoAPlannedManualRun (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC4` theRunKeepsWhatWasPlannedWhenTheCaseItsStepsOrTheSuiteChangeLater (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC5` ciIngestionIsUntouchedACiRunStaysCompletedAndANewManualRunNeverChangesARequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC5` theDatabaseRefusesAManualRunWithNoSuiteAndACiRunThatIsNotCompleted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC6` aPlanOrSuiteThatHasBeenRunCannotBeDeletedOneThatHasNotCan (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC7` aTesterCanPlanAndCreateARunThroughTheApiAndSeeTheSnapshot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+- `AC7` everyWriteIsRefusedWith403ToAPersonWhoIsNotATesterAndReadsAreOpenToAnySignedInPerson (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)

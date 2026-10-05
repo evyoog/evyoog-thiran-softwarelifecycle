@@ -3332,6 +3332,150 @@ export interface paths {
         patch: operations["update"];
         trace?: never;
     };
+    "/api/v1/test-cases/{id}/steps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["steps"];
+        put: operations["setSteps"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPlans"];
+        put?: never;
+        post: operations["createPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPlan"];
+        put: operations["updatePlan"];
+        post?: never;
+        delete: operations["deletePlan"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-plans/{planId}/suites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSuites"];
+        put?: never;
+        post: operations["createSuite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-suites/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSuite"];
+        put: operations["updateSuite"];
+        post?: never;
+        delete: operations["deleteSuite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-suites/{id}/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["suiteCases"];
+        put: operations["setSuiteCases"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-suites/{suiteId}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trace/coverage-matrix/{applicationId}": {
         parameters: {
             query?: never;
@@ -4089,6 +4233,23 @@ export interface components {
         CreateTerm: {
             definition: string;
             term: string;
+        };
+        CreateTestPlan: {
+            /** Format: uuid */
+            applicationId: string;
+            description?: string;
+            name: string;
+            /** Format: uuid */
+            releaseId?: string;
+        };
+        CreateTestRun: {
+            /** Format: uuid */
+            assignedTo?: string;
+            buildLabel?: string;
+        };
+        CreateTestSuite: {
+            description?: string;
+            name: string;
         };
         CreateUser: {
             displayName: string;
@@ -4904,6 +5065,22 @@ export interface components {
             /** Format: int64 */
             totalFindings?: number;
         };
+        RunCaseView: {
+            description?: string;
+            id?: string;
+            key?: string;
+            /** Format: int32 */
+            position?: number;
+            steps?: components["schemas"]["RunStepView"][];
+            testCaseId?: string;
+            title?: string;
+        };
+        RunStepView: {
+            action?: string;
+            expectedResult?: string;
+            /** Format: int32 */
+            position?: number;
+        };
         SaveView: {
             capabilityId?: string;
             name: string;
@@ -4989,6 +5166,12 @@ export interface components {
         SetStatus: {
             status: string;
         };
+        SetSteps: {
+            steps?: components["schemas"]["StepBody"][];
+        };
+        SetSuiteCases: {
+            testCaseIds?: string[];
+        };
         SetTargetDate: {
             targetDate: string;
         };
@@ -5044,6 +5227,17 @@ export interface components {
             status?: string;
             /** Format: int32 */
             thresholdDays?: number;
+        };
+        StepBody: {
+            action?: string;
+            expectedResult?: string;
+        };
+        SuiteCaseView: {
+            key?: string;
+            /** Format: int32 */
+            position?: number;
+            testCaseId?: string;
+            title?: string;
         };
         Summary: {
             /** Format: int32 */
@@ -5135,14 +5329,63 @@ export interface components {
             status?: string;
             title?: string;
         };
+        TestPlanView: {
+            applicationId?: string;
+            createdAt?: string;
+            description?: string;
+            id?: string;
+            key?: string;
+            name?: string;
+            releaseId?: string;
+            /** Format: int64 */
+            runCount?: number;
+            /** Format: int64 */
+            suiteCount?: number;
+        };
         TestRunBody: {
             buildLabel?: string;
             results: components["schemas"]["ResultBody"][];
             source?: string;
         };
+        TestRunDetailView: {
+            cases?: components["schemas"]["RunCaseView"][];
+            run?: components["schemas"]["TestRunView"];
+        };
         TestRunResponse: {
             outcomes?: components["schemas"]["IngestOutcomeView"][];
             runId?: string;
+        };
+        TestRunView: {
+            assignedTo?: string;
+            buildLabel?: string;
+            /** Format: int64 */
+            caseCount?: number;
+            completedAt?: string;
+            createdAt?: string;
+            id?: string;
+            kind?: string;
+            planId?: string;
+            planName?: string;
+            startedAt?: string;
+            status?: string;
+            suiteId?: string;
+            suiteName?: string;
+        };
+        TestStepView: {
+            action?: string;
+            expectedResult?: string;
+            /** Format: int32 */
+            position?: number;
+        };
+        TestSuiteView: {
+            /** Format: int64 */
+            caseCount?: number;
+            description?: string;
+            id?: string;
+            name?: string;
+            planId?: string;
+            /** Format: int32 */
+            position?: number;
         };
         TestTotalView: {
             /** Format: int64 */
@@ -5219,6 +5462,12 @@ export interface components {
             category?: string;
             description?: string;
             title: string;
+        };
+        UpdateTestPlan: {
+            description?: string;
+            name: string;
+            /** Format: uuid */
+            releaseId?: string;
         };
         UserView: {
             /** Format: int64 */
@@ -10797,6 +11046,405 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TestCaseView"];
+                };
+            };
+        };
+    };
+    steps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestStepView"][];
+                };
+            };
+        };
+    };
+    setSteps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSteps"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestStepView"][];
+                };
+            };
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: {
+                applicationId?: string;
+                releaseId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestPlanView"][];
+                };
+            };
+        };
+    };
+    createPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTestPlan"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestPlanView"];
+                };
+            };
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestPlanView"];
+                };
+            };
+        };
+    };
+    updatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTestPlan"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestPlanView"];
+                };
+            };
+        };
+    };
+    deletePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listSuites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestSuiteView"][];
+                };
+            };
+        };
+    };
+    createSuite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTestSuite"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestSuiteView"];
+                };
+            };
+        };
+    };
+    listRuns: {
+        parameters: {
+            query?: {
+                suiteId?: string;
+                planId?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunView"][];
+                };
+            };
+        };
+    };
+    getRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    getSuite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestSuiteView"];
+                };
+            };
+        };
+    };
+    updateSuite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTestSuite"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestSuiteView"];
+                };
+            };
+        };
+    };
+    deleteSuite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    suiteCases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuiteCaseView"][];
+                };
+            };
+        };
+    };
+    setSuiteCases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSuiteCases"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuiteCaseView"][];
+                };
+            };
+        };
+    };
+    createRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                suiteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateTestRun"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
                 };
             };
         };

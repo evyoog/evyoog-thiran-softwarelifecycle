@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
-/** VYB-0311: one CI build's worth of results. */
+/**
+ * VYB-0311: one CI build's worth of results. VYB-0923 adds manual runs of a test suite to the same
+ * table ({@code kind}, {@code status}, {@code suite_id}, ...); those columns are written by
+ * {@code TestManagementService}, and a CI row keeps the database defaults (kind CI, status COMPLETED).
+ */
 @Entity
 @Table(name = "test_run")
 public class TestRun {
@@ -16,7 +20,7 @@ public class TestRun {
     @Column(name = "build_label")
     private String buildLabel;
 
-    @Column(name = "started_at", nullable = false)
+    @Column(name = "started_at")
     private Instant startedAt = Instant.now();
 
     private String source;

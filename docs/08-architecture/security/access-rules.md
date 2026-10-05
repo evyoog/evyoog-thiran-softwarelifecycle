@@ -39,10 +39,12 @@ A platform **Administrator passes every rule**. A **service account**, or a toke
 
 ## Status
 
-VYB-0906 was done in three sessions (`BUILD-REGISTER.md`); all 88 write endpoints that needed a rule have one:
+VYB-0906 was done in three sessions (`BUILD-REGISTER.md`); all 88 write endpoints that needed a rule had one at the end of VYB-0906 (VYB-0923 added nine; see the last bullet):
 
 - **6a, done:** the mechanism, the tests, and the requirement-core endpoints (requirements, acceptance criteria, bulk edit, comments, clarifications, change requests, reviews, findings, trace links): 26 endpoints.
 - **6b, done:** products, applications, capabilities and clauses (Administrator); glossary, documents, variants and all import steps (Business Analyst or Architect, import checked on the batch's application); the variant matrix (any signed-in person): 34 endpoints.
 - **6c, done:** design flows and brief generation (Business Analyst or Architect); releases (Approver); defects and test cases (Tester); environments, creating a team and AI re-embed (Administrator); adding a team member (Administrator or the team's lead, like role changes and removal); tasks, notifications, saved views and lint (any signed-in person, their own state): 28 endpoints.
+
+- **VYB-0923, done:** test plans, suites, a suite's cases, a case's steps and run creation (9 write endpoints, `TestManagementController`) are `VERIFY` (Tester), anywhere. The matrix has no column for test planning; Verify is the nearest, the same rule test cases use. Reads are open to any signed-in person.
 
 Endpoints guarded in their own code (administration, requirement edit and delete, import commit and delete, team role changes, brief push, and others) are recognised by `AccessPolicyTest` by reading their source.
