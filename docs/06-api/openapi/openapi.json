@@ -934,6 +934,93 @@
         },
         "type" : "object"
       },
+      "ConnectorStatusView" : {
+        "properties" : {
+          "connectorDescription" : {
+            "type" : "string"
+          },
+          "consecutiveFailures" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "direction" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "lastError" : {
+            "type" : "string"
+          },
+          "lastErrorAt" : {
+            "type" : "string"
+          },
+          "lastSuccessAt" : {
+            "type" : "string"
+          },
+          "lastSync" : {
+            "$ref" : "#/components/schemas/ConnectorSyncEntryView"
+          },
+          "notConfiguredReason" : {
+            "type" : "string"
+          },
+          "operations" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "owns" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ConnectorSyncEntryView" : {
+        "properties" : {
+          "attempts" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "durationMs" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "error" : {
+            "type" : "string"
+          },
+          "finishedAt" : {
+            "type" : "string"
+          },
+          "httpStatus" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "idempotencyKey" : {
+            "type" : "string"
+          },
+          "operation" : {
+            "type" : "string"
+          },
+          "payloadBytes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "startedAt" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "CoverageCellView" : {
         "properties" : {
           "requirementId" : {
@@ -7967,6 +8054,27 @@
         "tags" : [ "integration-controller" ]
       }
     },
+    "/api/v1/integrations/health" : {
+      "get" : {
+        "operationId" : "health",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectorStatusView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "connector-health-controller" ]
+      }
+    },
     "/api/v1/integrations/{key}" : {
       "put" : {
         "operationId" : "setConnected",
@@ -8037,6 +8145,44 @@
           }
         },
         "tags" : [ "integration-controller" ]
+      }
+    },
+    "/api/v1/integrations/{key}/sync-log" : {
+      "get" : {
+        "operationId" : "syncLog",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "key",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectorSyncEntryView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "connector-health-controller" ]
       }
     },
     "/api/v1/internal/sso/logout" : {

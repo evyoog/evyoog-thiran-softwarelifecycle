@@ -1588,6 +1588,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations/{key}": {
         parameters: {
             query?: never;
@@ -1613,6 +1629,22 @@ export interface paths {
         };
         get?: never;
         put: operations["setConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/{key}/sync-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["syncLog"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -3905,6 +3937,38 @@ export interface components {
             term?: string;
             termId?: string;
             variants?: components["schemas"]["VariantView"][];
+        };
+        ConnectorStatusView: {
+            connectorDescription?: string;
+            /** Format: int32 */
+            consecutiveFailures?: number;
+            direction?: string;
+            key?: string;
+            lastError?: string;
+            lastErrorAt?: string;
+            lastSuccessAt?: string;
+            lastSync?: components["schemas"]["ConnectorSyncEntryView"];
+            notConfiguredReason?: string;
+            operations?: string[];
+            owns?: string;
+            state?: string;
+        };
+        ConnectorSyncEntryView: {
+            /** Format: int32 */
+            attempts?: number;
+            /** Format: int64 */
+            durationMs?: number;
+            error?: string;
+            finishedAt?: string;
+            /** Format: int32 */
+            httpStatus?: number;
+            id?: string;
+            idempotencyKey?: string;
+            operation?: string;
+            /** Format: int32 */
+            payloadBytes?: number;
+            startedAt?: string;
+            status?: string;
         };
         CoverageCellView: {
             requirementId?: string;
@@ -7837,6 +7901,26 @@ export interface operations {
             };
         };
     };
+    health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectorStatusView"][];
+                };
+            };
+        };
+    };
     setConnected: {
         parameters: {
             query?: never;
@@ -7885,6 +7969,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IntegrationView"];
+                };
+            };
+        };
+    };
+    syncLog: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectorSyncEntryView"][];
                 };
             };
         };

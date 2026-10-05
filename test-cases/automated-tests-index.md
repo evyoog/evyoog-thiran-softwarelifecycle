@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 583 tests cover 46 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 616 tests cover 47 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -724,3 +724,39 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` aSuccessfulPushIsInTheSyncLogAndLeavesTheConnectionConnectedAndHealthy (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
 - `AC5` aTransientFailureIsRetriedAndThePushThenSucceedsUnderOneIdempotencyKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
 - `AC5` theHealthStateUsesTheOldConfigurationShapeToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+
+## VYB-0917: Connector health screen under Administration [S; F40]
+
+- `AC1` aServiceAccountTokenIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC1` aSignedInPersonWhoIsNotAnAdministratorGets403OnBothEndpoints (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC1` noTokenIsRefusedWithoutAUser (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC2` aConnectionWithNoConnectorCodeSaysSoRatherThanShowingNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC2` everyRegisteredConnectionIsListedWithItsStateAndWhatItIsFor (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC2` thePlanningConnectionShowsItsConnectorAndItsOperations (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC3` aConnectionThatBothSendsAndReceivesUsesWhicheverSuccessIsNewer (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC3` aDegradedConnectionShowsItsFailuresItsLastErrorAndWhen (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC3` aHealthyConnectionShowsItsLastSuccessAndItsLatestSync (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC3` anInboundConnectionIsNeverNotConfiguredAndIsHealthyOnceConnected (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC3` anInboundConnectionsLastSuccessIsItsLastVerifiedDelivery (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC4` aConnectionThatSentNothingHasAnEmptyLogAndAnUnknownOneIs404 (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC4` theLimitIsHonouredAndKeptInsideItsBounds (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC4` theSyncLogIsNewestFirstAndCarriesWhatHappenedToEachOperation (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC5` noConfigurationSecretOrPayloadIsEverInTheResponse (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorHealthControllerIT.java`)
+- `AC6` aConnectionThatHasNeverWorkedSaysNotConnectedOrNeverSucceeded (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` aConnectionThatSentNothingSaysSoAndOtherwiseNamesTheLatestOperation (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` aConnectionWithNoCodeBoundSaysThatRatherThanShowingNothing (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` aDegradedConnectionLeadsWithTheReceiversReasonMarkedAsBorrowedFromThatConnection (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` aNotConnectedConnectionSaysWhatIsMissingInWords (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` aSingleFailureIsNotPluralAndAMissingReasonIsStillSaid (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` agoOfNothingOrNonsenseIsEmptyForTheCallerToReplaceWithWords (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` agoRoundsToTheUnitAReaderWouldUse (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` anInboundConnectionIsNeverToldItCannotSend (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` anInboundConnectionsLastSuccessIsADeliveryAndItsLastSentSaysItOnlyReceives (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` countsEachStateAndSaysHowManyConnectionsThereAre (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` degradedConnectionsComeFirstThenHealthyThenNotConnectedByKey (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` durationsReadAsMillisecondsOrSeconds (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` everyStateHasALabelAGlyphAndAClassSoColourIsNeverTheOnlySignal (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` noStateUsesTheAmberTokenWhichMeansAi (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` oneConnectionIsSingularAndNoneSaysSo (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` sortingDoesNotChangeTheListItWasGiven (`frontend/src/features/admin/connectorHealth.test.ts`)
+- `AC6` syncStatusesSaySuccessRetriedSuccessAndFailureAfterHowManyAttempts (`frontend/src/features/admin/connectorHealth.test.ts`)

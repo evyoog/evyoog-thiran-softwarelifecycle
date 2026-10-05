@@ -8,7 +8,8 @@ import java.time.Instant;
  * @param state NOT_CONNECTED: not configured, or configured but nothing has succeeded yet. HEALTHY: the
  *     last operations are succeeding. DEGRADED: {@code IntegrationConnection.DEGRADE_AFTER_FAILURES} failed
  *     operations in a row, until one succeeds.
- * @param notConfiguredReason why nothing can be sent, or null when the configuration is usable
+ * @param notConfiguredReason why nothing can be sent, or null when the configuration is usable. Always null for an
+ *     INBOUND-only connection, which sends nothing and so has no outbound configuration to lack.
  */
 public record ConnectorHealth(
     String connectionKey,

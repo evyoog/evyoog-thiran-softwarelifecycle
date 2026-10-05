@@ -12,8 +12,9 @@ import { announce } from '@/shared/ui/Announcer'
 import { useMe } from '@/shared/useMe'
 import { useRovingGrid } from '@/shared/ui/useRovingGrid'
 import { UserPicker } from '@/shared/ui/UserPicker'
+import { ConnectorHealthTab } from './admin/ConnectorHealthTab'
 
-type Tab = 'users' | 'teams' | 'grants' | 'roles' | 'service-accounts' | 'security' | 'audit' | 'integrations' | 'settings'
+type Tab = 'users' | 'teams' | 'grants' | 'roles' | 'service-accounts' | 'security' | 'audit' | 'integrations' | 'connector-health' | 'settings'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'users', label: 'Users' },
   { key: 'teams', label: 'Teams' },
@@ -23,6 +24,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'security', label: 'Security' },
   { key: 'audit', label: 'Audit log' },
   { key: 'integrations', label: 'Connected systems' },
+  { key: 'connector-health', label: 'Connector health' },
   { key: 'settings', label: 'Settings' },
 ]
 
@@ -67,6 +69,7 @@ export function Admin() {
       {tab === 'security' && <SecurityTab />}
       {tab === 'audit' && <AuditTab />}
       {tab === 'integrations' && <IntegrationsTab />}
+      {tab === 'connector-health' && <ConnectorHealthTab />}
       {tab === 'settings' && <SettingsTab />}
     </Page>
   )

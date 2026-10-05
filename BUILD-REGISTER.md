@@ -320,7 +320,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | BLOCKED: the Agile Planner repository has no field-level table and a different contract from this plan; decisions needed, see docs/09-integrations/agile-planner-contract-analysis.md | S3 |
 | VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
 | VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | DONE on dev (27 new tests; commit only, no PR yet) | S3 |
-| VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | TODO | S3 |
+| VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | DONE on dev (33 new tests; checked in a browser against mocked data; commit only, no PR yet) | S3 |
 | VYB-0918 | 6 | Agile Planner inbound and reconciliation | Process inbound backlog_item.status_changed and write completion signals back to requirements [M; F16] | TODO | S4 |
 | VYB-0919 | 6 | Agile Planner inbound and reconciliation | sprint.reassigned marks affected trace links suspect [S; F16] | TODO | S4 |
 | VYB-0920 | 6 | Agile Planner inbound and reconciliation | Orphan and reconciliation handling, conflict queue where both sides changed a field [M; F40] | TODO | S4 |
@@ -5010,6 +5010,29 @@ Phase 6 Sprint 3. Branch `dev`. **27 new tests**: `PlanningPushIT` 13 (real serv
 - The framework still lacks what the Planner contract would need (configurable signature header and prefix, extra static headers such as `X-TENANT-ID`, OAuth2 client-credentials): see the analysis; not needed here and not built.
 - The retry delays are real sleeps in `PlanningPushIT`; its transient-failure test takes about a second.
 - Tested on the local Postgres; the Testcontainers path and the GitHub CI run are unverified.
+
+---
+
+## Session 76 — VYB-0917 (F40): the Connector health screen
+
+Phase 6 Sprint 3. Branch `dev`. **33 new tests**: `ConnectorHealthControllerIT` 15 (backend, over HTTP with real tokens and PostgreSQL) and `connectorHealth.test.ts` 18 (frontend logic). The finding text F40 is not in the repository; scope is the register row. This is the first row in this phase with something to see: **Administration, Connector health**, a new tab beside "Connected systems".
+
+**Backend.** `GET /api/v1/integrations/health` (every registered connection) and `GET /api/v1/integrations/{key}/sync-log?limit=` (newest first, limit 1 to 100, 404 for an unknown key), in a new `ConnectorHealthController`, **platform administrators only** (401 with no token, 403 for anyone else, service-account tokens refused). Neither returns configuration, a secret, a payload or a request header; a test configures secrets and asserts none appears. New `ConnectorHealthService.statuses()` and `syncLog()`. The OpenAPI document and `schema.d.ts` were regenerated (additive: two paths, two schemas).
+
+**Frontend.** `features/admin/ConnectorHealthTab.tsx`, `connectorHealth.ts` (the logic, kept testable without a browser), tab added in `Admin.tsx`, hand-written types `ConnectorStatus` and `ConnectorSyncEntry` in `client.ts` (checked against the OpenAPI document by `apiContract.test.ts`), styles in `tokens.css`. Per connection: state as label, glyph and colour (never colour alone, never amber), degraded first; why it cannot send, or how many operations failed in a row; last success; latest operation; and for one that sends a History of its last 20 operations. Refreshes every 15 s. **Principle 8:** absence is said in words ("not connected", "never succeeded", "nothing sent yet", "receives only"), never blank or zero, and the receiver's own reason is hatched and marked "reported by <connection>". The contrast test (which parses `tokens.css`) passes for the new pairs in both themes.
+
+**A defect in VYB-0913's health logic, found by looking at the screen and fixed here.** The first screenshot showed "Cannot send yet: no configuration is set" against the inbound connections (`ci`, `git`, `hr`). `ConnectorHealthService` applied the outbound rules (a base URL, an auth scheme, a secret) to every connection, so a connected inbound webhook source would have been reported NOT_CONNECTED. Fixed: an INBOUND-only connection is judged by connected and not degraded, "not configured" never applies to it, and its last success is the last verified `webhook_delivery`; a BOTH connection uses whichever success is newer. Three integration tests cover it.
+
+**Evidence.** Removing the administrator guard from the health endpoint failed 2 tests (403 and the service-account token), then restored. The screen was rendered in Chromium against the dev server with mocked API responses, in both themes, collapsed and expanded, and read.
+
+**Found, NOT fixed (outside this row): `GET /api/v1/integrations` returns every connection's `config` to any signed-in user.** It has no guard, and `config` holds the planning connection's `apiKey` and `pushUrl` in clear text (the Administration screen writes them there). Any person or service account with a valid token can read the planning API key. Home and Delivery also call it, so it cannot simply be made administrator-only: the fix is to return `config` only to administrators (or not at all; the Administration form needs it to pre-fill). The new endpoints deliberately do not share this. Needs a decision and its own change.
+
+**Not done / to know**
+- The browser check used mocked API responses, not a live backend and Keycloak; the backend endpoints are tested separately over HTTP.
+- Read-only: connecting, disconnecting and configuring stay under Connected systems.
+- Inbound connections show "receives only" and no History; their last success is the last verified delivery, which is only recorded for deliveries that pass signature and replay checks.
+- No new write endpoint, so no new access rule to register; reads are guarded in code and tested for 401, 403 and the service account.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
 
 ---
 

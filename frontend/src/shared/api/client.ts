@@ -1327,6 +1327,42 @@ export interface IntegrationView {
   config?: string
 }
 
+// ── Administration: connector health (VYB-0917) ──────────────────────────────────
+
+export type ConnectorState = 'NOT_CONNECTED' | 'HEALTHY' | 'DEGRADED'
+export type ConnectorSyncStatus = 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED'
+
+/** One operation sent (or being sent) through a connection. `error` came from the receiver: shortened, secrets removed. */
+export interface ConnectorSyncEntry {
+  id: string
+  operation: string
+  idempotencyKey: string
+  status: ConnectorSyncStatus
+  attempts: number
+  httpStatus?: number
+  error?: string
+  payloadBytes: number
+  startedAt: string
+  finishedAt?: string
+  durationMs?: number
+}
+
+/** Holds no configuration and no secret. `notConfiguredReason` is why nothing can be sent yet; absent when the configuration is usable. */
+export interface ConnectorStatus {
+  key: string
+  state: ConnectorState
+  notConfiguredReason?: string
+  owns?: string
+  direction: string
+  connectorDescription?: string
+  operations: string[]
+  consecutiveFailures: number
+  lastError?: string
+  lastErrorAt?: string
+  lastSuccessAt?: string
+  lastSync?: ConnectorSyncEntry
+}
+
 // ── Administration: settings (VYB-0730–0734/0757) ─────────────────────────────────
 
 export interface AppConfigView {
@@ -1989,6 +2025,10 @@ export const api = {
 
   // Administration — integrations
   integrations: () => request<IntegrationView[]>('/integrations'),
+  // VYB-0917: platform administrators only; never returns configuration or a secret
+  connectorHealth: () => request<ConnectorStatus[]>('/integrations/health'),
+  connectorSyncLog: (key: string, limit = 20) =>
+    request<ConnectorSyncEntry[]>(`/integrations/${encodeURIComponent(key)}/sync-log?limit=${limit}`),
   setIntegrationConnected: (key: string, connected: boolean, webhookSecret?: string, owns?: string, direction?: string) =>
     request<IntegrationView>(`/integrations/${key}`, { method: 'PUT', body: JSON.stringify({ connected, webhookSecret, owns, direction }) }),
   setIntegrationConfig: (key: string, configJson: string) =>

@@ -108,6 +108,13 @@ public class ConnectorSyncLog {
             .filter(java.util.Objects::nonNull).findFirst();
     }
 
+    /** When the last verified, non-replayed webhook delivery arrived on this connection (the inbound counterpart of {@link #lastSuccess}). */
+    public Optional<Instant> lastDelivery(String connectionKey) {
+        return jdbc.query("SELECT max(received_at) AS at FROM webhook_delivery WHERE integration_key = ?",
+            (rs, n) -> instant(rs.getTimestamp("at")), connectionKey).stream()
+            .filter(java.util.Objects::nonNull).findFirst();
+    }
+
     private static Instant instant(Timestamp t) {
         return t == null ? null : t.toInstant();
     }

@@ -2396,3 +2396,15 @@ body {
 .tg-hover-l { margin: 0; font-size: 12px; font-weight: 600; color: var(--tx); }
 .tg-hover-s { margin: 5px 0 0; font-size: 11px; color: var(--tx-3); line-height: 1.4; }
 .tg-auto { margin: 0 0 10px; }
+
+/* connector health (VYB-0917). State is a label and a glyph as well as a colour. Never amber: amber means AI.
+   Hatched where the words came from the other system, because Vyoog displays them and does not own them. */
+.badge.cn-healthy  { background: var(--ok-dim);   color: var(--ok);   border-color: var(--ok-bd); }
+.badge.cn-degraded { background: var(--crit-dim); color: var(--crit); border-color: var(--crit-bd); }
+.badge.cn-off      { background: var(--panel-3);  color: var(--tx-2); border-color: var(--line-2); }
+.cn-borrowed {
+  margin-top: 4px; padding: 5px 9px; border: 1px dashed var(--line-2); border-radius: 6px;
+  background: repeating-linear-gradient(135deg, transparent 0 7px, var(--panel-2) 7px 8px);
+}
+.cn-src { font-family: var(--f-ui); font-size: 8.5px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; color: var(--tx-3); }
+.cn-log { margin: 4px 0 8px; }

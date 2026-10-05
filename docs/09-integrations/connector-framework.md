@@ -56,7 +56,27 @@ All of its database writes are short transactions of their own, so the log is tr
 | `HEALTHY` | Connected and the configuration is usable. |
 | `DEGRADED` | Three failed operations in a row (the registry's existing rule, `IntegrationConnection.DEGRADE_AFTER_FAILURES`). Cleared by the next success. |
 
-Failures are counted per **operation**, not per attempt. When a connection becomes degraded or recovers, one audit event is recorded (`connector.degraded`, `connector.recovered`, system actor). `ConnectorHealthService.health(key)` also reports the last error, when, and the last success. The screen that shows this under Administration is VYB-0917; there is no HTTP endpoint for it yet.
+Failures are counted per **operation**, not per attempt. When a connection becomes degraded or recovers, one audit event is recorded (`connector.degraded`, `connector.recovered`, system actor).
+
+The outbound rules (a base URL, an auth scheme, a secret) apply only to a connection that sends. An **INBOUND-only** connection (a webhook source: CI, git, HR) is judged by whether it is connected and not degraded; "not configured" does not apply to it, and its "last success" is when its last verified delivery arrived. A BOTH connection reports whichever success is newer.
+
+### The Administration screen (VYB-0917)
+
+**Administration, Connector health** (platform administrators; the tab sits beside Connected systems, where a connection is set up). It shows, per connection:
+
+- the state as a label, a glyph and a colour (never colour alone, never amber: amber means AI), degraded connections first;
+- why it cannot send yet, in words ("Cannot send yet: no baseUrl is set"), or for a degraded one how many operations failed in a row and the receiver's last reason;
+- when it last succeeded, and the latest operation sent;
+- for a connection that sends, a "History" of its last 20 operations (when, operation, result and attempts, HTTP status, how long, the receiver's reason).
+
+Principle 8: absence is said in words ("not connected", "never succeeded", "nothing sent yet", "receives only"), never blank or zero, and the reason a receiver gave is **hatched and marked "reported by <connection>"**, because Vyoog displays it and does not own it. It refreshes every 15 seconds.
+
+Two read endpoints feed it, both platform administrators only (anyone else gets 403) and neither returns a configuration, a secret, a payload or a request header:
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/v1/integrations/health` | every registered connection: key, state, why it cannot send, what it owns, direction, the bound connector and its operations, consecutive failures, last error and when, last success, latest sync |
+| `GET /api/v1/integrations/{key}/sync-log?limit=20` | newest-first sync-log rows (limit 1 to 100); 404 for an unknown key |
 
 ## Settings
 
@@ -95,4 +115,4 @@ Metrics: `vyoog_connector_operations_total{connection,outcome}` (`succeeded`, `f
 
 ## Not part of this row
 
-Field ownership (VYB-0914), the approval-triggered event (VYB-0915), the Administration health screen (VYB-0917) and inbound sync (S4) are later rows, and VYB-0914, 0915, 0918 and 0919 wait on the decisions in [`agile-planner-contract-analysis.md`](agile-planner-contract-analysis.md). Moving network calls out of database transactions elsewhere in the application is VYB-0940.
+Field ownership (VYB-0914), the approval-triggered event (VYB-0915) and inbound sync (S4) are later rows, and VYB-0914, 0915, 0918 and 0919 wait on the decisions in [`agile-planner-contract-analysis.md`](agile-planner-contract-analysis.md). Moving network calls out of database transactions elsewhere in the application is VYB-0940.
