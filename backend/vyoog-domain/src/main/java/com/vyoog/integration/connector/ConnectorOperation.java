@@ -8,8 +8,10 @@ import java.util.regex.Pattern;
  * <p>{@code idempotencyKey} identifies the <em>intent</em>, not the attempt: the same value on
  * every retry (sent as the {@code Idempotency-Key} header so the receiver can recognise a repeat)
  * and the key by which Vyoog refuses to send an operation that already succeeded. Derive it from
- * what is being sent, such as {@code "brief:<id>:<revision>"}, never from the clock or a random
- * value.
+ * what is being sent, such as {@code "brief:<id>:<revision>"}, when a repeat should be suppressed.
+ * When every user action must send (a "push" button that has always sent each time), use one fresh
+ * random key <em>per action</em>: its retries still share it, so a receiver can drop a duplicate of a
+ * retry, but two actions are two operations.
  *
  * <p>Everything that ends up in a header or a URL is checked here, so a connector bug or hostile
  * data cannot inject a header line or point the request at another host.

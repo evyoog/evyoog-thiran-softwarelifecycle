@@ -3,19 +3,15 @@ package com.vyoog.signals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vyoog.integration.IntegrationConnection;
 import com.vyoog.integration.IntegrationService;
-import com.vyoog.integration.WebhookSignatureVerifier;
+import com.vyoog.integration.connector.ConnectorExecutor;
+import com.vyoog.integration.connector.ConnectorResult;
+import com.vyoog.integration.planning.PlanningConnector;
 import com.vyoog.platform.audit.AuditService;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * VYB-0465/0505/0507: the signals were always real (VYB-0460–0463) — there was
@@ -32,16 +28,17 @@ public class SignalsExportService {
 
     private final SignalsService signals;
     private final IntegrationService integrations;
+    private final PlanningConnector planning;
+    private final ConnectorExecutor connectors;
     private final AuditService audit;
     private final ObjectMapper json;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
-    private static final String CONNECTION_KEY = "planning";
-
-    public SignalsExportService(SignalsService signals, IntegrationService integrations,
-                                 AuditService audit, ObjectMapper json) {
+    public SignalsExportService(SignalsService signals, IntegrationService integrations, PlanningConnector planning,
+                                 ConnectorExecutor connectors, AuditService audit, ObjectMapper json) {
         this.signals = signals;
         this.integrations = integrations;
+        this.planning = planning;
+        this.connectors = connectors;
         this.audit = audit;
         this.json = json;
     }
@@ -54,20 +51,14 @@ public class SignalsExportService {
      * can verify it really came from here. Not a fire-and-forget: the outcome is
      * recorded on the connection (failures accumulate toward "degraded", same as an
      * inbound integration) and audited either way.
+     *
+     * <p>VYB-0916: the request goes out through the connector framework (see {@link PlanningConnector}),
+     * which signs it, retries it, logs it and updates the connection's health. This method is no longer
+     * transactional, so no database transaction is held open across the call.
      */
-    @Transactional
     public PushResult pushToDeliveryTool(List<UUID> capabilityIds, UUID actor) {
-        IntegrationConnection conn = integrations.get(CONNECTION_KEY);
-        String pushUrl = readConfigField(conn.getConfig(), "pushUrl");
-        if (pushUrl == null || pushUrl.isBlank()) {
-            throw new IllegalStateException(
-                "No push URL configured for \"" + CONNECTION_KEY + "\" — set one in Administration first.");
-        }
-        String secret = conn.getWebhookSecret();
-        if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException(
-                "No shared secret configured for \"" + CONNECTION_KEY + "\" — the receiver couldn't verify this push anyway.");
-        }
+        IntegrationConnection conn = integrations.get(PlanningConnector.KEY);
+        planning.requireConfigured(conn, json);
 
         ScopeSignals scope = signals.compute(capabilityIds);
         String body;
@@ -87,34 +78,13 @@ public class SignalsExportService {
         } catch (Exception e) {
             throw new IllegalStateException("Could not encode signals payload: " + e.getMessage(), e);
         }
-        String signature = WebhookSignatureVerifier.sign(secret, body);
 
-        PushResult result;
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(pushUrl))
-                .timeout(Duration.ofSeconds(10))
-                .header("Content-Type", "application/json")
-                .header("X-Vyoog-Signature", signature)
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            boolean ok = response.statusCode() >= 200 && response.statusCode() < 300;
-            result = new PushResult(ok, response.statusCode(), ok ? null : "HTTP " + response.statusCode() + ": " + response.body());
-        } catch (IOException | InterruptedException e) {
-            result = new PushResult(false, 0, e.getMessage());
-        }
+        ConnectorResult sent = connectors.execute(planning.operation(conn, json, PlanningConnector.SIGNALS_PUSH,
+            "signals", "application/json", body.getBytes(StandardCharsets.UTF_8)));
+        PushResult result = new PushResult(sent.succeeded(), PlanningConnector.statusCode(sent), PlanningConnector.error(sent));
 
-        // Persist through IntegrationService's own methods, not the locally-mutated
-        // `conn` — both re-fetch and save for real, and setConnected(true, ...)
-        // already resets failure/degraded state exactly the way a real success should.
-        if (result.success()) {
-            integrations.setConnected(CONNECTION_KEY, true, null);
-        } else {
-            integrations.recordFailure(CONNECTION_KEY, result.error());
-        }
         audit.record(actor, "signals.pushed", "INTEGRATION_CONNECTION", null, null,
-            Map.of("connection", CONNECTION_KEY, "success", result.success(), "statusCode", result.statusCode(),
+            Map.of("connection", PlanningConnector.KEY, "success", result.success(), "statusCode", result.statusCode(),
                 "capabilityIds", capabilityIds.stream().map(UUID::toString).toList()));
         return result;
     }

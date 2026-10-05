@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vyoog.integration.IntegrationConnection;
 import com.vyoog.integration.IntegrationService;
+import com.vyoog.integration.connector.ConnectorExecutor;
+import com.vyoog.integration.planning.PlanningConnector;
 import com.vyoog.platform.audit.AuditService;
 import com.vyoog.portfolio.ApplicationRepository;
 import com.vyoog.portfolio.CapabilityRepository;
@@ -30,6 +32,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * other pusher ({@code SignalsExportService}) — {@code HttpClient} is a plain field, not
  * an injectable seam, and no test in this codebase spins up a local HTTP server for
  * these; the refusal paths are what a unit test can actually exercise honestly.
+ *
+ * <p>VYB-0916: the HTTP push itself now goes through the connector framework, so the refusals here are
+ * the ones raised before anything is handed to it, and nothing is sent when one is raised. The full push,
+ * over real HTTP and a real database, is {@code PlanningPushIT}.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -41,6 +47,7 @@ class BriefPushServiceTest {
     @Mock CapabilityRepository capabilities;
     @Mock IntegrationService integrations;
     @Mock AuditService audit;
+    @Mock ConnectorExecutor connectors;
     @Mock IntegrationConnection connection;
     @Mock JdbcTemplate jdbc;
 
@@ -50,8 +57,8 @@ class BriefPushServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new BriefPushService(briefs, applications, products, capabilities, integrations, audit,
-            new ObjectMapper(), jdbc);
+        service = new BriefPushService(briefs, applications, products, capabilities, integrations,
+            new PlanningConnector(), connectors, audit, new ObjectMapper(), jdbc);
         briefId = UUID.randomUUID();
         actor = UUID.randomUUID();
         Brief brief = new Brief(UUID.randomUUID(), BriefTarget.HUMAN, UUID.randomUUID(), "content", actor);
@@ -92,7 +99,7 @@ class BriefPushServiceTest {
 
         assertThatThrownBy(() -> service.push(briefId, actor)).isInstanceOf(IllegalStateException.class);
 
-        verifyNoInteractions(audit);
+        verifyNoInteractions(audit, connectors);
         verify(integrations, never()).setConnected(anyString(), anyBoolean(), any());
         verify(integrations, never()).recordFailure(anyString(), anyString());
     }

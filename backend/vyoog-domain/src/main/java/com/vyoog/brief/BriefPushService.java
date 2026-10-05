@@ -3,7 +3,9 @@ package com.vyoog.brief;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vyoog.integration.IntegrationConnection;
 import com.vyoog.integration.IntegrationService;
-import com.vyoog.integration.WebhookSignatureVerifier;
+import com.vyoog.integration.connector.ConnectorExecutor;
+import com.vyoog.integration.connector.ConnectorResult;
+import com.vyoog.integration.planning.PlanningConnector;
 import com.vyoog.platform.audit.AuditService;
 import com.vyoog.portfolio.Application;
 import com.vyoog.portfolio.ApplicationRepository;
@@ -11,12 +13,7 @@ import com.vyoog.portfolio.Capability;
 import com.vyoog.portfolio.CapabilityRepository;
 import com.vyoog.portfolio.Product;
 import com.vyoog.portfolio.ProductRepository;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +22,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * VYB-0818/0837: a generated brief, pushed out to whatever the "planning" {@link
@@ -67,27 +63,31 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class BriefPushService {
+    // VYB-0916: the request itself (URL, signature, API key, retries, idempotency key, sync log, health) is
+    // now the connector framework's, through PlanningConnector; this class only builds the payload.
 
     private final BriefRepository briefs;
     private final ApplicationRepository applications;
     private final ProductRepository products;
     private final CapabilityRepository capabilities;
     private final IntegrationService integrations;
+    private final PlanningConnector planning;
+    private final ConnectorExecutor connectors;
     private final AuditService audit;
     private final ObjectMapper json;
     private final JdbcTemplate jdbc;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
-
-    private static final String CONNECTION_KEY = "planning";
 
     public BriefPushService(BriefRepository briefs, ApplicationRepository applications, ProductRepository products,
-                             CapabilityRepository capabilities, IntegrationService integrations, AuditService audit,
+                             CapabilityRepository capabilities, IntegrationService integrations,
+                             PlanningConnector planning, ConnectorExecutor connectors, AuditService audit,
                              ObjectMapper json, JdbcTemplate jdbc) {
         this.briefs = briefs;
         this.applications = applications;
         this.products = products;
         this.capabilities = capabilities;
         this.integrations = integrations;
+        this.planning = planning;
+        this.connectors = connectors;
         this.audit = audit;
         this.json = json;
         this.jdbc = jdbc;
@@ -95,21 +95,15 @@ public class BriefPushService {
 
     public record PushResult(boolean success, int statusCode, String error) {}
 
-    @Transactional
+    /**
+     * VYB-0916: not transactional. The request goes out through the connector framework, whose retries can
+     * take a while, and a database transaction must not be held open across that. The brief is read, the
+     * request is sent, and the audit event is written afterwards; each is its own short unit.
+     */
     public PushResult push(UUID briefId, UUID actor) {
         Brief brief = briefs.findById(briefId).orElseThrow(NoSuchElementException::new);
-        IntegrationConnection conn = integrations.get(CONNECTION_KEY);
-        String pushUrl = readConfigField(conn.getConfig(), "pushUrl");
-        if (pushUrl == null || pushUrl.isBlank()) {
-            throw new IllegalStateException(
-                "No push URL configured for \"" + CONNECTION_KEY + "\" — set one in Administration first.");
-        }
-        String secret = conn.getWebhookSecret();
-        if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException(
-                "No shared secret configured for \"" + CONNECTION_KEY + "\" — the receiver couldn't verify this push anyway.");
-        }
-        String apiKey = readConfigField(conn.getConfig(), "apiKey");
+        IntegrationConnection conn = integrations.get(PlanningConnector.KEY);
+        planning.requireConfigured(conn, json);
         String customerName = readConfigField(conn.getConfig(), "customerName");
         if (customerName == null || customerName.isBlank()) {
             customerName = "vyoog";
@@ -149,36 +143,14 @@ public class BriefPushService {
         String filename = "VY-" + slug(application.getName()) + "-implementation-brief.md";
         String boundary = "----VyoogBoundary" + UUID.randomUUID();
         String body = buildMultipartBody(boundary, fields, "file", filename, "text/markdown", brief.getContent());
-        String signature = WebhookSignatureVerifier.sign(secret, body);
 
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create(pushUrl))
-            .timeout(Duration.ofSeconds(10))
-            .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-            .header("X-Vyoog-Signature", signature);
-        if (apiKey != null && !apiKey.isBlank()) {
-            requestBuilder.header("X-API-Key", apiKey);
-        }
+        // The signature, the API key and the URL are the connector's; the payload is this class's.
+        ConnectorResult sent = connectors.execute(planning.operation(conn, json, PlanningConnector.BRIEF_PUSH,
+            "brief:" + brief.getId(), "multipart/form-data; boundary=" + boundary, body.getBytes(StandardCharsets.UTF_8)));
+        PushResult result = new PushResult(sent.succeeded(), PlanningConnector.statusCode(sent), PlanningConnector.error(sent));
 
-        PushResult result;
-        try {
-            HttpRequest request = requestBuilder
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            boolean ok = response.statusCode() >= 200 && response.statusCode() < 300;
-            result = new PushResult(ok, response.statusCode(), ok ? null : "HTTP " + response.statusCode() + ": " + response.body());
-        } catch (IOException | InterruptedException e) {
-            result = new PushResult(false, 0, e.getMessage());
-        }
-
-        if (result.success()) {
-            integrations.setConnected(CONNECTION_KEY, true, null);
-        } else {
-            integrations.recordFailure(CONNECTION_KEY, result.error());
-        }
         audit.record(actor, "brief.pushed", "INTEGRATION_CONNECTION", brief.getId(), null,
-            Map.of("connection", CONNECTION_KEY, "success", result.success(), "statusCode", result.statusCode()));
+            Map.of("connection", PlanningConnector.KEY, "success", result.success(), "statusCode", result.statusCode()));
         return result;
     }
 
@@ -186,8 +158,7 @@ public class BriefPushService {
      * JDK's {@code HttpClient} has no built-in multipart/form-data support, so this is
      * hand-rolled. Every part here is text — the form fields and the markdown file
      * itself — so the whole body is safely built as one {@code String} rather than raw
-     * bytes, which keeps this compatible with {@link WebhookSignatureVerifier#sign}'s
-     * String-based signing without a second, byte-array signing path.
+     * bytes (the connector signs those exact bytes).
      */
     private static String buildMultipartBody(String boundary, Map<String, String> fields, String fileFieldName,
                                               String filename, String fileContentType, String fileContent) {

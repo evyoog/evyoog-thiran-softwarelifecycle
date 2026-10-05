@@ -17,11 +17,14 @@ import org.springframework.stereotype.Service;
 public class ConnectorHealthService {
 
     private final IntegrationService integrations;
+    private final ConnectorRegistry connectors;
     private final ConnectorSyncLog syncLog;
     private final ObjectMapper json;
 
-    public ConnectorHealthService(IntegrationService integrations, ConnectorSyncLog syncLog, ObjectMapper json) {
+    public ConnectorHealthService(IntegrationService integrations, ConnectorRegistry connectors, ConnectorSyncLog syncLog,
+                                  ObjectMapper json) {
         this.integrations = integrations;
+        this.connectors = connectors;
         this.syncLog = syncLog;
         this.json = json;
     }
@@ -37,7 +40,7 @@ public class ConnectorHealthService {
     }
 
     private ConnectorHealth of(IntegrationConnection conn) {
-        String problem = ConnectorConfig.problem(conn, json).orElse(null);
+        String problem = ConnectorConfig.problem(conn, json, connectors.forConnection(conn.getKey()).orElse(null)).orElse(null);
         ConnectorHealth.State state;
         if (conn.isDegraded()) state = ConnectorHealth.State.DEGRADED;
         else if (conn.isConnected() && problem == null) state = ConnectorHealth.State.HEALTHY;

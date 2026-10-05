@@ -2,6 +2,7 @@ package com.vyoog.integration.connector;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vyoog.integration.IntegrationConnection;
 import java.net.URI;
 import java.util.EnumSet;
@@ -57,10 +58,18 @@ public final class ConnectorConfig {
 
     /** @throws ConnectorNotConfiguredException naming what is missing or wrong */
     public static ConnectorConfig load(IntegrationConnection connection, ObjectMapper json) {
+        return load(connection, json, null);
+    }
+
+    /**
+     * As {@link #load(IntegrationConnection, ObjectMapper)}, with the connector's
+     * {@link Connector#compatibilityDefaults compatibility defaults} filled in under what is stored.
+     */
+    public static ConnectorConfig load(IntegrationConnection connection, ObjectMapper json, Connector connector) {
         String key = connection.getKey();
-        Optional<String> problem = problem(connection, json);
+        Optional<String> problem = problem(connection, json, connector);
         if (problem.isPresent()) throw new ConnectorNotConfiguredException(key, problem.get());
-        JsonNode node = parse(connection.getConfig(), json);
+        JsonNode node = effective(connection, json, connector);
         return new ConnectorConfig(key, URI.create(text(node, "baseUrl").replaceAll("/+$", "")), authOf(node),
             text(node, "apiKeyHeader") == null ? "X-API-Key" : text(node, "apiKeyHeader"),
             text(node, "apiKey"), text(node, "bearerToken"), connection.getWebhookSecret());
@@ -68,7 +77,11 @@ public final class ConnectorConfig {
 
     /** Why this connection cannot be used, or empty if it can. Used by the health state too. */
     public static Optional<String> problem(IntegrationConnection connection, ObjectMapper json) {
-        JsonNode node = parse(connection.getConfig(), json);
+        return problem(connection, json, null);
+    }
+
+    public static Optional<String> problem(IntegrationConnection connection, ObjectMapper json, Connector connector) {
+        JsonNode node = effective(connection, json, connector);
         if (node == null) return Optional.of("no configuration is set");
 
         String baseUrl = text(node, "baseUrl");
@@ -102,6 +115,19 @@ public final class ConnectorConfig {
             return Optional.of("auth HMAC_SIGNATURE needs the connection's shared secret");
         }
         return Optional.empty();
+    }
+
+    /** The stored configuration with the connector's compatibility defaults filled in where it has no value. */
+    private static JsonNode effective(IntegrationConnection connection, ObjectMapper json, Connector connector) {
+        JsonNode stored = parse(connection.getConfig(), json);
+        if (stored == null || connector == null) return stored;
+        ObjectNode merged = ((ObjectNode) stored).deepCopy();
+        connector.compatibilityDefaults(stored).forEach((field, value) -> {
+            JsonNode current = merged.get(field);
+            boolean absent = current == null || current.isNull() || (current.isTextual() && current.asText().isBlank());
+            if (absent) merged.set(field, json.valueToTree(value));
+        });
+        return merged;
     }
 
     private static JsonNode parse(String config, ObjectMapper json) {

@@ -1,5 +1,7 @@
 package com.vyoog.integration.connector;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,4 +26,16 @@ public interface Connector {
 
     /** The operation names it performs, as written to the sync log (for example {@code "brief.push"}). */
     Set<String> operations();
+
+    /**
+     * VYB-0916: settings an older way of configuring this connection did not have, so a connection
+     * configured before the framework existed keeps working without anyone editing it. Each entry is used
+     * only where the stored configuration has no (or a blank) value for that key; what is stored always
+     * wins. The default is none.
+     *
+     * @param stored the connection's stored {@code config}, as an object (empty if it has none)
+     */
+    default Map<String, Object> compatibilityDefaults(JsonNode stored) {
+        return Map.of();
+    }
 }

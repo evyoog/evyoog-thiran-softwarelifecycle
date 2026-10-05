@@ -69,6 +69,7 @@ public class ConnectorExecutor {
     }
 
     private final IntegrationService integrations;
+    private final ConnectorRegistry connectors;
     private final ConnectorSyncLog syncLog;
     private final JdbcTemplate jdbc;
     private final AuditService audit;
@@ -81,24 +82,26 @@ public class ConnectorExecutor {
     private final HttpClient http;
 
     @Autowired
-    public ConnectorExecutor(IntegrationService integrations, ConnectorSyncLog syncLog, JdbcTemplate jdbc,
+    public ConnectorExecutor(IntegrationService integrations, ConnectorRegistry connectors, ConnectorSyncLog syncLog, JdbcTemplate jdbc,
                              AuditService audit, ObjectMapper json, MeterRegistry meters,
                              PlatformTransactionManager txManager,
                              @Value("${vyoog.connector.max-attempts:4}") int maxAttempts,
                              @Value("${vyoog.connector.initial-delay-ms:500}") long initialDelayMs,
                              @Value("${vyoog.connector.max-delay-ms:30000}") long maxDelayMs,
                              @Value("${vyoog.connector.request-timeout-ms:10000}") long requestTimeoutMs) {
-        this(integrations, syncLog, jdbc, audit, json, meters, txManager,
+        this(integrations, connectors, syncLog, jdbc, audit, json, meters, txManager,
             new RetryPolicy(maxAttempts, Duration.ofMillis(initialDelayMs), Duration.ofMillis(maxDelayMs),
                 Duration.ofMillis(requestTimeoutMs)),
             d -> Thread.sleep(d), () -> ThreadLocalRandom.current().nextDouble());
     }
 
     /** For tests, which supply their own policy, a recording {@link Sleeper} and a fixed random source. Spring uses the other one. */
-    public ConnectorExecutor(IntegrationService integrations, ConnectorSyncLog syncLog, JdbcTemplate jdbc, AuditService audit,
+    public ConnectorExecutor(IntegrationService integrations, ConnectorRegistry connectors, ConnectorSyncLog syncLog,
+                      JdbcTemplate jdbc, AuditService audit,
                       ObjectMapper json, MeterRegistry meters, PlatformTransactionManager txManager,
                       RetryPolicy policy, Sleeper sleeper, DoubleSupplier random) {
         this.integrations = integrations;
+        this.connectors = connectors;
         this.syncLog = syncLog;
         this.jdbc = jdbc;
         this.audit = audit;
@@ -122,7 +125,7 @@ public class ConnectorExecutor {
     /** @throws ConnectorNotConfiguredException if the connection cannot be used as configured */
     public ConnectorResult execute(ConnectorOperation op) {
         IntegrationConnection conn = integrations.get(op.connectionKey());
-        ConnectorConfig config = ConnectorConfig.load(conn, json);
+        ConnectorConfig config = ConnectorConfig.load(conn, json, connectors.forConnection(op.connectionKey()).orElse(null));
         URI target = target(config, op);
 
         ConnectorSyncLog.Claim claim = syncLog.claim(op.connectionKey(), op.operation(), op.idempotencyKey(),

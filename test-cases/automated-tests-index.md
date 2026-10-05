@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 556 tests cover 45 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 583 tests cover 46 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -381,7 +381,6 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 
 - `AC1` appWideBriefSendsLevelApplicationAndBlankCapabilityName (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
 - `AC2` capabilityScopedBriefSendsLevelCapabilityAndItsName (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
-- `AC3` noApiKeyConfiguredOmitsHeaderRatherThanRefusing (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
 - `AC4` customerNameConfiguredOverridesTheVyoogDefault (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
 
 ## VYB-0839 (not in the register)
@@ -694,3 +693,34 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` failuresAreCountedPerOperationNotPerAttempt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
 - `AC5` theMetricsCountOperationsByOutcome (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
 - `AC5` threeFailedOperationsInARowDegradeTheConnectionOnceAndASuccessRecoversIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+
+## VYB-0916: Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40]
+
+- `AC1` aBriefIsPushedInTheOldSignedMultipartFormatWithTheKeyAndTheSignature (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC1` aFailedSendIsReportedWithItsStatusAndReason (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
+- `AC1` aPushThatNeverGotAnAnswerReportsStatusZero (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
+- `AC1` everyPushGetsItsOwnIdempotencyKeyWithTheGivenPrefix (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC1` everyPushIsItsOwnOperationForTheBriefOnTheBriefPushOperation (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefPushServiceMultipartTest.java`)
+- `AC1` pushingTheSameBriefAgainSendsAgainAsItAlwaysHas (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC1` theConnectorDeclaresItsConnectionAndBothOperations (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC1` thePlanningConnectionIsRegisteredAsAConnectorWithBothOperations (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC1` theResultIsReportedInTheShapeTheEndpointsHaveAlwaysReturned (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC1` theScopeSignalsArePushedAsSignedJsonOnTheSignalsOperation (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC1` theUrlIsSentExactlyAsConfiguredIncludingATrailingSlash (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC1` theUrlIsSentExactlyAsConfiguredIncludingATrailingSlash (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC1` withNoApiKeyTheHeaderIsOmittedAndTheScreensBlankFieldsDoNotRefuse (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC2` aConnectionAlreadyInTheNewShapeIsUsedAsItIsAndNeedsNoSecretWhenItDoesNotSign (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC2` theBlankFieldsTheScreenSavesAreTreatedAsNotSet (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC2` theConfigurationTheAdministrationScreenWritesIsUsableAsItIs (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC2` withoutTheConnectorTheOldShapeIsNotUsableWhichIsWhyTheConnectorSuppliesTheDefaults (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC3` aPlainHttpUrlToARemoteHostIsRefusedByNameNotSentInTheClear (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC3` aSettingTheFrameworkRefusesIsNamedNotSilentlyIgnored (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC3` anUnconfiguredConnectionRefusesInTheOldWordsAndSendsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC3` noSecretRefusesWithTheOldWords (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC3` noUrlConfiguredRefusesWithTheOldWords (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC3` signalsRefuseInTheSameOldWordsWhenNothingIsConfigured (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC4` noPushHoldsADatabaseTransactionOpenAcrossTheSend (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planning/PlanningConnectorTest.java`)
+- `AC5` aPushTheReceiverRefusesIsReportedAndCountsAgainstTheConnectionsHealth (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC5` aSuccessfulPushIsInTheSyncLogAndLeavesTheConnectionConnectedAndHealthy (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC5` aTransientFailureIsRetriedAndThePushThenSucceedsUnderOneIdempotencyKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)
+- `AC5` theHealthStateUsesTheOldConfigurationShapeToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlanningPushIT.java`)

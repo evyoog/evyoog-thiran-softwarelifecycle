@@ -14,6 +14,7 @@ import com.vyoog.integration.connector.ConnectorHealth;
 import com.vyoog.integration.connector.ConnectorHealthService;
 import com.vyoog.integration.connector.ConnectorNotConfiguredException;
 import com.vyoog.integration.connector.ConnectorOperation;
+import com.vyoog.integration.connector.ConnectorRegistry;
 import com.vyoog.integration.connector.ConnectorResult;
 import com.vyoog.integration.connector.ConnectorSyncLog;
 import com.vyoog.integration.connector.RetryPolicy;
@@ -77,7 +78,7 @@ class ConnectorExecutorIT extends IntegrationTestBase {
         server.createContext("/", this::handle);
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
-        executor = new ConnectorExecutor(integrations, syncLog, jdbc, audit, json, new SimpleMeterRegistry(), transactions,
+        executor = new ConnectorExecutor(integrations, new ConnectorRegistry(List.of()), syncLog, jdbc, audit, json, new SimpleMeterRegistry(), transactions,
             POLICY, waits::add, () -> 0.5);
         key = unique("conn");
         integrations.create(key, "connector IT", IntegrationConnection.Direction.OUTBOUND);
@@ -224,7 +225,7 @@ class ConnectorExecutorIT extends IntegrationTestBase {
     @Test
     void VYB0913_AC2_aReceiverThatAnswersTooSlowlyIsATimeoutAndIsRetried() {
         configureNoAuth();
-        executor = new ConnectorExecutor(integrations, syncLog, jdbc, audit, json, new SimpleMeterRegistry(), transactions,
+        executor = new ConnectorExecutor(integrations, new ConnectorRegistry(List.of()), syncLog, jdbc, audit, json, new SimpleMeterRegistry(), transactions,
             new RetryPolicy(2, Duration.ofMillis(10), Duration.ofMillis(50), Duration.ofMillis(300)), waits::add, () -> 0.5);
         responder = r -> { try { Thread.sleep(1500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } return new Object[] {200, ""}; };
 
@@ -512,7 +513,7 @@ class ConnectorExecutorIT extends IntegrationTestBase {
     void VYB0913_AC5_theMetricsCountOperationsByOutcome() {
         configureNoAuth();
         SimpleMeterRegistry meters = new SimpleMeterRegistry();
-        executor = new ConnectorExecutor(integrations, syncLog, jdbc, audit, json, meters, transactions, POLICY, waits::add, () -> 0.5);
+        executor = new ConnectorExecutor(integrations, new ConnectorRegistry(List.of()), syncLog, jdbc, audit, json, meters, transactions, POLICY, waits::add, () -> 0.5);
         executor.execute(op("fn:24:a"));
         executor.execute(op("fn:24:a"));
         responder = r -> new Object[] {400, ""};

@@ -70,6 +70,29 @@ Failures are counted per **operation**, not per attempt. When a connection becom
 
 Metrics: `vyoog_connector_operations_total{connection,outcome}` (`succeeded`, `failed`, `already_done`, `in_progress_elsewhere`) and `vyoog_connector_attempts_total{connection}`.
 
+## The planning connection (VYB-0916)
+
+`PlanningConnector` (`com.vyoog.integration.planning`) is the first connector. It is the existing `planning` connection, and it replaces the two hand-written pushes: `BriefPushService` (a brief, as `multipart/form-data`, operation `brief.push`) and `SignalsExportService` (the scope signals, as JSON, operation `signals.push`). They still build their own payloads; the request itself (URL, signature, API key, retries, idempotency key, sync log, health) is the framework's. Neither push is transactional any more, so no database transaction is held open across the send.
+
+**What stays the same, so a receiver and an existing configuration are not affected:**
+
+- The wire format: the same body bytes, `X-Vyoog-Signature` carrying the bare hex HMAC-SHA256 of the exact body, `X-API-Key` when an API key is set, the same `Content-Type`.
+- The configuration: the Administration screen still writes `{"pushUrl", "apiKey", "customerName"}` and the secret in `webhook_secret`. The connector reads that shape (`pushUrl` is the base URL; with no `auth` set, the schemes are the signature, plus the API key when there is one). A connection already written in the new shape (`baseUrl`, `auth`) is used as it is. Blank fields the screen saves are treated as not set. A trailing slash on `pushUrl` is sent as it was.
+- The endpoints, their access rules, and the `{success, statusCode, error}` they return; the audit events `brief.pushed` and `signals.pushed`; the refusal texts "No push URL configured for "planning" — set one in Administration first." and "No shared secret configured for "planning" — the receiver couldn't verify this push anyway." (HTTP 409).
+- Every click on "push" still sends: each push has its own idempotency key. The retries inside one push share it.
+
+**What changes:**
+
+| Before | Now |
+|---|---|
+| One attempt, 10 s | Up to 4 attempts with backoff for connection failures, timeouts and 408, 425, 429, 500, 502, 503, 504; a click can take up to about a minute when the receiver is down, and then reports the last failure |
+| Plain http to any host accepted | https required; http only for localhost. An http `pushUrl` to a remote host is refused with a named reason |
+| A `pushUrl` with a query string worked | Refused ("no query or fragment"): put the token in the API key or move it into the path |
+| Receiver's error text returned in full | A short single-line excerpt, with the connection's own secrets removed |
+| Redirects followed | Never followed (a 3xx is a failed push) |
+| Two extra request headers | `Idempotency-Key` and `User-Agent: vyoog-connector` are added |
+| No record of a push | A `connector_sync_log` row per push; the connection's health is the framework's |
+
 ## Not part of this row
 
-The existing `BriefPushService` and `SignalsExportService` push straight to the `planning` connection and are **unchanged**: they do not retry, have no idempotency key and no sync log, and one of them makes its HTTP call inside a database transaction. Replacing them with a connector is VYB-0916. Field ownership (VYB-0914), the approval-triggered `function.upserted` event (VYB-0915), the health screen (VYB-0917) and inbound sync (S4) are the later rows.
+Field ownership (VYB-0914), the approval-triggered event (VYB-0915), the Administration health screen (VYB-0917) and inbound sync (S4) are later rows, and VYB-0914, 0915, 0918 and 0919 wait on the decisions in [`agile-planner-contract-analysis.md`](agile-planner-contract-analysis.md). Moving network calls out of database transactions elsewhere in the application is VYB-0940.

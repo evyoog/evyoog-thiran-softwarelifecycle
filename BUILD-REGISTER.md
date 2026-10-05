@@ -319,7 +319,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | DONE on dev (44 new tests; generic part only, no connector uses it yet; D24 still open; commit only, no PR yet) | S3 |
 | VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | BLOCKED: the Agile Planner repository has no field-level table and a different contract from this plan; decisions needed, see docs/09-integrations/agile-planner-contract-analysis.md | S3 |
 | VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
-| VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | TODO | S3 |
+| VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | DONE on dev (27 new tests; commit only, no PR yet) | S3 |
 | VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | TODO | S3 |
 | VYB-0918 | 6 | Agile Planner inbound and reconciliation | Process inbound backlog_item.status_changed and write completion signals back to requirements [M; F16] | TODO | S4 |
 | VYB-0919 | 6 | Agile Planner inbound and reconciliation | sprint.reassigned marks affected trace links suspect [S; F16] | TODO | S4 |
@@ -4985,6 +4985,31 @@ Phase 6 Sprint 3. Branch `dev`. **No code and no tests.** One analysis document,
 **Why nothing was built.** Building the table now would mean inventing business rules (CLAUDE.md: never guess at a business rule) on top of a contract that conflicts with the plan's own event names. D24 stays Open.
 
 **Needed from the product owner:** (A) whose direction and vocabulary win; (B) the field-level rules, at least "after the first push, who owns the Requirement's title and text"; (C) answers to the Planner's open questions 1 to 3 (they are asked of this application's team). Until then VYB-0914, VYB-0915, VYB-0918 and VYB-0919 cannot be built as written. VYB-0916 (replace the old planning push with the connector) and VYB-0917 (health screen) do not need the Planner contract.
+
+---
+
+## Session 75 — VYB-0916 (F16, F40): the planning pushes now go through the connector framework
+
+Phase 6 Sprint 3. Branch `dev`. **27 new tests**: `PlanningPushIT` 13 (real services, real PostgreSQL, real HTTP), `PlanningConnectorTest` 12, `BriefPushServiceMultipartTest` +2 (and the existing ones kept). The finding texts F16 and F40 are not in the repository; scope is the register row. This row needs no Agile Planner contract, so it was not affected by D24; the Planner-specific rows (0914, 0915, 0918, 0919) remain blocked (session 74).
+
+**What changed.** `BriefPushService` (a brief, multipart) and `SignalsExportService` (scope signals, JSON) each hand-built an HTTP request: one attempt, no idempotency key, no log, health updated by hand, and the call made inside a `@Transactional` method. Both now build the same payload and hand it to `ConnectorExecutor` through a new `PlanningConnector` (`com.vyoog.integration.planning`), the first `Connector`. The signature, API key, URL, retries, idempotency key, sync log and health are the framework's. Neither push is transactional any more.
+
+**Compatibility kept** (the register row's "keep the signed-payload format"): the same body bytes, `X-Vyoog-Signature` as bare hex HMAC-SHA256 of the exact body, `X-API-Key` only when a key is set, same `Content-Type`, same `{success, statusCode, error}` response, same audit events, same two refusal texts (409). **The Administration screen still writes the old configuration** (`{"pushUrl","apiKey","customerName"}` and the secret in `webhook_secret`; it writes `""` for blank fields), so the framework gained `Connector.compatibilityDefaults`: the planning connector supplies `pushUrl` as the base URL and the signature (plus the API key if set) as the auth when the stored configuration says neither. What is stored always wins, so a connection in the new shape works too. Nothing needs re-entering. Every push still sends (each has its own idempotency key; retries within one share it).
+
+**Behaviour changes to know** (listed in `docs/09-integrations/connector-framework.md`):
+1. A failing push is retried (up to 4 attempts, backoff to 30 s); a click can now take up to about a minute when the receiver is down, where it used to give up after 10 s.
+2. **Plain http to a remote host is now refused** (named reason; http is allowed only for localhost). The old push accepted it. If a real deployment uses an http planning URL, it stops working until it is https.
+3. A `pushUrl` with a query string is refused. The old push accepted it.
+4. Redirects are not followed; the receiver's error text is a 200-character excerpt with the connection's secrets removed; two request headers are added (`Idempotency-Key`, `User-Agent`).
+5. Each push is now a `connector_sync_log` row and counts toward the connection's health per push, as before, but once per operation rather than once per attempt.
+
+**Evidence.** All 13 integration tests passed on the first run. Then three deliberate breaks, each reverted: removing the compatibility defaults (3 failures and 8 errors: the old configuration stops working), dropping the trailing slash (1), and putting `@Transactional` back on the brief push (1). Stale compiled test classes from before the constructor change gave `NoSuchMethodError` until a `clean`; the full build is run clean. No endpoint changed, so the OpenAPI document is unchanged.
+
+**Not done / to know**
+- Only these two pushes moved; webhooks (inbound) and the AI clients are untouched. Moving network calls out of transactions elsewhere is VYB-0940.
+- The framework still lacks what the Planner contract would need (configurable signature header and prefix, extra static headers such as `X-TENANT-ID`, OAuth2 client-credentials): see the analysis; not needed here and not built.
+- The retry delays are real sleeps in `PlanningPushIT`; its transient-failure test takes about a second.
+- Tested on the local Postgres; the Testcontainers path and the GitHub CI run are unverified.
 
 ---
 
