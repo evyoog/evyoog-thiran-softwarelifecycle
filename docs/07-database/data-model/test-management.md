@@ -1,8 +1,8 @@
 # Test management: plans, suites, steps and runs
 
-Added by VYB-0923 (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
+Added by VYB-0923 (entities, run creation) and VYB-0924a (executing a run, below) (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
 
-This row is the **entities and the creation of a run**. Recording a result against a step is VYB-0924, turning results into verification records bound to a requirement revision is VYB-0925, raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here records a result, writes a `verification` row, or touches `requirement.status` (CLAUDE.md rule 3).
+VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence attachments and retest are VYB-0924b, turning results into verification records bound to a requirement revision is VYB-0925, raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here records a result, writes a `verification` row, or touches `requirement.status` (CLAUDE.md rule 3).
 
 ## Model
 
@@ -21,7 +21,7 @@ application ──< test_plan >── release (optional)
 | `test_suite_case` | Which existing test cases a suite holds, in order. | A case appears once per suite; removed if the case is deleted. A case may be in many suites. |
 | `test_step` | One step of a test case: an **action** and its **expected result**. | Both required and not blank (the database checks it): VYB-0924 judges each step pass or fail against its expected result. Ordered, 1-based. Beside `test_case.description`, which is untouched and migrates nothing. |
 | `test_run` | **Extended, not replaced.** Adds `kind`, `status`, `suite_id`, `assigned_to`, `created_by`, `created_at`, `completed_at`; `started_at` is now nullable. | Every existing row is a CI run: `kind = 'CI'`, `status = 'COMPLETED'` (the defaults), so `POST /ci/test-runs` is unchanged. A `MANUAL` run must have a suite; a `CI` run must be `COMPLETED` (both are database checks). A manual run is created `PLANNED` with `started_at` NULL. |
-| `test_run_case`, `test_run_step` | The **snapshot** taken when a run is created: each case's key, title and description, and each step's action and expected result. | Copies, not references. `test_run_case.test_case_id` records where a copy came from but is deliberately not a foreign key, so deleting or editing the live case changes nothing in the run. No result columns yet (VYB-0924). |
+| `test_run_case`, `test_run_step` | The **snapshot** taken when a run is created: each case's key, title and description, and each step's action and expected result. | Copies, not references. `test_run_case.test_case_id` records where a copy came from but is deliberately not a foreign key, so deleting or editing the live case changes nothing in the run. Results are recorded on these rows (VYB-0924a, below). |
 
 `test_run.suite_id` has no delete action: a suite (or a plan, through its suites) that has been run cannot be deleted from under its runs. The service refuses with a 409 and says how many runs.
 
@@ -45,12 +45,24 @@ Reads need only a signed-in person. Every write is the matrix's **Verify** colum
 | `GET/PUT /api/v1/test-suites/{id}/cases` | A suite's ordered cases; `PUT` replaces them with `{"testCaseIds": [...]}` |
 | `GET/PUT /api/v1/test-cases/{id}/steps` | A case's steps; `PUT` replaces them with `{"steps": [{"action", "expectedResult"}]}`, an empty list clears |
 | `POST /api/v1/test-suites/{suiteId}/runs` | Create a PLANNED manual run (optional `assignedTo`, `buildLabel`); returns the run and its snapshot |
+| `POST /api/v1/test-runs/{id}/start`, `PUT .../steps/{stepId}/result`, `PUT .../cases/{caseId}/result`, `POST .../complete` | Execute a run (VYB-0924a, below) |
 | `GET /api/v1/test-runs`, `GET /api/v1/test-runs/{id}` | Manual runs (filters `suiteId`, `planId`, `status`) and one run with its cases and steps. CI runs are not listed. |
+
+## Executing a run (VYB-0924a)
+
+Migration `V041__test_run_results.sql`; service `TestExecutionService`. PLANNED, `start` to IN_PROGRESS, results recorded, `complete` to COMPLETED (final).
+
+- A result is PASS, FAIL or BLOCKED, recorded on a step of the run's snapshot (`test_run_step`) with an **actual result**, who and when. The actual result is required unless the step passed. Recording again while the run is IN_PROGRESS replaces the result; the audit event keeps the earlier one. The database checks that result, who and when are all set or all null.
+- A case's result is **derived**, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else NOT_RUN if any step has no result, else PASS. A case with **no steps** is judged on `test_run_case` itself; recording on a case that has steps is refused.
+- The run must be started before anything is recorded; it can be completed only when every case has a result; after that nothing can be recorded.
+- The run detail returns each step's result, the case results and a summary (total, passed, failed, blocked, not run).
+- Execution writes **no** `verification` row and never touches `requirement.status` (VYB-0925 creates verification records from a completed run).
+- Not decided here: any Tester may execute any run (`assigned_to` is informational), and there is no cancel.
 
 ## Audit events
 
-`test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created`.
+`test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created|started|step-recorded|case-recorded|completed`.
 
 ## Tests
 
-`TestManagementIT` (`VYB0923_AC1` to `AC7`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.
+`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.

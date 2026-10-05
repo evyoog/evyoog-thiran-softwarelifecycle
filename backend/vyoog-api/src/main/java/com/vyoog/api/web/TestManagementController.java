@@ -1,6 +1,7 @@
 package com.vyoog.api.web;
 
 import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.evidence.TestExecutionService;
 import com.vyoog.evidence.TestManagementService;
 import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
@@ -25,10 +26,13 @@ import org.springframework.web.bind.annotation.*;
 public class TestManagementController {
 
     private final TestManagementService service;
+    private final TestExecutionService execution;
     private final UserProvisioningService provisioning;
 
-    public TestManagementController(TestManagementService service, UserProvisioningService provisioning) {
+    public TestManagementController(TestManagementService service, TestExecutionService execution,
+                                     UserProvisioningService provisioning) {
         this.service = service;
+        this.execution = execution;
         this.provisioning = provisioning;
     }
 
@@ -177,12 +181,17 @@ public class TestManagementController {
                                String status, String buildLabel, String assignedTo, String createdAt, String startedAt,
                                String completedAt, long caseCount) {}
 
-    public record RunStepView(int position, String action, String expectedResult) {}
+    public record RunStepView(String id, int position, String action, String expectedResult, String result,
+                               String actualResult, String executedBy, String executedAt) {}
 
+    /** {@code result} is derived (PASS, FAIL, BLOCKED or NOT_RUN); the other result fields are set only for a case with no steps. */
     public record RunCaseView(String id, int position, String testCaseId, String key, String title, String description,
-                               List<RunStepView> steps) {}
+                               List<RunStepView> steps, String result, String actualResult, String executedBy,
+                               String executedAt) {}
 
-    public record TestRunDetailView(TestRunView run, List<RunCaseView> cases) {}
+    public record RunSummaryView(int total, int passed, int failed, int blocked, int notRun) {}
+
+    public record TestRunDetailView(TestRunView run, List<RunCaseView> cases, RunSummaryView summary) {}
 
     private static String s(Object o) {
         return o == null ? null : o.toString();
@@ -196,7 +205,11 @@ public class TestManagementController {
     private static TestRunDetailView view(TestManagementService.RunDetail d) {
         return new TestRunDetailView(view(d.run()), d.cases().stream().map(c -> new RunCaseView(
             s(c.id()), c.position(), s(c.testCaseId()), c.key(), c.title(), c.description(),
-            c.steps().stream().map(st -> new RunStepView(st.position(), st.action(), st.expectedResult())).toList())).toList());
+            c.steps().stream().map(st -> new RunStepView(s(st.id()), st.position(), st.action(), st.expectedResult(),
+                st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()))).toList(),
+            c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()))).toList(),
+            new RunSummaryView(d.summary().total(), d.summary().passed(), d.summary().failed(), d.summary().blocked(),
+                d.summary().notRun()));
     }
 
     /** Creates a PLANNED run of the suite and copies its cases and their steps into it. */
@@ -218,5 +231,39 @@ public class TestManagementController {
     @GetMapping("/test-runs/{id}")
     public TestRunDetailView getRun(@PathVariable UUID id) {
         return view(service.getRun(id));
+    }
+
+    // -------------------------------------------------------------- execution
+
+    public record RecordResult(String result, String actualResult) {}
+
+    /** PLANNED to IN_PROGRESS. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/test-runs/{id}/start")
+    public TestRunDetailView startRun(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return view(execution.start(id, currentUserId(jwt)));
+    }
+
+    /** Records (or replaces, while the run is in progress) the result of one step of the run's snapshot. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PutMapping("/test-runs/{id}/steps/{stepId}/result")
+    public TestRunDetailView recordStepResult(@PathVariable UUID id, @PathVariable UUID stepId,
+                                               @RequestBody RecordResult body, @AuthenticationPrincipal Jwt jwt) {
+        return view(execution.recordStepResult(id, stepId, body.result(), body.actualResult(), currentUserId(jwt)));
+    }
+
+    /** For a case with no steps only. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PutMapping("/test-runs/{id}/cases/{caseId}/result")
+    public TestRunDetailView recordCaseResult(@PathVariable UUID id, @PathVariable UUID caseId,
+                                               @RequestBody RecordResult body, @AuthenticationPrincipal Jwt jwt) {
+        return view(execution.recordCaseResult(id, caseId, body.result(), body.actualResult(), currentUserId(jwt)));
+    }
+
+    /** IN_PROGRESS to COMPLETED; every case must have a result. */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/test-runs/{id}/complete")
+    public TestRunDetailView completeRun(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return view(execution.complete(id, currentUserId(jwt)));
     }
 }

@@ -327,7 +327,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0921 | 6 | Agile Planner inbound and reconciliation | Webhook hardening: timestamp window, rate limit, constant-time compare, real payload processing [S; F08] | TODO | S4 |
 | VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
 | VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
-| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | TODO | S5 |
+| VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | PARTIAL: split in two at the owner's choice; 0924a (start, per-step result and actual result, complete) done on dev, 0924b (evidence attachment, retest) TODO | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
@@ -5058,6 +5058,31 @@ Phase 6 Sprint 5. Branch `dev`. **16 new tests**: `TestManagementIT` (`VYB0923_A
 - No way to start, complete or cancel a run, and no result columns: a run stays PLANNED. That is VYB-0924.
 - Nothing links a manual run to requirements or verification yet (VYB-0925); a manual run writes no `verification` row and never changes a requirement's status (tested).
 - Plans cannot be reordered across suites, and suites cannot be reordered after creation (no row asks for it).
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 78 — VYB-0924a (F14): executing a manual run
+
+Phase 6 Sprint 5. Branch `dev`. **11 new tests**: `TestExecutionIT` (`VYB0924_AC1` to `AC6`, real PostgreSQL, service calls and HTTP with real tokens). Backend only, no screen (VYB-0927). The finding text F14 is not in the repository; scope is the register row.
+
+**Decisions with the product owner this session.** (1) The row is L and was **split in two**: this session is **0924a** (start, a result and actual result per step, complete); **0924b** (evidence attachment, retest) is the next. (2) Evidence (0924b): **reuse the requirement attachments** (the owner's choice over a new evidence table). I recommended the table and flagged the cost: a test case can verify several requirements or none, and run evidence would appear in a requirement's file list; 0924b has to decide which requirement a step's evidence attaches to. (3) Retest (0924b): a new run of the failed or blocked cases of a completed run, copied from its snapshot, linked back; the original run is never changed.
+
+**Database.** `V041__test_run_results.sql`: on `test_run_step` and `test_run_case`: `result` (PASS, FAIL, BLOCKED), `actual_result`, `executed_by`, `executed_at`. The database checks that result, who and when are all set or all null, and that an actual result is present unless the step passed. `executed_by` is listed as audit-style in `ForeignKeyIndexIT`.
+
+**Backend.** `TestExecutionService` (start, record a step result, record a case result, complete) and four write endpoints in `TestManagementController`: `POST /test-runs/{id}/start`, `PUT /test-runs/{id}/steps/{stepId}/result`, `PUT /test-runs/{id}/cases/{caseId}/result`, `POST /test-runs/{id}/complete`. The run detail now returns each step's result, actual result, who and when, each case's derived result, and a summary (total, passed, failed, blocked, not run). OpenAPI and `schema.d.ts` regenerated (additive; `RunStepView` and `RunCaseView` gained fields and `RunSummaryView` is new).
+
+**Access.** The four writes are `VERIFY` (Tester), scope ANYWHERE, registered in `AccessPolicyTest`; a test proves 403 for a Business Analyst and a Viewer on every one.
+
+**Audit.** `test-run.started`, `test-run.step-recorded` and `test-run.case-recorded` (before and after result), `test-run.completed` (with counts).
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Results are PASS, FAIL or BLOCKED; there is no SKIPPED. (2) An actual result is required for FAIL and BLOCKED, optional for PASS. (3) A case's result is derived from its steps (FAIL outranks BLOCKED, any unrecorded step makes it NOT_RUN) and is never stored; a case with no steps is judged on the case itself, and recording on a case with steps is refused. (4) The run must be started first; recording on a PLANNED run is a 409. Recording again while IN_PROGRESS replaces the result; the audit event keeps both. (5) Completing needs every case to have a result and is final: nothing can be recorded afterwards. (6) Any Tester may execute any run; `assigned_to` is informational, not enforced. (7) There is no cancel: a run that is never completed stays IN_PROGRESS.
+
+**Evidence.** Making completion skip the "every case has a result" check failed 2 tests, then restored. A test confirms executing and completing a run writes no `verification` row and does not change a requirement's status.
+
+**Not done / to know**
+- 0924b: evidence attachments and retest.
+- Nothing yet turns a completed run into verification records (VYB-0925), so a passed run still does not count as verification of any requirement.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

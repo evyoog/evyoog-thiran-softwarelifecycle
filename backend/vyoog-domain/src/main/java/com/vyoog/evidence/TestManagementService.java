@@ -47,12 +47,32 @@ public class TestManagementService {
                        String buildLabel, UUID assignedTo, UUID createdBy, Instant createdAt, Instant startedAt,
                        Instant completedAt, long caseCount) {}
 
-    public record RunStep(int position, String action, String expectedResult) {}
+    /** {@code result} is null until recorded (VYB-0924a); then PASS, FAIL or BLOCKED. */
+    public record RunStep(UUID id, int position, String action, String expectedResult, String result,
+                           String actualResult, UUID executedBy, Instant executedAt) {}
 
+    /**
+     * {@code result} is derived, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else
+     * NOT_RUN if any is unrecorded, else PASS. A case with no steps is judged on itself: {@code recordedResult},
+     * {@code actualResult}, {@code executedBy} and {@code executedAt} hold that judgement and are null for a case that has steps.
+     */
     public record RunCase(UUID id, int position, UUID testCaseId, String key, String title, String description,
-                           List<RunStep> steps) {}
+                           List<RunStep> steps, String result, String actualResult, UUID executedBy, Instant executedAt) {}
 
-    public record RunDetail(Run run, List<RunCase> cases) {}
+    public record RunSummary(int total, int passed, int failed, int blocked, int notRun) {}
+
+    public record RunDetail(Run run, List<RunCase> cases, RunSummary summary) {}
+
+    static String caseResult(List<RunStep> steps, String ownResult) {
+        if (steps.isEmpty()) return ownResult == null ? "NOT_RUN" : ownResult;
+        boolean blocked = false, unrecorded = false;
+        for (RunStep st : steps) {
+            if ("FAIL".equals(st.result())) return "FAIL";
+            if ("BLOCKED".equals(st.result())) blocked = true;
+            if (st.result() == null) unrecorded = true;
+        }
+        return blocked ? "BLOCKED" : unrecorded ? "NOT_RUN" : "PASS";
+    }
 
     private final JdbcTemplate jdbc;
     private final AuditService audit;
@@ -335,24 +355,42 @@ public class TestManagementService {
         if (rows.isEmpty()) throw new NoSuchElementException("No such test run: " + id);
         Map<UUID, List<RunStep>> stepsByCase = new LinkedHashMap<>();
         jdbc.query("""
-            SELECT rs.run_case_id, rs.position, rs.action, rs.expected_result
+            SELECT rs.id, rs.run_case_id, rs.position, rs.action, rs.expected_result, rs.result, rs.actual_result,
+                   rs.executed_by, rs.executed_at
               FROM test_run_step rs JOIN test_run_case rc ON rc.id = rs.run_case_id
              WHERE rc.run_id = ? ORDER BY rc.position, rs.position
             """, rs -> {
                 stepsByCase.computeIfAbsent(rs.getObject("run_case_id", UUID.class), k -> new ArrayList<>())
-                    .add(new RunStep(rs.getInt("position"), rs.getString("action"), rs.getString("expected_result")));
+                    .add(new RunStep(rs.getObject("id", UUID.class), rs.getInt("position"), rs.getString("action"),
+                        rs.getString("expected_result"), rs.getString("result"), rs.getString("actual_result"),
+                        rs.getObject("executed_by", UUID.class), instant(rs.getTimestamp("executed_at"))));
             }, id);
         List<RunCase> cases = jdbc.query("""
-            SELECT id, position, test_case_id, case_key, title, description FROM test_run_case WHERE run_id = ? ORDER BY position
-            """, (rs, i) -> new RunCase(rs.getObject("id", UUID.class), rs.getInt("position"),
-                rs.getObject("test_case_id", UUID.class), rs.getString("case_key"), rs.getString("title"),
-                rs.getString("description"), List.of()), id);
-        List<RunCase> withSteps = new ArrayList<>();
+            SELECT id, position, test_case_id, case_key, title, description, result, actual_result, executed_by, executed_at
+              FROM test_run_case WHERE run_id = ? ORDER BY position
+            """, (rs, i) -> {
+                UUID caseId = rs.getObject("id", UUID.class);
+                List<RunStep> steps = stepsByCase.getOrDefault(caseId, List.of());
+                String own = rs.getString("result");
+                return new RunCase(caseId, rs.getInt("position"), rs.getObject("test_case_id", UUID.class),
+                    rs.getString("case_key"), rs.getString("title"), rs.getString("description"), steps,
+                    caseResult(steps, own), rs.getString("actual_result"), rs.getObject("executed_by", UUID.class),
+                    instant(rs.getTimestamp("executed_at")));
+            }, id);
+        int passed = 0, failed = 0, blocked = 0, notRun = 0;
         for (RunCase c : cases) {
-            withSteps.add(new RunCase(c.id(), c.position(), c.testCaseId(), c.key(), c.title(), c.description(),
-                stepsByCase.getOrDefault(c.id(), List.of())));
+            switch (c.result()) {
+                case "PASS" -> passed++;
+                case "FAIL" -> failed++;
+                case "BLOCKED" -> blocked++;
+                default -> notRun++;
+            }
         }
-        return new RunDetail(rows.get(0), withSteps);
+        return new RunDetail(rows.get(0), cases, new RunSummary(cases.size(), passed, failed, blocked, notRun));
+    }
+
+    private static Instant instant(java.sql.Timestamp t) {
+        return t == null ? null : t.toInstant();
     }
 
     /** Manual runs of one suite or plan, newest first; CI runs are not listed here (they have no suite). */

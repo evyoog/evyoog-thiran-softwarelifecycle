@@ -3428,6 +3428,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/test-runs/{id}/cases/{caseId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["recordCaseResult"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-runs/{id}/steps/{stepId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["recordStepResult"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/test-suites/{id}": {
         parameters: {
             query?: never;
@@ -4896,6 +4960,10 @@ export interface components {
             requirementCount?: number;
             succeeded?: boolean;
         };
+        RecordResult: {
+            actualResult?: string;
+            result?: string;
+        };
         RecordUsage: {
             definition?: string;
         };
@@ -5066,20 +5134,41 @@ export interface components {
             totalFindings?: number;
         };
         RunCaseView: {
+            actualResult?: string;
             description?: string;
+            executedAt?: string;
+            executedBy?: string;
             id?: string;
             key?: string;
             /** Format: int32 */
             position?: number;
+            result?: string;
             steps?: components["schemas"]["RunStepView"][];
             testCaseId?: string;
             title?: string;
         };
         RunStepView: {
             action?: string;
+            actualResult?: string;
+            executedAt?: string;
+            executedBy?: string;
             expectedResult?: string;
+            id?: string;
             /** Format: int32 */
             position?: number;
+            result?: string;
+        };
+        RunSummaryView: {
+            /** Format: int32 */
+            blocked?: number;
+            /** Format: int32 */
+            failed?: number;
+            /** Format: int32 */
+            notRun?: number;
+            /** Format: int32 */
+            passed?: number;
+            /** Format: int32 */
+            total?: number;
         };
         SaveView: {
             capabilityId?: string;
@@ -5350,6 +5439,7 @@ export interface components {
         TestRunDetailView: {
             cases?: components["schemas"]["RunCaseView"][];
             run?: components["schemas"]["TestRunView"];
+            summary?: components["schemas"]["RunSummaryView"];
         };
         TestRunResponse: {
             outcomes?: components["schemas"]["IngestOutcomeView"][];
@@ -11295,6 +11385,104 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    recordCaseResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordResult"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    completeRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    startRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestRunDetailView"];
+                };
+            };
+        };
+    };
+    recordStepResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordResult"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

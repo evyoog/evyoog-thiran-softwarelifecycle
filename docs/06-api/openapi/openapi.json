@@ -3227,6 +3227,17 @@
         },
         "type" : "object"
       },
+      "RecordResult" : {
+        "properties" : {
+          "actualResult" : {
+            "type" : "string"
+          },
+          "result" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "RecordUsage" : {
         "properties" : {
           "definition" : {
@@ -3713,7 +3724,16 @@
       },
       "RunCaseView" : {
         "properties" : {
+          "actualResult" : {
+            "type" : "string"
+          },
           "description" : {
+            "type" : "string"
+          },
+          "executedAt" : {
+            "type" : "string"
+          },
+          "executedBy" : {
             "type" : "string"
           },
           "id" : {
@@ -3725,6 +3745,9 @@
           "position" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "result" : {
+            "type" : "string"
           },
           "steps" : {
             "items" : {
@@ -3746,10 +3769,50 @@
           "action" : {
             "type" : "string"
           },
+          "actualResult" : {
+            "type" : "string"
+          },
+          "executedAt" : {
+            "type" : "string"
+          },
+          "executedBy" : {
+            "type" : "string"
+          },
           "expectedResult" : {
             "type" : "string"
           },
+          "id" : {
+            "type" : "string"
+          },
           "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "result" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RunSummaryView" : {
+        "properties" : {
+          "blocked" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "failed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "notRun" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
             "format" : "int32",
             "type" : "integer"
           }
@@ -4507,6 +4570,9 @@
           },
           "run" : {
             "$ref" : "#/components/schemas/TestRunView"
+          },
+          "summary" : {
+            "$ref" : "#/components/schemas/RunSummaryView"
           }
         },
         "type" : "object"
@@ -12266,6 +12332,150 @@
             "type" : "string"
           }
         } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/cases/{caseId}/result" : {
+      "put" : {
+        "operationId" : "recordCaseResult",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "caseId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordResult"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/complete" : {
+      "post" : {
+        "operationId" : "completeRun",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/start" : {
+      "post" : {
+        "operationId" : "startRun",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TestRunDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "test-management-controller" ]
+      }
+    },
+    "/api/v1/test-runs/{id}/steps/{stepId}/result" : {
+      "put" : {
+        "operationId" : "recordStepResult",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "stepId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordResult"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

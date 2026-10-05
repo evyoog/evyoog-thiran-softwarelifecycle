@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 632 tests cover 48 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 643 tests cover 49 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -779,3 +779,17 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` aPlanOrSuiteThatHasBeenRunCannotBeDeletedOneThatHasNotCan (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
 - `AC7` aTesterCanPlanAndCreateARunThroughTheApiAndSeeTheSnapshot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
 - `AC7` everyWriteIsRefusedWith403ToAPersonWhoIsNotATesterAndReadsAreOpenToAnySignedInPerson (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
+
+## VYB-0924: Execute a run: per-step result, actual result, evidence attachment, retest [L; F14]
+
+- `AC1` aPlannedRunIsStartedOnceAndNothingCanBeRecordedBeforeThat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC2` aStepOfAnotherRunCannotBeRecordedThroughThisOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC2` aStepThatDidNotPassNeedsAnActualResultAndOnlyThreeResultsExist (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC2` eachStepGetsAResultAndAnActualResultAndWhoAndWhenAreKept (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC2` recordingAgainReplacesTheResultAndTheAuditEventKeepsTheEarlierOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC3` aCaseWithNoStepsIsJudgedOnItselfAndACaseWithStepsIsNot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC3` aCasesResultIsDerivedFromItsStepsAndNeverStored (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC4` aRunCompletesOnlyWhenEveryCaseHasAResultThenItIsFinal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC5` executingARunNeverWritesVerificationOrChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC5` theDatabaseItselfRefusesAFailWithNoActualResultAndAResultWithNoWho (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC6` everyExecutionWriteIsRefusedWith403ToANonTesterAndAllowedToATester (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
