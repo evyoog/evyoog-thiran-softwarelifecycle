@@ -328,7 +328,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
 | VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | DONE on dev, in two sessions (0924a execute, 0924b evidence and retest; 25 new tests; backend only, no screen; commit only, no PR yet) | S5 |
-| VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | TODO | S5 |
+| VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | DONE on dev (9 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | TODO | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
 | VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | TODO | S6 |
@@ -5113,6 +5113,30 @@ Phase 6 Sprint 5. Branch `dev`. **14 new tests**: `TestEvidenceRetestIT` (`VYB09
 - Nothing yet turns a completed run into verification records (VYB-0925); evidence and retest write none and never change a requirement's status (tested).
 - No screen to attach, view or download evidence (VYB-0927); the file is already downloadable through the requirement's attachment endpoints.
 - Object-store failures are not tested (the store is stubbed, as in every integration test); testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 80 — VYB-0925 (F14): verification records from manual runs, bound to the requirement revision
+
+Phase 6 Sprint 5. Branch `dev`. **9 new tests**: `TestVerificationIT` (`VYB0925_AC1` to `AC6`, real PostgreSQL). Backend only, no screen (VYB-0927). Two tests from the previous sessions were changed on purpose (below).
+
+**Decisions with the product owner this session.** (1) **Revision: at run start.** Starting a run freezes each verified requirement's revision and the record binds to that, so the evidence is for what the tester actually saw; edited during the run, the result is stale straight away. (2) **Trigger: on completing the run.** Completing is already a person's explicit decision; it writes the records in the same transaction, audited. No separate "record" action.
+
+**Database.** `V043__test_run_requirement_revisions.sql`: `test_run_case_requirement` (run case, requirement, revision), filled when the run is started from the case's `TEST --VERIFIES--> REQUIREMENT` links.
+
+**Backend.** `TestExecutionService.start` freezes the requirements and revisions; `complete` writes one `verification` row per case and frozen requirement: **PASS case writes PASS, FAIL case writes FAIL, BLOCKED writes none** (it was not tested). The test case id is kept only while the live case still exists. After writing, each affected requirement is rescanned by the detectors (same as every write that changes what a detector reads, VYB-0161). The run detail now returns each case's `requirements` (key, tested revision, current revision) and `summary.verificationsRecorded`. No new endpoint, so no new access rule; OpenAPI and `schema.d.ts` regenerated (additive). Audit: `test-run.verifications-recorded`.
+
+**Effect to know: a manual PASS now verifies a requirement.** `requirement_verification_state.is_verified` is "any PASS at the current revision" (V001), so one passing manual case makes a requirement verified (the coverage "test" pip and the `noverify` detector follow), exactly as one CI pass does today. A FAIL does not cancel a PASS from another case or run: that predicate is unchanged and I did not change it (it would change CI behaviour too). If a failing case should block "verified", that needs its own decision. `requirement.status` is never written (CLAUDE.md rule 3; tested).
+
+**Tests changed on purpose.** `TestExecutionIT` AC5 and `TestEvidenceRetestIT` AC5 used to assert that executing or retesting writes no verification row; that is no longer true for a completed run (VYB-0925), so they now assert only that no requirement status changes and that a retest writes none of its own (renamed accordingly). The expected run summary in `TestExecutionIT` gained the new field.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A case that verifies no requirement writes nothing. (2) A run already IN_PROGRESS when this migration is applied has no frozen requirements and so records nothing on completion (development data only). (3) A retest binds to the revision at its own start, and the earlier FAIL stays on record. (4) A deleted requirement takes its frozen rows and verification rows with it (existing cascades).
+
+**Evidence.** Binding to the revision at completion instead of at start failed the "edited during the run" test, then restored.
+
+**Not done / to know**
+- No screen: the pass rate per requirement is VYB-0927.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

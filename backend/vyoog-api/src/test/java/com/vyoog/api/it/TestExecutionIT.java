@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * VYB-0924a (F14): executing a manual run: start, a result and the actual result per step,
- * complete. Evidence attachments and retest are VYB-0924b; verification records are VYB-0925.
+ * complete. Evidence attachments and retest are VYB-0924b; verification records are VYB-0925 (TestVerificationIT).
  */
 @AutoConfigureMockMvc
 class TestExecutionIT extends IntegrationTestBase {
@@ -190,7 +190,7 @@ class TestExecutionIT extends IntegrationTestBase {
 
         assertThat(done.run().status()).isEqualTo("COMPLETED");
         assertThat(done.run().completedAt()).isNotNull();
-        assertThat(done.summary()).isEqualTo(new TestManagementService.RunSummary(2, 1, 1, 0, 0));
+        assertThat(done.summary()).isEqualTo(new TestManagementService.RunSummary(2, 1, 1, 0, 0, 2));
         assertThat(auditCount(f.id(), "test-run.completed")).isEqualTo(1);
         assertThatThrownBy(() -> exec.recordStepResult(f.id(), f.step(0), "FAIL", "late", f.actor()))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("completed");
@@ -201,7 +201,7 @@ class TestExecutionIT extends IntegrationTestBase {
     }
 
     @Test
-    void VYB0924_AC5_executingARunNeverWritesVerificationOrChangesARequirementStatus() {
+    void VYB0924_AC5_executingARunNeverChangesARequirementStatus() {
         Fixture f = fixture();
         String before = jdbc.queryForObject("SELECT status FROM requirement WHERE id = ?", String.class, f.requirementId());
         exec.start(f.id(), f.actor());
@@ -211,7 +211,6 @@ class TestExecutionIT extends IntegrationTestBase {
         exec.complete(f.id(), f.actor());
 
         assertThat(jdbc.queryForObject("SELECT status FROM requirement WHERE id = ?", String.class, f.requirementId())).isEqualTo(before);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM verification WHERE test_run_id = ?", Integer.class, f.id())).isZero();
     }
 
     @Test

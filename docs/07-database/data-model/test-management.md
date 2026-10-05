@@ -1,8 +1,8 @@
 # Test management: plans, suites, steps and runs
 
-Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run) and VYB-0924b (evidence, retest), both below (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
+Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run), VYB-0924b (evidence, retest) and VYB-0925 (verification records), the last three below (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
 
-VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence and retest are VYB-0924b (below), turning results into verification records bound to a requirement revision is VYB-0925, raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here records a result, writes a `verification` row, or touches `requirement.status` (CLAUDE.md rule 3).
+VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence and retest are VYB-0924b, verification records bound to a requirement revision are VYB-0925 (both below), raising a defect from a failed step is VYB-0926 and the Quality screen is VYB-0927. Nothing here ever writes `requirement.status` (CLAUDE.md rule 3).
 
 ## Model
 
@@ -31,7 +31,7 @@ application ──< test_plan >── release (optional)
 2. Plans have no status. Deleting a plan or suite is allowed only while it has never been run.
 3. Replacing a suite's cases, or a case's steps, is one atomic call with the whole ordered list; a refused list changes nothing.
 4. A suite with no cases cannot be run.
-5. The snapshot does not bind to a requirement revision; that is VYB-0925, which creates the verification records.
+5. The snapshot itself does not bind to a requirement revision; starting the run does (VYB-0925, below).
 
 ## API
 
@@ -57,7 +57,7 @@ Migration `V041__test_run_results.sql`; service `TestExecutionService`. PLANNED,
 - A case's result is **derived**, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else NOT_RUN if any step has no result, else PASS. A case with **no steps** is judged on `test_run_case` itself; recording on a case that has steps is refused.
 - The run must be started before anything is recorded; it can be completed only when every case has a result; after that nothing can be recorded.
 - The run detail returns each step's result, the case results and a summary (total, passed, failed, blocked, not run).
-- Execution (and evidence and retest) writes **no** `verification` row and never touches `requirement.status` (VYB-0925 creates verification records from a completed run).
+- Execution, evidence and retest never touch `requirement.status`. Verification records are written when a run is **completed** (VYB-0925, below).
 - Not decided here: any Tester may execute any run (`assigned_to` is informational), and there is no cancel.
 
 ## Evidence and retest (VYB-0924b)
@@ -72,10 +72,21 @@ Migration `V042__test_run_evidence_and_retest.sql`.
 
 **Retest** `POST /test-runs/{id}/retest` makes a new PLANNED run (`test_run.retest_of` = the source) of the **failed and blocked cases** of a COMPLETED run, copied from its snapshot (not the live cases), with every result and evidence blank. Cases are renumbered from 1; the suite is kept; the build label is the source's unless given. Refused while an earlier retest of the same run is open; a retest of a retest is allowed. The original run is never changed.
 
+## Verification records (VYB-0925)
+
+Migration `V043__test_run_requirement_revisions.sql`.
+
+- **Starting** a run freezes, per case, the requirements it verifies (the `TEST --VERIFIES--> REQUIREMENT` links) and each requirement's revision at that moment, in `test_run_case_requirement`.
+- **Completing** the run writes one `verification` row per case and frozen requirement, bound to the **frozen** revision (what the tester saw), in the same transaction: a PASS case writes PASS, a FAIL case writes FAIL, a BLOCKED case writes none (not tested). The test case id is kept only while the live case still exists. The affected requirements are rescanned by the detectors.
+- If the requirement is edited during or after the run, `requirement_verification_state` marks the evidence stale by the existing revision comparison; the run detail shows `testedRevision` against `currentRevision` for each requirement.
+- A case that verifies no requirement writes nothing. A retest binds to the revision at its own start; the earlier FAIL stays on record.
+- **A manual PASS verifies a requirement** the same way a CI PASS does: `is_verified` is "any PASS at the current revision" (V001). A FAIL does not cancel a PASS from another case or run; that predicate is unchanged.
+- `requirement.status` is never written (CLAUDE.md rule 3).
+
 ## Audit events
 
 `test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created|started|step-recorded|case-recorded|completed|evidence-added|retest-created`.
 
 ## Tests
 
-`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.
+`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `TestVerificationIT` (`VYB0925_AC1` to `AC6`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.

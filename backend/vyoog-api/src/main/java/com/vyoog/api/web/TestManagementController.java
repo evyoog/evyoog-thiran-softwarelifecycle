@@ -191,9 +191,12 @@ public class TestManagementController {
     /** {@code result} is derived (PASS, FAIL, BLOCKED or NOT_RUN); the other result fields are set only for a case with no steps. */
     public record RunCaseView(String id, int position, String testCaseId, String key, String title, String description,
                                List<RunStepView> steps, String result, String actualResult, String executedBy,
-                               String executedAt, List<EvidenceView> evidence) {}
+                               String executedAt, List<EvidenceView> evidence, List<TestedRequirementView> requirements) {}
 
-    public record RunSummaryView(int total, int passed, int failed, int blocked, int notRun) {}
+    /** A requirement the case verifies, frozen at run start; currentRevision above testedRevision means it was edited since. */
+    public record TestedRequirementView(String requirementId, String key, int testedRevision, int currentRevision) {}
+
+    public record RunSummaryView(int total, int passed, int failed, int blocked, int notRun, int verificationsRecorded) {}
 
     public record TestRunDetailView(TestRunView run, List<RunCaseView> cases, RunSummaryView summary) {}
 
@@ -216,9 +219,11 @@ public class TestManagementController {
             s(c.id()), c.position(), s(c.testCaseId()), c.key(), c.title(), c.description(),
             c.steps().stream().map(st -> new RunStepView(s(st.id()), st.position(), st.action(), st.expectedResult(),
                 st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()), evidence(st.evidence()))).toList(),
-            c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()), evidence(c.evidence()))).toList(),
+            c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()), evidence(c.evidence()),
+            c.requirements().stream().map(q -> new TestedRequirementView(s(q.requirementId()), q.key(), q.testedRevision(),
+                q.currentRevision())).toList())).toList(),
             new RunSummaryView(d.summary().total(), d.summary().passed(), d.summary().failed(), d.summary().blocked(),
-                d.summary().notRun()));
+                d.summary().notRun(), d.summary().verificationsRecorded()));
     }
 
     /** Creates a PLANNED run of the suite and copies its cases and their steps into it. */

@@ -269,7 +269,7 @@ class TestEvidenceRetestIT extends IntegrationTestBase {
     }
 
     @Test
-    void VYB0924b_AC5_retestingWritesNoVerificationAndChangesNoRequirementStatus() {
+    void VYB0924b_AC5_aRetestWritesNoVerificationOfItsOwnAndNothingChangesARequirementStatus() {
         Fx f = fixture();
         String before = jdbc.queryForObject("SELECT status FROM requirement WHERE id = ?", String.class, f.requirement().getId());
         exec.addStepEvidence(f.id(), f.step(0), null, "a.png", "image/png", PNG, f.actor());
@@ -277,7 +277,7 @@ class TestEvidenceRetestIT extends IntegrationTestBase {
         RunDetail retest = exec.retest(f.id(), null, null, f.actor());
 
         assertThat(jdbc.queryForObject("SELECT status FROM requirement WHERE id = ?", String.class, f.requirement().getId())).isEqualTo(before);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM verification WHERE test_run_id IN (?, ?)", Integer.class, f.id(), retest.run().id())).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM verification WHERE test_run_id = ?", Integer.class, retest.run().id())).isZero();
     }
 
     @Test

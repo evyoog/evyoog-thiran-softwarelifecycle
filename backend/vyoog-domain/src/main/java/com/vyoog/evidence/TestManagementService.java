@@ -65,9 +65,17 @@ public class TestManagementService {
      */
     public record RunCase(UUID id, int position, UUID testCaseId, String key, String title, String description,
                            List<RunStep> steps, String result, String actualResult, UUID executedBy, Instant executedAt,
-                           List<Evidence> evidence) {}
+                           List<Evidence> evidence, List<TestedRequirement> requirements) {}
 
-    public record RunSummary(int total, int passed, int failed, int blocked, int notRun) {}
+    /**
+     * A requirement the case verifies, frozen when the run was started (VYB-0925): {@code testedRevision} is what the
+     * verification record binds to; {@code currentRevision} is the requirement's revision now, so a larger one means
+     * the requirement was edited after (or during) the run and the result is stale.
+     */
+    public record TestedRequirement(UUID requirementId, String key, int testedRevision, int currentRevision) {}
+
+    /** {@code verificationsRecorded}: the verification rows written when the run was completed (0 until then). */
+    public record RunSummary(int total, int passed, int failed, int blocked, int notRun, int verificationsRecorded) {}
 
     public record RunDetail(Run run, List<RunCase> cases, RunSummary summary) {}
 
@@ -379,6 +387,18 @@ public class TestManagementService {
                         rs.getString("filename"), rs.getString("content_type"), (Long) rs.getObject("size_bytes"),
                         rs.getObject("added_by", UUID.class), instant(rs.getTimestamp("added_at"))));
             }, id);
+        Map<UUID, List<TestedRequirement>> requirementsByCase = new LinkedHashMap<>();
+        jdbc.query("""
+            SELECT crq.run_case_id, crq.requirement_id, r.key, crq.requirement_revision, r.revision AS current_revision
+              FROM test_run_case_requirement crq
+              JOIN test_run_case rc ON rc.id = crq.run_case_id
+              JOIN requirement r ON r.id = crq.requirement_id
+             WHERE rc.run_id = ? ORDER BY r.key
+            """, rs -> {
+                requirementsByCase.computeIfAbsent(rs.getObject("run_case_id", UUID.class), k -> new ArrayList<>())
+                    .add(new TestedRequirement(rs.getObject("requirement_id", UUID.class), rs.getString("key"),
+                        rs.getInt("requirement_revision"), rs.getInt("current_revision")));
+            }, id);
         Map<UUID, List<RunStep>> stepsByCase = new LinkedHashMap<>();
         jdbc.query("""
             SELECT rs.id, rs.run_case_id, rs.position, rs.action, rs.expected_result, rs.result, rs.actual_result,
@@ -402,7 +422,8 @@ public class TestManagementService {
                 return new RunCase(caseId, rs.getInt("position"), rs.getObject("test_case_id", UUID.class),
                     rs.getString("case_key"), rs.getString("title"), rs.getString("description"), steps,
                     caseResult(steps, own), rs.getString("actual_result"), rs.getObject("executed_by", UUID.class),
-                    instant(rs.getTimestamp("executed_at")), evidenceByOwner.getOrDefault(caseId, List.of()));
+                    instant(rs.getTimestamp("executed_at")), evidenceByOwner.getOrDefault(caseId, List.of()),
+                    requirementsByCase.getOrDefault(caseId, List.of()));
             }, id);
         int passed = 0, failed = 0, blocked = 0, notRun = 0;
         for (RunCase c : cases) {
@@ -413,7 +434,8 @@ public class TestManagementService {
                 default -> notRun++;
             }
         }
-        return new RunDetail(rows.get(0), cases, new RunSummary(cases.size(), passed, failed, blocked, notRun));
+        return new RunDetail(rows.get(0), cases, new RunSummary(cases.size(), passed, failed, blocked, notRun,
+            jdbc.queryForObject("SELECT count(*) FROM verification WHERE test_run_id = ?", Integer.class, id)));
     }
 
     private static Instant instant(java.sql.Timestamp t) {

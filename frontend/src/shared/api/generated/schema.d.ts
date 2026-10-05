@@ -5210,6 +5210,7 @@ export interface components {
             key?: string;
             /** Format: int32 */
             position?: number;
+            requirements?: components["schemas"]["TestedRequirementView"][];
             result?: string;
             steps?: components["schemas"]["RunStepView"][];
             testCaseId?: string;
@@ -5238,6 +5239,8 @@ export interface components {
             passed?: number;
             /** Format: int32 */
             total?: number;
+            /** Format: int32 */
+            verificationsRecorded?: number;
         };
         SaveView: {
             capabilityId?: string;
@@ -5556,6 +5559,14 @@ export interface components {
             testCaseKey?: string;
             /** Format: int64 */
             verified?: number;
+        };
+        TestedRequirementView: {
+            /** Format: int32 */
+            currentRevision?: number;
+            key?: string;
+            requirementId?: string;
+            /** Format: int32 */
+            testedRevision?: number;
         };
         TokenRequest: {
             ssoSessionId: string;

@@ -1,6 +1,7 @@
 package com.vyoog.evidence;
 
 import com.vyoog.attachments.AttachmentService;
+import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.platform.audit.AuditService;
 import jakarta.persistence.EntityManager;
 import java.util.LinkedHashMap;
@@ -27,8 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
  * attachment of a requirement the test case verifies; {@link #retest} makes a new run of the failed and
  * blocked cases of a completed one.
  *
- * <p>This writes no {@code verification} row and never touches {@code requirement.status}:
- * turning results into verification records is VYB-0925 (CLAUDE.md rule 3).
+ * <p>VYB-0925: starting a run freezes, per case, the requirements it verifies and their current revisions
+ * ({@code test_run_case_requirement}); completing it writes one {@code verification} row per case and requirement
+ * from that table, bound to the frozen revision: a PASS case writes PASS, a FAIL case writes FAIL, a BLOCKED case
+ * writes none (it was not tested). It never touches {@code requirement.status} (CLAUDE.md rule 3): the rows are
+ * quality evidence, read by {@code requirement_verification_state}, exactly as for CI ingestion.
  */
 @Service
 public class TestExecutionService {
@@ -40,10 +44,13 @@ public class TestExecutionService {
     private final TestManagementService mgmt;
     private final AttachmentService attachments;
     private final EntityManager entityManager;
+    private final DetectionSweepService detection;
 
     public TestExecutionService(JdbcTemplate jdbc, AuditService audit, TestManagementService mgmt,
-                                 AttachmentService attachments, EntityManager entityManager) {
+                                 AttachmentService attachments, EntityManager entityManager,
+                                 DetectionSweepService detection) {
         this.entityManager = entityManager;
+        this.detection = detection;
         this.jdbc = jdbc;
         this.audit = audit;
         this.mgmt = mgmt;
@@ -57,6 +64,17 @@ public class TestExecutionService {
             throw new IllegalStateException("Only a planned run can be started; this one is " + status);
         }
         jdbc.update("UPDATE test_run SET status = 'IN_PROGRESS', started_at = now() WHERE id = ?", runId);
+        // Freeze what each case verifies, and at which revision, as of now (VYB-0925).
+        jdbc.update("""
+            INSERT INTO test_run_case_requirement (run_case_id, requirement_id, requirement_revision)
+            SELECT DISTINCT rc.id, r.id, r.revision
+              FROM test_run_case rc
+              JOIN trace_link tl ON tl.from_type = 'TEST' AND tl.from_id = rc.test_case_id
+                                AND tl.to_type = 'REQUIREMENT' AND tl.link_type = 'VERIFIES'
+              JOIN requirement r ON r.id = tl.to_id
+             WHERE rc.run_id = ?
+            ON CONFLICT DO NOTHING
+            """, runId);
         audit.record(actorId, "test-run.started", "TEST_RUN", runId, auditMap("status", "PLANNED"), auditMap("status", "IN_PROGRESS"));
         return mgmt.getRun(runId);
     }
@@ -102,7 +120,8 @@ public class TestExecutionService {
     @Transactional
     public TestManagementService.RunDetail complete(UUID runId, UUID actorId) {
         requireInProgress(runId);
-        TestManagementService.RunSummary summary = mgmt.getRun(runId).summary();
+        TestManagementService.RunDetail before = mgmt.getRun(runId);
+        TestManagementService.RunSummary summary = before.summary();
         if (summary.notRun() > 0) {
             throw new IllegalStateException(summary.notRun() + " of " + summary.total()
                 + " case(s) still have no result; record them before completing the run");
@@ -111,7 +130,33 @@ public class TestExecutionService {
         audit.record(actorId, "test-run.completed", "TEST_RUN", runId, auditMap("status", "IN_PROGRESS"),
             auditMap("status", "COMPLETED", "passed", String.valueOf(summary.passed()), "failed", String.valueOf(summary.failed()),
                 "blocked", String.valueOf(summary.blocked())));
+        recordVerifications(runId, before.cases(), actorId);
         return mgmt.getRun(runId);
+    }
+
+    /**
+     * VYB-0925: one verification row per case and requirement frozen at start, PASS or FAIL as the case's derived
+     * result says; a BLOCKED case writes nothing. The test case id is kept only while the live case still exists
+     * (the run's copy is a snapshot and may outlive it).
+     */
+    private void recordVerifications(UUID runId, List<TestManagementService.RunCase> cases, UUID actorId) {
+        int written = 0;
+        java.util.Set<UUID> touched = new java.util.LinkedHashSet<>();
+        for (TestManagementService.RunCase c : cases) {
+            if (!"PASS".equals(c.result()) && !"FAIL".equals(c.result())) continue;
+            written += jdbc.update("""
+                INSERT INTO verification (requirement_id, requirement_revision, test_case_id, test_run_id, result)
+                SELECT crq.requirement_id, crq.requirement_revision, (SELECT tc.id FROM test_case tc WHERE tc.id = rc.test_case_id),
+                       rc.run_id, ?
+                  FROM test_run_case_requirement crq JOIN test_run_case rc ON rc.id = crq.run_case_id
+                 WHERE rc.id = ?
+                """, c.result(), c.id());
+            c.requirements().forEach(r -> touched.add(r.requirementId()));
+        }
+        audit.record(actorId, "test-run.verifications-recorded", "TEST_RUN", runId, null,
+            auditMap("verifications", String.valueOf(written), "requirements", String.valueOf(touched.size())));
+        // Same as every write path that changes what a detector reads (VYB-0161): new evidence changes noverify.
+        touched.forEach(detection::rescanObject);
     }
 
     // -------------------------------------------------------- evidence (0924b)

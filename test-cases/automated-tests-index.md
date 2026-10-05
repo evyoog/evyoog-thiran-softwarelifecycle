@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 657 tests cover 50 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 666 tests cover 51 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -790,7 +790,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC3` aCaseWithNoStepsIsJudgedOnItselfAndACaseWithStepsIsNot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 - `AC3` aCasesResultIsDerivedFromItsStepsAndNeverStored (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 - `AC4` aRunCompletesOnlyWhenEveryCaseHasAResultThenItIsFinal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
-- `AC5` executingARunNeverWritesVerificationOrChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
+- `AC5` executingARunNeverChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 - `AC5` theDatabaseItselfRefusesAFailWithNoActualResultAndAResultWithNoWho (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 - `AC6` everyExecutionWriteIsRefusedWith403ToANonTesterAndAllowedToATester (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestExecutionIT.java`)
 
@@ -806,7 +806,19 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC4` aBlockedCaseIsRetestedToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
 - `AC4` aRetestIsANewPlannedRunOfTheFailedAndBlockedCasesWithEveryResultBlank (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
 - `AC4` theRetestKeepsTheSnapshotNotTheLiveCase (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+- `AC5` aRetestWritesNoVerificationOfItsOwnAndNothingChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
 - `AC5` onlyACompletedRunWithSomethingToRetestCanBeRetestedAndOnlyOneRetestAtATime (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
-- `AC5` retestingWritesNoVerificationAndChangesNoRequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
 - `AC5` theDatabaseRefusesEvidenceOnBothAStepAndACaseOrOnNeither (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
 - `AC6` evidenceAndRetestWritesAreRefusedWith403ToANonTesterAndWorkForATester (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestEvidenceRetestIT.java`)
+
+## VYB-0925: Verification records created from manual runs, bound to the requirement revision [M; F14]
+
+- `AC1` startingARunFreezesWhatEachCaseVerifiesAndAtWhichRevision (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC2` aBlockedCaseWasNotTestedSoItRecordsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC2` aFailingCaseRecordsAFailAndDoesNotVerifyTheRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC2` completingAPassingRunRecordsAPassBoundToTheRevisionAndTheRequirementBecomesVerified (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC3` aRequirementEditedDuringTheRunIsRecordedAtTheRevisionTheTesterSawSoItIsStaleAtOnce (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC4` aCaseThatVerifiesSeveralRequirementsRecordsOneRowForEachAndOneThatVerifiesNoneRecordsNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC5` aRetestRecordsAtItsOwnStartRevisionAndTheEarlierFailStaysOnRecord (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC6` theRecordSurvivesTheLiveCaseBeingDeletedWithoutTheTestCaseId (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
+- `AC6` theRecordsAreWrittenOnceThenTheRunIsFinalAndNothingAboutCiChanges (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestVerificationIT.java`)
