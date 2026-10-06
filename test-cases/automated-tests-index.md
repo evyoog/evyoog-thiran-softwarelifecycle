@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 714 tests cover 54 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 732 tests cover 55 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -879,3 +879,24 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` theDatabaseRefusesAnOverrideRecordedWithoutAReasonOrTheGates (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
 - `AC8` theOptionsShowEachMoveWithItsEnabledGatesEvaluated (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
 - `AC9` movingAReleaseNeverChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+
+## VYB-0929: Release sign-off with step-up, and Home blocking panel fed from real state [M; F13]
+
+- `AC1` movingIntoFrozenOrReleasedWithoutASignatureIsRefusedAndOpeningNeedsNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC2` aSignedMoveRecordsTheLevelAchievedAndWhenThePersonAuthenticatedAndAnUnsignedOneRecordsNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC2` theAuthenticationTimeMayBeUnknownButTheLevelNeverIs (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC3` theDatabaseRefusesASignedMoveRecordedWithNoLevel (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC4` theOptionsSaySignaturesAreRequiredForFreezeAndReleaseOnly (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC5` aServiceAccountTokenCannotSignAndStepUpDoesNotReplaceTheApproverRole (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC5` openingAndReopeningNeedNoStepUp (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC5` withStepUpTheMoveSucceedsAndTheLevelAndAuthTimeAreRecorded (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC5` withoutStepUpFreezingAndReleasingGet401NamingTheLevelAndNothingMoves (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC6` theReleaseBeingPreparedIsTheNearestOpenOrFrozenOneAndNoneWhenNoneIs (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC7` theCurrentReleaseCarriesItsNextMovesGatesAndItsBlockedRequirements (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseSignOffIT.java`)
+- `AC8` aBlockedReasonReadsInWordsAndAnUnknownOneIsStillShown (`frontend/src/features/homeRelease.test.ts`)
+- `AC8` aMissingTargetDateIsSaidNotLeftBlank (`frontend/src/features/homeRelease.test.ts`)
+- `AC8` aMoveIsNamedTheWayAPersonWouldAndAReopenIsNotAnOpen (`frontend/src/features/homeRelease.test.ts`)
+- `AC8` everyStateHasALabelAndAGlyphSoItIsNeverColourAlone (`frontend/src/features/homeRelease.test.ts`)
+- `AC8` onlyTheForwardMovesAreWhatBlocksTheRelease (`frontend/src/features/homeRelease.test.ts`)
+- `AC8` readinessIsSaidInWordsWithTheNumberOfChecksFailing (`frontend/src/features/homeRelease.test.ts`)
+- `AC8` thereIsSomethingToShowOnlyWhenAForwardMoveIsNotReadyOrARequirementIsBlocked (`frontend/src/features/homeRelease.test.ts`)

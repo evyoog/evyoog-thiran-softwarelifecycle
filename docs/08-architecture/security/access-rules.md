@@ -47,5 +47,6 @@ VYB-0906 was done in three sessions (`BUILD-REGISTER.md`); all 88 write endpoint
 
 - **VYB-0923, done:** test plans, suites, a suite's cases, a case's steps and run creation (9 write endpoints, `TestManagementController`), and VYB-0924a added four more on the same rule (start, record a step result, record a case result, complete a run), VYB-0924b three more (add step evidence, add case evidence, retest) and VYB-0926 two more (raise a defect from a step or a case) are `VERIFY` (Tester), anywhere. The matrix has no column for test planning; Verify is the nearest, the same rule test cases use. Reads are open to any signed-in person.
 - **VYB-0928, done:** moving a release (`ReleaseLifecycleController#transition`) is `BASELINE` (Approver), anywhere, like every release write. Editing the readiness-gate configuration is administrator-only, guarded in the handler. Reads are open to any signed-in person.
+- **VYB-0929, done:** the same transition endpoint additionally requires **step-up** (checked in the handler, before the domain runs) and a person, not a service account, when the target is FROZEN or RELEASED; opening and reopening do not.
 
 Endpoints guarded in their own code (administration, requirement edit and delete, import commit and delete, team role changes, brief push, and others) are recognised by `AccessPolicyTest` by reading their source.

@@ -16,6 +16,14 @@ public enum ReleaseState {
         };
     }
 
+    /**
+     * VYB-0929: moving <em>into</em> FROZEN or RELEASED is a signature event, needing step-up authentication and
+     * recording the level achieved. Opening and reopening are not.
+     */
+    public boolean requiresSignature() {
+        return this == FROZEN || this == RELEASED;
+    }
+
     /** Scope (what is committed to the release) can change only before it is frozen. */
     public boolean scopeEditable() {
         return this == PLANNED || this == OPEN;

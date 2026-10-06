@@ -1303,6 +1303,34 @@ export interface BlockedItem {
   reason: string
 }
 
+/** VYB-0928/0929: one readiness gate evaluated now, in words. */
+export interface GateResult {
+  gate: string
+  passed: boolean
+  detail: string
+}
+
+/** A move a release can make from its current state, with each enabled readiness gate evaluated. */
+export interface ReleaseMove {
+  to: ReleaseState
+  /** A reopen needs a written reason. */
+  needsReason: boolean
+  /** Moving into FROZEN or RELEASED is a signature event: it needs step-up authentication. */
+  signatureRequired: boolean
+  ready: boolean
+  gates: GateResult[]
+}
+
+/** VYB-0929: the release being prepared (OPEN or FROZEN, earliest target date first) and what stands in its way. */
+export interface CurrentRelease {
+  id: string
+  name: string
+  state: ReleaseState
+  targetDate?: string
+  moves: ReleaseMove[]
+  blocked: BlockedItem[]
+}
+
 export interface ReleaseNoteItem {
   requirementId: string
   key: string
@@ -2171,6 +2199,8 @@ export const api = {
     request<ScopeMovementView[]>(`/releases/${id}/movements${query({ from, to })}`),
   releaseReadiness: (id: string) => request<ReleaseReadiness>(`/releases/${id}/readiness`),
   releaseBlocked: (id: string) => request<BlockedItem[]>(`/releases/${id}/blocked`),
+  /** VYB-0929: undefined (204) when no release is being prepared. */
+  currentRelease: () => request<CurrentRelease | undefined>('/releases/current'),
   releaseNotes: (id: string) => request<ReleaseNotes>(`/releases/${id}/notes`),
 
   // Environments and deployment (ingestion itself is CI-only, not called from here)

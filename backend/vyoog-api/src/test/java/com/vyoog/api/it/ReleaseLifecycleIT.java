@@ -43,6 +43,9 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
     @Autowired ReleaseGateConfigService gateConfig;
     @Autowired MockMvc mvc;
 
+    private static final ReleaseLifecycleService.Signature SIGNED =
+        new ReleaseLifecycleService.Signature("step-up", java.time.Instant.now());
+
     private Portfolio p;
     private UUID author, admin;
     private List<ReleaseGateConfigService.Setting> originalGates;
@@ -104,9 +107,9 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         // readyRelease already opened it
         assertThat(stateOf(rel)).isEqualTo(ReleaseState.OPEN);
 
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "scope agreed", false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "scope agreed", false, admin, SIGNED);
         assertThat(stateOf(rel)).isEqualTo(ReleaseState.FROZEN);
-        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin, SIGNED);
         assertThat(stateOf(rel)).isEqualTo(ReleaseState.RELEASED);
 
         var history = lifecycle.history(rel.getId());
@@ -128,7 +131,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         }
         lifecycle.transition(rel.getId(), ReleaseState.OPEN, null, false, admin);
         assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.PLANNED, "x", true, admin)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.RELEASED, "x", true, admin)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.RELEASED, "x", true, admin, SIGNED)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.OPEN, "x", true, admin)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> lifecycle.transition(rel.getId(), null, "x", true, admin)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> lifecycle.transition(UUID.randomUUID(), ReleaseState.OPEN, null, false, admin))
@@ -140,8 +143,8 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
     @Test
     void VYB0928_AC2_aReleasedReleaseCannotMoveAgain() {
         Release rel = readyRelease();
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin);
-        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED);
+        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin, SIGNED);
         for (ReleaseState to : ReleaseState.values()) {
             assertThatThrownBy(() -> lifecycle.transition(rel.getId(), to, "again", true, admin)).isInstanceOf(IllegalStateException.class);
         }
@@ -151,7 +154,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
     @Test
     void VYB0928_AC3_aFrozenReleaseCanBeReopenedOnlyWithAReasonAndThenItsScopeCanChangeAgain() {
         Release rel = readyRelease();
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED);
         assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.OPEN, "  ", false, admin))
             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("reason");
         assertThat(stateOf(rel)).isEqualTo(ReleaseState.FROZEN);
@@ -175,7 +178,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         lifecycle.transition(rel.getId(), ReleaseState.OPEN, null, false, admin);
         releases.commit(rel.getId(), b.getId(), admin, "open: fine");
 
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "go", true, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "go", true, admin, SIGNED);
         Requirement c = approvedRequirement();
         assertThatThrownBy(() -> releases.commit(rel.getId(), c.getId(), admin, "late"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("frozen").hasMessageContaining("reopen");
@@ -183,7 +186,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("frozen");
         assertThat(releases.scope(rel.getId())).containsExactlyInAnyOrder(a.getId(), b.getId());
 
-        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, "go", true, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, "go", true, admin, SIGNED);
         assertThatThrownBy(() -> releases.commit(rel.getId(), c.getId(), admin, "late"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("released");
         assertThat(releases.scope(rel.getId())).hasSize(2);
@@ -196,13 +199,13 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         Release rel = newRelease();
         lifecycle.transition(rel.getId(), ReleaseState.OPEN, null, false, admin);
 
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin))
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED))
             .isInstanceOfSatisfying(ReleaseGateException.class, e -> assertThat(e.failed()).extracting(f -> f.gate())
                 .containsExactly(ReleaseGate.SCOPE_NOT_EMPTY));
 
         Requirement draft = newRequirement(p, author); // still DRAFT
         releases.commit(rel.getId(), draft.getId(), admin, "in");
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin))
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED))
             .isInstanceOfSatisfying(ReleaseGateException.class, e -> {
                 assertThat(e.failed()).extracting(f -> f.gate()).containsExactly(ReleaseGate.ALL_APPROVED);
                 assertThat(e.failed().get(0).detail()).contains("1 of 1").contains(draft.getKey());
@@ -219,17 +222,17 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
             INSERT INTO finding (rule_key, fingerprint, object_type, object_id, severity, title)
             SELECT (SELECT key FROM gap_rule_template ORDER BY key LIMIT 1), ?, 'REQUIREMENT', ?, 'crit', 'A critical gap'""",
             UUID.randomUUID().toString(), req);
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin))
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED))
             .isInstanceOfSatisfying(ReleaseGateException.class, e -> {
                 assertThat(e.failed()).extracting(f -> f.gate()).containsExactly(ReleaseGate.NO_CRITICAL_GAPS);
                 assertThat(e.failed().get(0).detail()).contains("1 open critical gap");
             });
         jdbc.update("UPDATE finding SET state = 'RESOLVED' WHERE object_id = ?", req);
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED);
 
         // releasing also checks that nothing in scope is blocked; remove the owner and it is
         jdbc.update("UPDATE requirement SET owner_id = NULL WHERE id = ?", req);
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin))
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin, SIGNED))
             .isInstanceOfSatisfying(ReleaseGateException.class, e -> assertThat(e.failed()).extracting(f -> f.gate())
                 .containsExactly(ReleaseGate.NO_BLOCKED_ITEMS));
     }
@@ -244,7 +247,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
 
         // switched off, the approved requirement freezes; the verified-share gate on at 50% then refuses (0% verified)
         gateConfig.update(Transition.OPEN_TO_FROZEN, ReleaseGate.VERIFIED_SHARE, true, 50, admin);
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin))
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED))
             .isInstanceOfSatisfying(ReleaseGateException.class, e -> {
                 assertThat(e.failed()).extracting(f -> f.gate()).containsExactly(ReleaseGate.VERIFIED_SHARE);
                 assertThat(e.failed().get(0).detail()).contains("0%").contains("at least 50%");
@@ -256,11 +259,11 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
             assertThat(s.enabled()).isFalse();
             assertThat(s.threshold()).isEqualTo(50);
         });
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED);
 
         // all gates off on the release move: anything goes
         for (ReleaseGate g : ReleaseGate.values()) gateConfig.update(Transition.FROZEN_TO_RELEASED, g, false, null, admin);
-        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin, SIGNED);
     }
 
     @Test
@@ -290,11 +293,11 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         Requirement draft = newRequirement(p, author);
         releases.commit(rel.getId(), draft.getId(), admin, "in");
 
-        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "  ", true, admin))
+        assertThatThrownBy(() -> lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "  ", true, admin, SIGNED))
             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("reason");
         assertThat(stateOf(rel)).isEqualTo(ReleaseState.OPEN);
 
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "the customer signed off the draft", true, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, "the customer signed off the draft", true, admin, SIGNED);
 
         assertThat(stateOf(rel)).isEqualTo(ReleaseState.FROZEN);
         var t = lifecycle.history(rel.getId()).get(1);
@@ -309,7 +312,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
     @Test
     void VYB0928_AC7_overridingWhenNothingFailsIsNotRecordedAsAnOverride() {
         Release rel = readyRelease();
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, true, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, true, admin, SIGNED);
         assertThat(lifecycle.history(rel.getId()).get(1).overridden()).isFalse();
         assertThat(lifecycle.history(rel.getId()).get(1).failedGates()).isEmpty();
     }
@@ -337,7 +340,7 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
             assertThat(o.gates()).filteredOn(g -> !g.passed()).extracting(g -> g.gate()).containsExactly(ReleaseGate.SCOPE_NOT_EMPTY);
         });
         Release ready = readyRelease();
-        lifecycle.transition(ready.getId(), ReleaseState.FROZEN, null, false, admin);
+        lifecycle.transition(ready.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED);
         assertThat(lifecycle.options(ready.getId())).extracting(o -> o.to()).containsExactlyInAnyOrder(ReleaseState.RELEASED, ReleaseState.OPEN);
         assertThat(lifecycle.options(ready.getId())).filteredOn(o -> o.to() == ReleaseState.OPEN).singleElement()
             .satisfies(o -> assertThat(o.needsReason()).isTrue());
@@ -348,8 +351,8 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         Release rel = readyRelease();
         UUID req = releases.scope(rel.getId()).get(0);
         String before = jdbc.queryForObject("SELECT status FROM requirement WHERE id = ?", String.class, req);
-        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin);
-        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin);
+        lifecycle.transition(rel.getId(), ReleaseState.FROZEN, null, false, admin, SIGNED);
+        lifecycle.transition(rel.getId(), ReleaseState.RELEASED, null, false, admin, SIGNED);
         assertThat(jdbc.queryForObject("SELECT status FROM requirement WHERE id = ?", String.class, req)).isEqualTo(before);
     }
 
@@ -359,14 +362,14 @@ class ReleaseLifecycleIT extends IntegrationTestBase {
         String id = unique("p");
         UUID user = users.upsert("sub-" + id, id + "@it.test", id).getId();
         grantOnCapability(user, role, capabilityId);
-        return jwt().jwt(j -> j.subject("sub-" + id).claim("email", id + "@it.test").claim("preferred_username", id).claim("azp", "vyoog-web"));
+        return jwt().jwt(j -> j.subject("sub-" + id).claim("email", id + "@it.test").claim("preferred_username", id).claim("azp", "vyoog-web").claim("acr", "step-up"));
     }
 
     private JwtRequestPostProcessor anAdministrator() {
         String id = unique("adm");
         UUID user = users.upsert("sub-" + id, id + "@it.test", id).getId();
         grants.grant(user, AccessRole.ADMINISTRATOR, com.vyoog.identity.ScopeType.PLATFORM, null, null, user);
-        return jwt().jwt(j -> j.subject("sub-" + id).claim("email", id + "@it.test").claim("preferred_username", id).claim("azp", "vyoog-web"));
+        return jwt().jwt(j -> j.subject("sub-" + id).claim("email", id + "@it.test").claim("preferred_username", id).claim("azp", "vyoog-web").claim("acr", "step-up"));
     }
 
     @Test

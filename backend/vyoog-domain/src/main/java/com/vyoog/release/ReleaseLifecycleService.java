@@ -31,12 +31,19 @@ public class ReleaseLifecycleService {
     public record GateResult(ReleaseGate gate, boolean passed, String detail) {}
 
     /** A move available from the release's current state, with each enabled gate evaluated now. */
-    public record Offered(ReleaseState to, boolean needsReason, List<GateResult> gates) {
+    public record Offered(ReleaseState to, boolean needsReason, boolean signatureRequired, List<GateResult> gates) {
         public boolean ready() { return gates.stream().allMatch(GateResult::passed); }
     }
 
+    /** The step-up evidence of a signed move: the authentication level achieved and when the person last authenticated (may be unknown). */
+    public record Signature(String acr, Instant authTime) {}
+
     public record Transition(UUID id, ReleaseState from, ReleaseState to, String reason, boolean overridden,
-                              List<ReleaseGateException.Failed> failedGates, UUID changedBy, Instant changedAt) {}
+                              List<ReleaseGateException.Failed> failedGates, UUID changedBy, Instant changedAt,
+                              String signatureAcr, Instant authTime) {}
+
+    /** The release being prepared and what stands in the way, for the Home panel. */
+    public record Current(Release release, List<Offered> moves, List<ReleaseService.BlockedItem> blocked) {}
 
     private final ReleaseRepository releases;
     private final ReleaseService releaseService;
@@ -67,14 +74,36 @@ public class ReleaseLifecycleService {
         List<Offered> out = new ArrayList<>();
         for (ReleaseState to : ReleaseState.values()) {
             if (!release.getState().canMoveTo(to)) continue;
-            out.add(new Offered(to, release.getState() == ReleaseState.FROZEN && to == ReleaseState.OPEN,
+            out.add(new Offered(to, release.getState() == ReleaseState.FROZEN && to == ReleaseState.OPEN, to.requiresSignature(),
                 evaluate(releaseId, guarded(release.getState(), to))));
         }
         return out;
     }
 
-    @Transactional
+    /**
+     * The release being prepared: among those OPEN or FROZEN, the one with the earliest target date (a release with no
+     * date sorts last, then by name). Empty when none is being prepared. VYB-0929.
+     */
+    public java.util.Optional<Current> current() {
+        List<UUID> ids = jdbc.queryForList("""
+            SELECT id FROM release WHERE state IN ('OPEN', 'FROZEN') ORDER BY target_date ASC NULLS LAST, name LIMIT 1
+            """, UUID.class);
+        if (ids.isEmpty()) return java.util.Optional.empty();
+        UUID id = ids.get(0);
+        return java.util.Optional.of(new Current(releases.findById(id).orElseThrow(), options(id), releaseService.blocked(id)));
+    }
+
+    /** A move that needs no signature (opening, reopening); a signed move without evidence is refused. */
     public Release transition(UUID releaseId, ReleaseState to, String reason, boolean override, UUID actorId) {
+        return transition(releaseId, to, reason, override, actorId, null);
+    }
+
+    /**
+     * Moves the release. {@code signature} is the step-up evidence the caller already verified (the domain never sees the
+     * token): required to move into FROZEN or RELEASED, recorded with the move, and ignored for the others.
+     */
+    @Transactional
+    public Release transition(UUID releaseId, ReleaseState to, String reason, boolean override, UUID actorId, Signature signature) {
         // Serialise concurrent moves of one release; the state is read under the lock.
         List<String> locked = jdbc.queryForList("SELECT state FROM release WHERE id = ? FOR UPDATE", String.class, releaseId);
         if (locked.isEmpty()) throw new NoSuchElementException("No such release: " + releaseId);
@@ -83,6 +112,10 @@ public class ReleaseLifecycleService {
         if (to == null || !from.canMoveTo(to)) {
             throw new IllegalStateException("A release cannot go from " + from + " to " + to);
         }
+        if (to.requiresSignature() && (signature == null || signature.acr() == null || signature.acr().isBlank())) {
+            throw new IllegalStateException("Moving a release to " + to + " is a signature event and needs step-up authentication");
+        }
+        Signature signed = to.requiresSignature() ? signature : null;
         String cleanReason = reason == null || reason.isBlank() ? null : reason.strip();
         if (from == ReleaseState.FROZEN && to == ReleaseState.OPEN && cleanReason == null) {
             throw new IllegalArgumentException("Reopening a frozen release needs a reason");
@@ -102,9 +135,12 @@ public class ReleaseLifecycleService {
         release.setState(to);
         releases.save(release);
         jdbc.update("""
-            INSERT INTO release_transition (release_id, from_state, to_state, reason, overridden, failed_gates, changed_by)
-            VALUES (?, ?, ?, ?, ?, ?::jsonb, ?)
-            """, releaseId, from.name(), to.name(), cleanReason, overridden, overridden ? asJson(failed) : null, actorId);
+            INSERT INTO release_transition (release_id, from_state, to_state, reason, overridden, failed_gates, changed_by,
+                                            signature_acr, auth_time)
+            VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
+            """, releaseId, from.name(), to.name(), cleanReason, overridden, overridden ? asJson(failed) : null, actorId,
+            signed == null ? null : signed.acr(),
+            signed == null || signed.authTime() == null ? null : java.sql.Timestamp.from(signed.authTime()));
         Map<String, Object> before = new LinkedHashMap<>();
         before.put("state", from.name());
         Map<String, Object> after = new LinkedHashMap<>();
@@ -112,6 +148,10 @@ public class ReleaseLifecycleService {
         after.put("reason", cleanReason);
         after.put("overridden", overridden);
         if (overridden) after.put("failedGates", failed.stream().map(f -> f.gate().name()).toList());
+        if (signed != null) {
+            after.put("signatureAcr", signed.acr());
+            after.put("authTime", signed.authTime() == null ? null : signed.authTime().toString());
+        }
         audit.record(actorId, "release.transitioned", "RELEASE", releaseId, before, after);
         return release;
     }
@@ -119,12 +159,14 @@ public class ReleaseLifecycleService {
     public List<Transition> history(UUID releaseId) {
         if (!releases.existsById(releaseId)) throw new NoSuchElementException("No such release: " + releaseId);
         return jdbc.query("""
-            SELECT id, from_state, to_state, reason, overridden, failed_gates::text AS failed_gates, changed_by, changed_at
+            SELECT id, from_state, to_state, reason, overridden, failed_gates::text AS failed_gates, changed_by, changed_at,
+                   signature_acr, auth_time
               FROM release_transition WHERE release_id = ? ORDER BY changed_at, id
             """, (rs, i) -> new Transition(rs.getObject("id", UUID.class), ReleaseState.valueOf(rs.getString("from_state")),
                 ReleaseState.valueOf(rs.getString("to_state")), rs.getString("reason"), rs.getBoolean("overridden"),
                 parseFailed(rs.getString("failed_gates")), rs.getObject("changed_by", UUID.class),
-                rs.getTimestamp("changed_at").toInstant()), releaseId);
+                rs.getTimestamp("changed_at").toInstant(), rs.getString("signature_acr"),
+                rs.getTimestamp("auth_time") == null ? null : rs.getTimestamp("auth_time").toInstant()), releaseId);
     }
 
     // ----------------------------------------------------------------- gates

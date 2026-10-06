@@ -1,6 +1,6 @@
 # Release state machine and readiness gates
 
-Added by VYB-0928 (Phase 6, Sprint 6, F13). Migration `database/migrations/V045__release_lifecycle.sql`. Code: `com.vyoog.release` (`ReleaseState`, `ReleaseLifecycleService`, `ReleaseGateConfigService`, `ReleaseGate`), endpoints in `ReleaseLifecycleController`.
+Added by VYB-0928 and VYB-0929 (Phase 6, Sprint 6, F13). Migrations `database/migrations/V045__release_lifecycle.sql` and `V046__release_signoff.sql`. Code: `com.vyoog.release` (`ReleaseState`, `ReleaseLifecycleService`, `ReleaseGateConfigService`, `ReleaseGate`), endpoints in `ReleaseLifecycleController`.
 
 Before this row a release's state existed (`release.state`, V001) but nothing ever changed it.
 
@@ -35,7 +35,7 @@ Defaults: freezing needs `SCOPE_NOT_EMPTY`, `ALL_APPROVED`, `NO_CRITICAL_GAPS`; 
 
 `POST /api/v1/releases/{id}/transition` with `{"to": "FROZEN", "reason": "...", "override": false}`.
 
-- **Who:** the Approver (matrix "Baseline", the rule every release write uses); a platform administrator passes too. Signing a release off with step-up is VYB-0929 and is not here.
+- **Who:** the Approver (matrix "Baseline", the rule every release write uses); a platform administrator passes too.
 - **A failing gate refuses the move** with 409 and a problem document that lists each failing gate (`failedGates`: gate and a plain-language detail) and says `overridable: true`.
 - **Override:** the same call with `"override": true` and a reason proceeds. The reason and the gates that were failing are recorded with the move. An override with no reason is refused (400); an override when nothing fails is not recorded as one.
 - **Reopen** (FROZEN to OPEN) needs a reason, never gates.
@@ -43,15 +43,30 @@ Defaults: freezing needs `SCOPE_NOT_EMPTY`, `ALL_APPROVED`, `NO_CRITICAL_GAPS`; 
 
 `GET /api/v1/releases/{id}/gates` returns the moves available now, each with its enabled gates evaluated (what stands in the way); `GET /api/v1/releases/{id}/history` returns every recorded move: from, to, reason, whether it overrode, the gates it overrode, who and when.
 
+## Sign-off: freezing and releasing are signature events (VYB-0929)
+
+Moving **into FROZEN** and **into RELEASED** is a signature event (spec 4.5), so it needs **step-up authentication at the moment of the move**, checked now rather than at sign-in. Opening, and reopening a frozen release, do not.
+
+- Without the configured step-up level (`vyoog.stepup.required-level`, default `step-up`; the token's `acr` claim) the call is refused with **401** and a problem document naming the level required (`requiredLevel`). The SPA is expected to re-authenticate at that level and retry. Nothing moves and nothing is recorded.
+- A service-account token cannot sign (a person is required), and step-up never replaces the Approver role: a Tester with step-up is still 403.
+- One signer: the Approver who makes the move signs it. The same person may freeze and release. The signature is recorded on the move itself: **who** (`changed_by`), **the authentication level achieved** (`signature_acr`), **when the person last authenticated** (`auth_time`, from the token's `auth_time` claim; may be unknown) and when (`changed_at`). The database refuses a freeze or release recorded with no level (for new rows; the rows V045 wrote before this have none).
+- The domain refuses a signed move with no signature too, so no caller can skip it. The audit event `release.transitioned` carries the level and authentication time.
+- `GET /releases/{id}/gates` marks each move with `signatureRequired`.
+- Still to do: a recorded sign-off by more than one person, and a separate-person rule (the person who releases differs from the one who froze); both were offered and not chosen.
+
+## The release being prepared (Home)
+
+`GET /api/v1/releases/current` (any signed-in person) returns the release being prepared: among those **OPEN or FROZEN**, the one with the **earliest target date** (a release with no date sorts last, then by name). 204 when none is. It carries the release's state and target date, its available moves each with their readiness gates evaluated (what stands in the way, in words) and the **blocked requirements** (unverified, conflicting, unowned). The Home screen's "Blocking the release" panel reads it: the state and date, whether the next forward move is ready and each failing check, that the move is a sign-off needing step-up, and the blocked requirements. Before VYB-0928 nothing could be OPEN, so that panel was always empty.
+
 ## Data
 
-- `release_transition`: one row per move (`from_state`, `to_state`, `reason`, `overridden`, `failed_gates` JSON, `changed_by`, `changed_at`). The database refuses an override recorded without a reason and the gates.
+- `release_transition`: one row per move (`from_state`, `to_state`, `reason`, `overridden`, `failed_gates` JSON, `changed_by`, `changed_at`, and for a freeze or release `signature_acr` and `auth_time`). The database refuses an override recorded without a reason and the gates.
 - `release_gate`: the ten settings (two moves times five gates), seeded and only ever updated. The database refuses a threshold on any gate but `VERIFIED_SHARE`.
 
 ## Audit
 
-`release.transitioned` (before and after state, reason, whether overridden and which gates), `release-gate.updated`.
+`release.transitioned` (before and after state, reason, whether overridden and which gates, and for a signed move the level and authentication time), `release-gate.updated`.
 
 ## Tests
 
-`ReleaseLifecycleIT` (`VYB0928_AC1` to `AC10`); `AccessPolicyTest` (the transition endpoint is Baseline); `ForeignKeyIndexIT`.
+`ReleaseLifecycleIT` (`VYB0928_AC1` to `AC10`), `ReleaseSignOffIT` (`VYB0929_AC1` to `AC7`), `homeRelease.test.ts` (`VYB0929_AC8`); `AccessPolicyTest` (the transition endpoint is Baseline); `ForeignKeyIndexIT`.

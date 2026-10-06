@@ -2,6 +2,9 @@ import { useQuery, useQueries } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { api, type RequirementStatus } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
+import {
+  STATE_CLASS, STATE_GLYPH, STATE_LABEL, blockedReason, failingGates, forwardMoves, moveLabel, readinessText, targetDateText,
+} from './homeRelease'
 
 const FLOW_STAGES: RequirementStatus[] = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'APPROVED']
 
@@ -14,6 +17,9 @@ const FLOW_STAGES: RequirementStatus[] = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'APP
  * critical severity specifically. AC2 ("opens Analytics filtered to it") is also not
  * quite what this does — Analytics has no per-requirement filter to deep-link into,
  * so this opens the requirement detail instead, where the same findings are visible.
+ * VYB-0929: the "blocking the release" panel reads the release being prepared (OPEN or FROZEN, earliest target
+ * date first) from the server, now that a release really has a state (VYB-0928): its state and date, why its next
+ * move is not ready (each failing check, in words), and the blocked requirements as before.
  * VYB-0233: the same connection registry Administration's Connected Systems screen
  * reads (VYB-0756) — reused here rather than a second copy.
  */
@@ -29,12 +35,10 @@ export function Home() {
     queryKey: ['findings', 'OPEN', 'home-count'],
     queryFn: () => api.findings({ state: 'OPEN', size: 1 }),
   })
-  const { data: releases } = useQuery({ queryKey: ['releases'], queryFn: api.releases })
-  const currentRelease = releases?.find((r) => r.state === 'OPEN')
-  const { data: blocked } = useQuery({
-    queryKey: ['release-blocked', currentRelease?.id],
-    queryFn: () => api.releaseBlocked(currentRelease!.id),
-    enabled: !!currentRelease,
+  const { data: currentRelease, isLoading: releaseLoading } = useQuery({
+    queryKey: ['release-current'],
+    // a 204 (nothing being prepared) comes back as undefined, which react-query does not accept as data
+    queryFn: async () => (await api.currentRelease()) ?? null,
   })
   const { data: integrations } = useQuery({ queryKey: ['integrations'], queryFn: api.integrations })
 
@@ -118,16 +122,44 @@ export function Home() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div>
           <h4 className="section-h">Blocking {currentRelease ? currentRelease.name : 'the current release'}</h4>
-          {!currentRelease && <Empty title="No open release" desc="Nothing is currently in an OPEN release scope." />}
-          {currentRelease && blocked && blocked.length === 0 && (
-            <Empty title="Nothing blocking it" desc="Every committed requirement in this release is ready." />
+          {releaseLoading && <p className="eyebrow">Loading…</p>}
+          {!releaseLoading && !currentRelease && (
+            <Empty title="No release being prepared" desc="Nothing is currently open or frozen. A release shows here once it is opened." />
           )}
-          {blocked?.map((b) => (
-            <div key={b.requirementId} className="list-item" style={{ cursor: 'pointer' }} onClick={() => navigate(`/requirements/${b.requirementId}`)}>
-              <span className="mono muted" style={{ fontSize: 10 }}>{b.key}</span>
-              <span style={{ flex: 1, color: 'var(--crit)' }}>{b.reason}</span>
-            </div>
-          ))}
+          {currentRelease && (
+            <>
+              <p style={{ margin: '0 0 8px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className={`badge ${STATE_CLASS[currentRelease.state]}`}>
+                  <span aria-hidden="true">{STATE_GLYPH[currentRelease.state]}</span> {STATE_LABEL[currentRelease.state]}
+                </span>
+                <span className="muted">{targetDateText(currentRelease.targetDate)}</span>
+              </p>
+              {forwardMoves(currentRelease.moves).map((m) => (
+                <div key={m.to} style={{ marginBottom: 8 }}>
+                  <div role="status" style={{ fontWeight: 600, color: m.ready ? 'var(--ok)' : 'var(--crit)' }}>
+                    <span aria-hidden="true">{m.ready ? '✓' : '✕'}</span> {readinessText(m)}
+                  </div>
+                  {failingGates(m).map((g) => (
+                    <div key={g.gate} className="list-item"><span style={{ flex: 1, color: 'var(--crit)' }}>{g.detail}</span></div>
+                  ))}
+                  {m.signatureRequired && (
+                    <div className="hint muted">{moveLabel(m)} is a sign-off: it needs step-up authentication.</div>
+                  )}
+                </div>
+              ))}
+              {currentRelease.blocked.length === 0 ? (
+                <Empty title="Nothing blocking it" desc="Every committed requirement in this release is ready." />
+              ) : (
+                <h4 className="section-h" style={{ marginTop: 10 }}>Blocked requirements</h4>
+              )}
+              {currentRelease.blocked.map((b) => (
+                <div key={b.requirementId} className="list-item" style={{ cursor: 'pointer' }} onClick={() => navigate(`/requirements/${b.requirementId}`)}>
+                  <span className="mono muted" style={{ fontSize: 10 }}>{b.key}</span>
+                  <span style={{ flex: 1, color: 'var(--crit)' }}>{blockedReason(b.reason)}</span>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         <div>

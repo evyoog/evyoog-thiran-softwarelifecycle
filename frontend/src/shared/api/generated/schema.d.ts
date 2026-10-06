@@ -1988,6 +1988,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/releases/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["current_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/releases/{id}": {
         parameters: {
             query?: never;
@@ -4148,6 +4164,11 @@ export interface components {
             uploadKind?: string;
             uploadedAt?: string;
         };
+        BlockedItemView: {
+            key?: string;
+            reason?: string;
+            requirementId?: string;
+        };
         BlockedView: {
             key?: string;
             reason?: string;
@@ -4541,6 +4562,14 @@ export interface components {
             /** Format: int32 */
             ordinal?: number;
             text?: string;
+        };
+        CurrentReleaseView: {
+            blocked?: components["schemas"]["BlockedItemView"][];
+            id?: string;
+            moves?: components["schemas"]["OfferedView"][];
+            name?: string;
+            state?: string;
+            targetDate?: string;
         };
         Dashboard: {
             products?: components["schemas"]["ProductSummary"][];
@@ -4958,6 +4987,7 @@ export interface components {
             gates?: components["schemas"]["GateResultView"][];
             needsReason?: boolean;
             ready?: boolean;
+            signatureRequired?: boolean;
             to?: string;
         };
         OpenRequest: {
@@ -5864,6 +5894,7 @@ export interface components {
             target: string;
         };
         TransitionView: {
+            authTime?: string;
             changedAt?: string;
             changedBy?: string;
             failedGates?: components["schemas"]["GateResultView"][];
@@ -5871,6 +5902,7 @@ export interface components {
             id?: string;
             overridden?: boolean;
             reason?: string;
+            signatureAcr?: string;
             to?: string;
         };
         TransitionedView: {
@@ -9238,6 +9270,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReleaseView"];
+                };
+            };
+        };
+    };
+    current_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CurrentReleaseView"];
                 };
             };
         };

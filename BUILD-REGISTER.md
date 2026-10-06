@@ -332,7 +332,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | DONE on dev (12 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | DONE on dev (7 backend and 13 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S5 |
 | VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S6 |
-| VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | TODO | S6 |
+| VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | DONE on dev (11 backend and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
 | VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | TODO | S6 |
 | VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | TODO | S6 |
 | VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
@@ -5215,6 +5215,32 @@ Phase 6 Sprint 6. Branch `dev`. **16 new tests**: `ReleaseLifecycleIT` (`VYB0928
 **Not done / to know**
 - No screen: the Releases screen does not show the state, the gates or a Move button. That is a gap the register does not yet cover.
 - No notification when a release moves.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 84 — VYB-0929 (F13): release sign-off with step-up, and the Home panel fed from real state
+
+Phase 6 Sprint 6. Branch `dev`. **18 new tests**: `ReleaseSignOffIT` 11 (backend, real PostgreSQL, service and HTTP with real tokens) and `homeRelease.test.ts` 7 (frontend logic). The finding text F13 is not in the repository; scope is the register row. Description: `docs/04-workflows/release-state-machine.md`. Something to see: **Home, "Blocking <release>"**.
+
+**Decisions with the product owner this session.** (1) **Signed moves: freeze and release** (spec 4.5: approval and freeze are signature events). Opening and reopening stay plain Approver moves. (2) **One signer**: the Approver who makes the move signs it; the same person may freeze and release. A separate-person rule and a configurable number of signers were offered and not chosen. (3) **Home shows the nearest release being prepared**: among OPEN or FROZEN releases, the earliest target date (none last).
+
+**Database.** `V046__release_signoff.sql`: `release_transition.signature_acr` and `auth_time`, and a check that a freeze or release is recorded with a level. The check is `NOT VALID`, so it holds for every new row and leaves the rows V045 wrote before this alone (they have no signature).
+
+**Backend.** Freezing or releasing now needs step-up, checked in the handler before the domain runs: **401 naming the required level** without it (the existing mechanism: the token's `acr` against `vyoog.stepup.required-level`), a person rather than a service account, and the Approver role as before. The level and the token's `auth_time` are passed to `ReleaseLifecycleService.transition` and recorded on the move and in the `release.transitioned` audit event. The domain also refuses a freeze or release with no signature, so no other caller can skip it; the unsigned overload remains only for opening and reopening. `GET /releases/{id}/gates` marks each move `signatureRequired`. New `GET /api/v1/releases/current` returns the release being prepared with its moves (gates evaluated) and its blocked requirements, or 204. OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Frontend.** `features/homeRelease.ts` (logic) and the "Blocking" panel in `Home.tsx` reading `GET /releases/current` instead of picking an OPEN release from the list and its blocked items separately. It shows the state (label and glyph as well as colour, never amber), the target date or "no target date", whether the next forward move is ready and each failing check in words, that the move is a sign-off needing step-up, and the blocked requirements with their reason in words (Not verified, No owner, In conflict). Nothing being prepared reads "No release being prepared". Types in `client.ts` (checked against the OpenAPI document).
+
+**Existing tests changed on purpose.** `ReleaseLifecycleIT` now passes a signature for every move into FROZEN or RELEASED and its approver tokens carry the step-up level, because those moves are signature events now.
+
+**Evidence.** Removing the step-up check from the handler failed the "no step-up gets 401" test (it got 409 instead), then restored. The Home panel was rendered in Chromium against the dev server with mocked API responses, in both themes, for a blocked release, a ready frozen release and none being prepared, and read.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) The authentication time may be unknown (a token without `auth_time`); the level may not. (2) A signature handed to a move that is not a signature event is ignored, not recorded. (3) The Home panel shows only the forward moves (freeze, release); a reopen's readiness is not "what blocks the release". (4) "Nearest" is by target date only; there is no notion of an overdue release.
+
+**Not done / to know**
+- **No button yet to move a release, and no screen that triggers step-up.** The SPA has no code path that re-authenticates at the required level and retries (the spec says it should); nothing in the app can freeze or release a release yet, so this row only enforces and records it. That, and a Move control on the Releases screen, is not in the register.
+- The step-up path has only been exercised against tokens made in tests, not a Keycloak realm with a step-up flow (as the existing mechanism's own comment says).
+- The Home panel's text for a gate failure is the server's wording, shown as received.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

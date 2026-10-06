@@ -327,6 +327,20 @@
         },
         "type" : "object"
       },
+      "BlockedItemView" : {
+        "properties" : {
+          "key" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "BlockedView" : {
         "properties" : {
           "key" : {
@@ -1443,6 +1457,35 @@
             "type" : "integer"
           },
           "text" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CurrentReleaseView" : {
+        "properties" : {
+          "blocked" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BlockedItemView"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "moves" : {
+            "items" : {
+              "$ref" : "#/components/schemas/OfferedView"
+            },
+            "type" : "array"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "targetDate" : {
             "type" : "string"
           }
         },
@@ -2659,6 +2702,9 @@
             "type" : "boolean"
           },
           "ready" : {
+            "type" : "boolean"
+          },
+          "signatureRequired" : {
             "type" : "boolean"
           },
           "to" : {
@@ -5159,6 +5205,9 @@
       },
       "TransitionView" : {
         "properties" : {
+          "authTime" : {
+            "type" : "string"
+          },
           "changedAt" : {
             "type" : "string"
           },
@@ -5181,6 +5230,9 @@
             "type" : "boolean"
           },
           "reason" : {
+            "type" : "string"
+          },
+          "signatureAcr" : {
             "type" : "string"
           },
           "to" : {
@@ -9635,6 +9687,24 @@
           }
         },
         "tags" : [ "release-controller" ]
+      }
+    },
+    "/api/v1/releases/current" : {
+      "get" : {
+        "operationId" : "current_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CurrentReleaseView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-lifecycle-controller" ]
       }
     },
     "/api/v1/releases/{id}" : {
