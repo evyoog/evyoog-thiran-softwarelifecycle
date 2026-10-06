@@ -331,7 +331,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | DONE on dev (9 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | DONE on dev (12 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | DONE on dev (7 backend and 13 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S5 |
-| VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | TODO | S6 |
+| VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S6 |
 | VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | TODO | S6 |
 | VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | TODO | S6 |
 | VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | TODO | S6 |
@@ -5185,6 +5185,37 @@ Phase 6 Sprint 5, and the last row of it. Branch `dev`. **20 new tests**: `PassR
 - Plans, suites and steps cannot be created or edited, and evidence cannot be added, from the screen. A person must use the API for those. That is the obvious next row if you want manual testing usable without the API.
 - The assignee is shown but not chosen: New run does not take one.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
+
+---
+
+## Session 83 — VYB-0928 (F13): the release state machine and configurable readiness gates
+
+Phase 6 Sprint 6. Branch `dev`. **16 new tests**: `ReleaseLifecycleIT` (`VYB0928_AC1` to `AC10`, real PostgreSQL, service calls and HTTP with real tokens). Backend only, no screen: the register has no row for a release-transition screen (VYB-0929 is sign-off and the Home panel, VYB-0930 is notes export and the scope form). The finding text F13 is not in the repository; scope is the register row. Description: `docs/04-workflows/release-state-machine.md`.
+
+**Decisions with the product owner this session.** (1) **Moves: forward, plus reopen.** PLANNED to OPEN to FROZEN to RELEASED, and FROZEN back to OPEN with a written reason; RELEASED is final; the scope is editable only in PLANNED and OPEN. Freezing does **not** create a baseline. (2) **Gates: platform-wide, per move**, configured by an administrator. (3) **Override: an Approver may proceed past a failing gate with a reason**, recorded with the gates that were failing.
+
+**Why this row was bigger than it sounds.** `release.state` existed since V001 but **nothing ever changed it**: there was no transition at all, so every release has been PLANNED since the start.
+
+**Database.** `V045__release_lifecycle.sql`: `release_transition` (every move: from, to, reason, whether it overrode, the gates it overrode, who, when) and `release_gate` (two guarded moves times five gates, seeded). `release_transition.changed_by` is audit-style in `ForeignKeyIndexIT`.
+
+**Backend.** `ReleaseState` (allowed moves, scope lock), `ReleaseGate`, `ReleaseGateConfigService`, `ReleaseLifecycleService` (move, options, history; row lock against concurrent moves), `ReleaseGateException` (409 with `failedGates` and `overridable`), `ReleaseLifecycleController`; `ReleaseService.commit` and `removeFromScope` now refuse on a frozen or released release. Endpoints: `POST /releases/{id}/transition`, `GET /releases/{id}/gates` (what stands in the way), `GET /releases/{id}/history`, `GET /release-gates`, `PUT /release-gates/{transition}/{gate}`. OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Gates (my defaults; the specification names none).** Five: scope not empty; every committed requirement Approved; no open critical gaps; nothing blocked (unverified, conflicting, unowned); verified share at least N%. Freezing needs the first three, releasing adds the fourth, the fifth is off on both at 100%. Change them with the endpoint, no code.
+
+**Access.** Moving a release is `BASELINE` (Approver), anywhere, the same rule as every other release write (listed in `AccessPolicyTest`); a test proves 403 for a Business Analyst and a Tester and 401 with no token. Editing the gates is administrator-only, guarded in the handler (403 for an Approver, Business Analyst and Tester). Reads are open to any signed-in person. **The release move does not have step-up authentication or a recorded sign-off yet: that is VYB-0929.**
+
+**Audit.** `release.transitioned` (before and after, reason, overridden, which gates) and `release-gate.updated`.
+
+**A thing the tests found, about gaps.** Creating and approving a requirement makes the detectors raise critical gaps on it (for instance "no verification" before any test exists), and nothing resolves them when a test is added through SQL. In real use the nightly sweep or a rescan does that; in the tests the fixture resolves them explicitly. Worth knowing: `NO_CRITICAL_GAPS` reflects the findings table as it is, so a very recent verification may need a rescan before the gate agrees.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A reopen needs a reason and no gate; PLANNED to OPEN has no gate. (2) An override when nothing fails proceeds normally and is not recorded as an override. (3) `VERIFIED_SHARE` of an empty scope fails (nothing is verified). (4) A release's target date can still be set in any state. (5) Existing releases are all PLANNED; nothing migrates them.
+
+**Evidence.** Making the scope editable in every state failed the scope-lock test, then restored. Tests also cover every refused move leaving no history row, a database check refusing an override without a reason, and that moving a release never changes a requirement's status.
+
+**Not done / to know**
+- No screen: the Releases screen does not show the state, the gates or a Move button. That is a gap the register does not yet cover.
+- No notification when a release moves.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

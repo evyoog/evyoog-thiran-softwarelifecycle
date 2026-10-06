@@ -133,6 +133,7 @@ class AccessPolicyTest {
         Map.entry("DefectController#raise", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DefectController#classify", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DefectController#close", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ReleaseLifecycleController#transition", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TestCaseController#draft", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TestCaseController#update", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("TestManagementController#createPlan", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),

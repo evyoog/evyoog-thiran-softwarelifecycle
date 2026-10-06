@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 698 tests cover 53 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 714 tests cover 54 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -860,3 +860,22 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` theBasisSaysHowManyCasesTheRateRestsOn (`frontend/src/features/quality/testRuns.test.ts`)
 - `AC6` anySignedInPersonCanReadItAndNoTokenIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
 - `AC7` readingItWritesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+
+## VYB-0928: Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13]
+
+- `AC1` aReleaseGoesPlannedOpenFrozenReleasedAndEachMoveIsRecordedAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC10` aRefusedMoveListsTheFailingGatesAndAnOverrideWithAReasonProceeds (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC10` onlyAnApproverCanMoveAReleaseAndOnlyAnAdministratorCanEditTheGates (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC2` aReleasedReleaseCannotMoveAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC2` onlyTheDefinedMovesAreAllowedAndReleasedIsFinal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC3` aFrozenReleaseCanBeReopenedOnlyWithAReasonAndThenItsScopeCanChangeAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC4` theScopeOfAFrozenOrReleasedReleaseIsLockedAndOfAPlannedOrOpenOneIsNot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC5` openCriticalGapsBlockFreezingAndTheReleaseGateAlsoCatchesBlockedItems (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC5` theDefaultFreezeGatesRefuseAnEmptyScopeAndAnUnapprovedRequirementNamingEach (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC6` aGateIsConfigurableOnOrOffAndTheVerifiedShareHasAThreshold (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC6` gateEditsAreValidatedAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC7` aFailingGateCanBeOverriddenOnlyWithAReasonWhichIsRecordedWithTheGatesItOverrode (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC7` overridingWhenNothingFailsIsNotRecordedAsAnOverride (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC7` theDatabaseRefusesAnOverrideRecordedWithoutAReasonOrTheGates (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC8` theOptionsShowEachMoveWithItsEnabledGatesEvaluated (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)
+- `AC9` movingAReleaseNeverChangesARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseLifecycleIT.java`)

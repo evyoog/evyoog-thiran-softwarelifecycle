@@ -2042,6 +2042,38 @@
         },
         "type" : "object"
       },
+      "GateResultView" : {
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "gate" : {
+            "type" : "string"
+          },
+          "passed" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "GateSettingView" : {
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "gate" : {
+            "type" : "string"
+          },
+          "threshold" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "transition" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "GenerateBrief" : {
         "properties" : {
           "applicationId" : {
@@ -2610,6 +2642,26 @@
             "type" : "string"
           },
           "tone" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "OfferedView" : {
+        "properties" : {
+          "gates" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GateResultView"
+            },
+            "type" : "array"
+          },
+          "needsReason" : {
+            "type" : "boolean"
+          },
+          "ready" : {
+            "type" : "boolean"
+          },
+          "to" : {
             "type" : "string"
           }
         },
@@ -5105,6 +5157,52 @@
         "required" : [ "target" ],
         "type" : "object"
       },
+      "TransitionView" : {
+        "properties" : {
+          "changedAt" : {
+            "type" : "string"
+          },
+          "changedBy" : {
+            "type" : "string"
+          },
+          "failedGates" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GateResultView"
+            },
+            "type" : "array"
+          },
+          "from" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "overridden" : {
+            "type" : "boolean"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "to" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TransitionedView" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "UncoveredView" : {
         "properties" : {
           "id" : {
@@ -5144,6 +5242,18 @@
           }
         },
         "required" : [ "name" ],
+        "type" : "object"
+      },
+      "UpdateGate" : {
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "threshold" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
         "type" : "object"
       },
       "UpdateProduct" : {
@@ -5939,7 +6049,7 @@
     },
     "/api/v1/briefs" : {
       "get" : {
-        "operationId" : "history",
+        "operationId" : "history_1",
         "parameters" : [ {
           "in" : "query",
           "name" : "applicationId",
@@ -9416,6 +9526,70 @@
         "tags" : [ "quality-controller" ]
       }
     },
+    "/api/v1/release-gates" : {
+      "get" : {
+        "operationId" : "gates",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/GateSettingView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-lifecycle-controller" ]
+      }
+    },
+    "/api/v1/release-gates/{transition}/{gate}" : {
+      "put" : {
+        "operationId" : "updateGate",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "transition",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "gate",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateGate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GateSettingView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-lifecycle-controller" ]
+      }
+    },
     "/api/v1/releases" : {
       "get" : {
         "operationId" : "list_7",
@@ -9518,6 +9692,66 @@
           }
         },
         "tags" : [ "release-controller" ]
+      }
+    },
+    "/api/v1/releases/{id}/gates" : {
+      "get" : {
+        "operationId" : "options",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/OfferedView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-lifecycle-controller" ]
+      }
+    },
+    "/api/v1/releases/{id}/history" : {
+      "get" : {
+        "operationId" : "history",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TransitionView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-lifecycle-controller" ]
       }
     },
     "/api/v1/releases/{id}/movements" : {
@@ -9748,6 +9982,43 @@
           }
         },
         "tags" : [ "release-controller" ]
+      }
+    },
+    "/api/v1/releases/{id}/transition" : {
+      "post" : {
+        "operationId" : "transition_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TransitionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TransitionedView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-lifecycle-controller" ]
       }
     },
     "/api/v1/requirements" : {

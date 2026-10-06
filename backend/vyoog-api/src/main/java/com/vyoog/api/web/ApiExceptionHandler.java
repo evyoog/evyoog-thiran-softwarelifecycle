@@ -82,6 +82,20 @@ public class ApiExceptionHandler {
         return pd;
     }
 
+    /**
+     * VYB-0928: a release move refused by its readiness gates. Same 409 as any state conflict, plus the failing gates
+     * as a property so a screen can list each, and {@code overridable} to say a reason lets an approver proceed.
+     */
+    @ExceptionHandler(com.vyoog.release.ReleaseGateException.class)
+    public ProblemDetail onReleaseGates(com.vyoog.release.ReleaseGateException e) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+        pd.setType(URI.create("https://vyoog.dev/problems/release-not-ready"));
+        pd.setTitle("The release is not ready");
+        pd.setProperty("failedGates", e.failed().stream().map(f -> java.util.Map.of("gate", f.gate().name(), "detail", f.detail())).toList());
+        pd.setProperty("overridable", true);
+        return pd;
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ProblemDetail onIllegalState(IllegalStateException e) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());

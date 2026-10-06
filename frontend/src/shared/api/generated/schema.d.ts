@@ -283,7 +283,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["history"];
+        get: operations["history_1"];
         put?: never;
         post: operations["generate_1"];
         delete?: never;
@@ -1940,6 +1940,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/release-gates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["gates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/release-gates/{transition}/{gate}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateGate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/releases": {
         parameters: {
             query?: never;
@@ -1980,6 +2012,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["blocked"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/releases/{id}/gates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/releases/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["history"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2078,6 +2142,22 @@ export interface paths {
         get?: never;
         put: operations["setTargetDate"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/releases/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transition_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4662,6 +4742,18 @@ export interface components {
             reason?: string;
             ruleKey?: string;
         };
+        GateResultView: {
+            detail?: string;
+            gate?: string;
+            passed?: boolean;
+        };
+        GateSettingView: {
+            enabled?: boolean;
+            gate?: string;
+            /** Format: int32 */
+            threshold?: number;
+            transition?: string;
+        };
         GenerateBrief: {
             applicationId: string;
             capabilityIds?: string[];
@@ -4861,6 +4953,12 @@ export interface components {
             subtitle?: string;
             title?: string;
             tone?: string;
+        };
+        OfferedView: {
+            gates?: components["schemas"]["GateResultView"][];
+            needsReason?: boolean;
+            ready?: boolean;
+            to?: string;
         };
         OpenRequest: {
             closesAt?: string;
@@ -5765,6 +5863,21 @@ export interface components {
             reason?: string;
             target: string;
         };
+        TransitionView: {
+            changedAt?: string;
+            changedBy?: string;
+            failedGates?: components["schemas"]["GateResultView"][];
+            from?: string;
+            id?: string;
+            overridden?: boolean;
+            reason?: string;
+            to?: string;
+        };
+        TransitionedView: {
+            id?: string;
+            name?: string;
+            state?: string;
+        };
         UncoveredView: {
             id?: string;
             key?: string;
@@ -5778,6 +5891,11 @@ export interface components {
             code?: string;
             description?: string;
             name: string;
+        };
+        UpdateGate: {
+            enabled?: boolean;
+            /** Format: int32 */
+            threshold?: number;
         };
         UpdateProduct: {
             lifecycleStatus?: string;
@@ -6285,7 +6403,7 @@ export interface operations {
             };
         };
     };
-    history: {
+    history_1: {
         parameters: {
             query?: {
                 applicationId?: string;
@@ -9033,6 +9151,53 @@ export interface operations {
             };
         };
     };
+    gates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GateSettingView"][];
+                };
+            };
+        };
+    };
+    updateGate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transition: string;
+                gate: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GateSettingView"];
+                };
+            };
+        };
+    };
     list_7: {
         parameters: {
             query?: never;
@@ -9117,6 +9282,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BlockedView"][];
+                };
+            };
+        };
+    };
+    options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferedView"][];
+                };
+            };
+        };
+    };
+    history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TransitionView"][];
                 };
             };
         };
@@ -9281,6 +9490,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReleaseView"];
+                };
+            };
+        };
+    };
+    transition_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TransitionedView"];
                 };
             };
         };

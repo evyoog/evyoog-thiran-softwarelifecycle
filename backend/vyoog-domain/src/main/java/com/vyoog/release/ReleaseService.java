@@ -55,7 +55,7 @@ public class ReleaseService {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("Committing to a release needs a reason");
         }
-        releases.findById(releaseId).orElseThrow(NoSuchElementException::new);
+        requireScopeEditable(releases.findById(releaseId).orElseThrow(NoSuchElementException::new));
 
         List<UUID> existingReleases = jdbc.queryForList(
             "SELECT release_id FROM release_scope_item WHERE requirement_id = ?", UUID.class, requirementId);
@@ -78,10 +78,19 @@ public class ReleaseService {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("Removing from a release's scope needs a reason");
         }
+        requireScopeEditable(releases.findById(releaseId).orElseThrow(NoSuchElementException::new));
         jdbc.update("DELETE FROM release_scope_item WHERE release_id = ? AND requirement_id = ?", releaseId, requirementId);
         movements.save(new ScopeMovement(releaseId, requirementId, MovementDirection.OUT, reason, actor));
         audit.record(actor, "release.scope_removed", "RELEASE", releaseId, null,
             Map.of("requirementId", requirementId.toString(), "reason", reason));
+    }
+
+    /** VYB-0928: a frozen or released release's scope is locked; a frozen one can be reopened to change it. */
+    private static void requireScopeEditable(Release release) {
+        if (!release.getState().scopeEditable()) {
+            throw new IllegalStateException("The scope of a " + release.getState().name().toLowerCase()
+                + " release cannot change" + (release.getState() == ReleaseState.FROZEN ? "; reopen it first" : ""));
+        }
     }
 
     public List<UUID> scope(UUID releaseId) {
