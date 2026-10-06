@@ -2408,3 +2408,11 @@ body {
 }
 .cn-src { font-family: var(--f-ui); font-size: 8.5px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; color: var(--tx-3); }
 .cn-log { margin: 4px 0 8px; }
+
+/* VYB-0927: results and run states on the Quality screen. Each is also a label and a glyph in the markup, so colour
+   is never the only signal. Never the amber token: amber means AI. */
+.badge.tr-pass    { background: var(--ok-dim);   color: var(--ok);   border-color: var(--ok-bd); }
+.badge.tr-fail    { background: var(--crit-dim); color: var(--crit); border-color: var(--crit-bd); }
+.badge.tr-blocked { background: var(--info-dim); color: var(--info); border-color: var(--info-bd); }
+.badge.tr-none    { background: var(--panel-3);  color: var(--tx-2);  border-color: var(--line-2); }
+.tr-case .tbl tbody tr { cursor: default; }

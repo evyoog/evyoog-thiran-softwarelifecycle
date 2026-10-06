@@ -51,11 +51,11 @@ public class TestManagementController {
     public record UpdateTestPlan(@NotBlank String name, String description, UUID releaseId) {}
 
     public record TestPlanView(String id, String key, String name, String description, String applicationId,
-                                String releaseId, String createdAt, long suiteCount, long runCount) {}
+                                String applicationName, String releaseId, String createdAt, long suiteCount, long runCount) {}
 
     private static TestPlanView view(TestManagementService.Plan p) {
         return new TestPlanView(p.id().toString(), p.key(), p.name(), p.description(), p.applicationId().toString(),
-            p.releaseId() == null ? null : p.releaseId().toString(), p.createdAt().toString(), p.suiteCount(), p.runCount());
+            p.applicationName(), p.releaseId() == null ? null : p.releaseId().toString(), p.createdAt().toString(), p.suiteCount(), p.runCount());
     }
 
     @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
@@ -181,7 +181,7 @@ public class TestManagementController {
     public record CreateTestRun(UUID assignedTo, String buildLabel) {}
 
     public record TestRunView(String id, String suiteId, String suiteName, String planId, String planName, String kind,
-                               String status, String buildLabel, String assignedTo, String createdAt, String startedAt,
+                               String status, String buildLabel, String assignedTo, String assignedToName, String createdAt, String startedAt,
                                String completedAt, long caseCount, String retestOf) {}
 
     /** One file backing a result: download it through the requirement's attachment endpoints (requirementId, attachmentId, version). */
@@ -189,13 +189,13 @@ public class TestManagementController {
                                 String filename, String contentType, Long sizeBytes, String addedBy, String addedAt) {}
 
     public record RunStepView(String id, int position, String action, String expectedResult, String result,
-                               String actualResult, String executedBy, String executedAt, List<EvidenceView> evidence,
-                               String defectId, String defectKey) {}
+                               String actualResult, String executedBy, String executedByName, String executedAt,
+                               List<EvidenceView> evidence, String defectId, String defectKey) {}
 
     /** {@code result} is derived (PASS, FAIL, BLOCKED or NOT_RUN); the other result fields are set only for a case with no steps. */
     public record RunCaseView(String id, int position, String testCaseId, String key, String title, String description,
                                List<RunStepView> steps, String result, String actualResult, String executedBy,
-                               String executedAt, List<EvidenceView> evidence, List<TestedRequirementView> requirements,
+                               String executedByName, String executedAt, List<EvidenceView> evidence, List<TestedRequirementView> requirements,
                                String defectId, String defectKey) {}
 
     /** A requirement the case verifies, frozen at run start; currentRevision above testedRevision means it was edited since. */
@@ -211,7 +211,7 @@ public class TestManagementController {
 
     private static TestRunView view(TestManagementService.Run r) {
         return new TestRunView(s(r.id()), s(r.suiteId()), r.suiteName(), s(r.planId()), r.planName(), r.kind(), r.status(),
-            r.buildLabel(), s(r.assignedTo()), s(r.createdAt()), s(r.startedAt()), s(r.completedAt()), r.caseCount(), s(r.retestOf()));
+            r.buildLabel(), s(r.assignedTo()), r.assignedToName(), s(r.createdAt()), s(r.startedAt()), s(r.completedAt()), r.caseCount(), s(r.retestOf()));
     }
 
     private static List<EvidenceView> evidence(List<TestManagementService.Evidence> list) {
@@ -223,9 +223,9 @@ public class TestManagementController {
         return new TestRunDetailView(view(d.run()), d.cases().stream().map(c -> new RunCaseView(
             s(c.id()), c.position(), s(c.testCaseId()), c.key(), c.title(), c.description(),
             c.steps().stream().map(st -> new RunStepView(s(st.id()), st.position(), st.action(), st.expectedResult(),
-                st.result(), st.actualResult(), s(st.executedBy()), s(st.executedAt()), evidence(st.evidence()),
+                st.result(), st.actualResult(), s(st.executedBy()), st.executedByName(), s(st.executedAt()), evidence(st.evidence()),
                 st.defect() == null ? null : s(st.defect().id()), st.defect() == null ? null : st.defect().key())).toList(),
-            c.result(), c.actualResult(), s(c.executedBy()), s(c.executedAt()), evidence(c.evidence()),
+            c.result(), c.actualResult(), s(c.executedBy()), c.executedByName(), s(c.executedAt()), evidence(c.evidence()),
             c.requirements().stream().map(q -> new TestedRequirementView(s(q.requirementId()), q.key(), q.testedRevision(),
                 q.currentRevision())).toList(),
             c.defect() == null ? null : s(c.defect().id()), c.defect() == null ? null : c.defect().key())).toList(),

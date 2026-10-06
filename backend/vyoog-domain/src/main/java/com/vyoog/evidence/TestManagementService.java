@@ -32,8 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TestManagementService {
 
-    public record Plan(UUID id, String key, String name, String description, UUID applicationId, UUID releaseId,
-                        UUID createdBy, Instant createdAt, long suiteCount, long runCount) {}
+    public record Plan(UUID id, String key, String name, String description, UUID applicationId, String applicationName,
+                        UUID releaseId, UUID createdBy, Instant createdAt, long suiteCount, long runCount) {}
 
     public record Suite(UUID id, UUID planId, String name, String description, int position, long caseCount) {}
 
@@ -44,7 +44,7 @@ public class TestManagementService {
     public record StepInput(String action, String expectedResult) {}
 
     public record Run(UUID id, UUID suiteId, String suiteName, UUID planId, String planName, String kind, String status,
-                       String buildLabel, UUID assignedTo, UUID createdBy, Instant createdAt, Instant startedAt,
+                       String buildLabel, UUID assignedTo, String assignedToName, UUID createdBy, Instant createdAt, Instant startedAt,
                        Instant completedAt, long caseCount, UUID retestOf) {}
 
     /** {@code result} is null until recorded (VYB-0924a); then PASS, FAIL or BLOCKED. */
@@ -59,8 +59,8 @@ public class TestManagementService {
     public record DefectRef(UUID id, String key) {}
 
     public record RunStep(UUID id, int position, String action, String expectedResult, String result,
-                           String actualResult, UUID executedBy, Instant executedAt, List<Evidence> evidence,
-                           DefectRef defect) {}
+                           String actualResult, UUID executedBy, String executedByName, Instant executedAt,
+                           List<Evidence> evidence, DefectRef defect) {}
 
     /**
      * {@code result} is derived, never stored: FAIL if any step failed, else BLOCKED if any was blocked, else
@@ -68,7 +68,7 @@ public class TestManagementService {
      * {@code actualResult}, {@code executedBy} and {@code executedAt} hold that judgement and are null for a case that has steps.
      */
     public record RunCase(UUID id, int position, UUID testCaseId, String key, String title, String description,
-                           List<RunStep> steps, String result, String actualResult, UUID executedBy, Instant executedAt,
+                           List<RunStep> steps, String result, String actualResult, UUID executedBy, String executedByName, Instant executedAt,
                            List<Evidence> evidence, List<TestedRequirement> requirements, DefectRef defect) {}
 
     /**
@@ -105,15 +105,15 @@ public class TestManagementService {
     // ------------------------------------------------------------------ plans
 
     private static final String PLAN_SELECT = """
-        SELECT p.id, p.key, p.name, p.description, p.application_id, p.release_id, p.created_by, p.created_at,
+        SELECT p.id, p.key, p.name, p.description, p.application_id, a.name AS application_name, p.release_id, p.created_by, p.created_at,
                (SELECT count(*) FROM test_suite s WHERE s.plan_id = p.id) AS suites,
                (SELECT count(*) FROM test_run r JOIN test_suite s ON s.id = r.suite_id WHERE s.plan_id = p.id) AS runs
-          FROM test_plan p
+          FROM test_plan p JOIN application a ON a.id = p.application_id
         """;
 
     private Plan plan(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new Plan(rs.getObject("id", UUID.class), rs.getString("key"), rs.getString("name"),
-            rs.getString("description"), rs.getObject("application_id", UUID.class),
+            rs.getString("description"), rs.getObject("application_id", UUID.class), rs.getString("application_name"),
             rs.getObject("release_id", UUID.class), rs.getObject("created_by", UUID.class),
             rs.getTimestamp("created_at").toInstant(), rs.getLong("suites"), rs.getLong("runs"));
     }
@@ -318,17 +318,19 @@ public class TestManagementService {
 
     private static final String RUN_SELECT = """
         SELECT r.id, r.suite_id, s.name AS suite_name, s.plan_id, p.name AS plan_name, r.kind, r.status, r.build_label,
-               r.assigned_to, r.created_by, r.created_at, r.started_at, r.completed_at, r.retest_of,
+               r.assigned_to, au.display_name AS assigned_to_name, r.created_by, r.created_at, r.started_at, r.completed_at, r.retest_of,
                (SELECT count(*) FROM test_run_case c WHERE c.run_id = r.id) AS cases
           FROM test_run r
           LEFT JOIN test_suite s ON s.id = r.suite_id
           LEFT JOIN test_plan p ON p.id = s.plan_id
+          LEFT JOIN app_user au ON au.id = r.assigned_to
         """;
 
     private Run run(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new Run(rs.getObject("id", UUID.class), rs.getObject("suite_id", UUID.class), rs.getString("suite_name"),
             rs.getObject("plan_id", UUID.class), rs.getString("plan_name"), rs.getString("kind"), rs.getString("status"),
-            rs.getString("build_label"), rs.getObject("assigned_to", UUID.class), rs.getObject("created_by", UUID.class),
+            rs.getString("build_label"), rs.getObject("assigned_to", UUID.class), rs.getString("assigned_to_name"),
+            rs.getObject("created_by", UUID.class),
             rs.getTimestamp("created_at").toInstant(),
             rs.getTimestamp("started_at") == null ? null : rs.getTimestamp("started_at").toInstant(),
             rs.getTimestamp("completed_at") == null ? null : rs.getTimestamp("completed_at").toInstant(),
@@ -417,20 +419,24 @@ public class TestManagementService {
         Map<UUID, List<RunStep>> stepsByCase = new LinkedHashMap<>();
         jdbc.query("""
             SELECT rs.id, rs.run_case_id, rs.position, rs.action, rs.expected_result, rs.result, rs.actual_result,
-                   rs.executed_by, rs.executed_at
+                   rs.executed_by, u.display_name AS executed_by_name, rs.executed_at
               FROM test_run_step rs JOIN test_run_case rc ON rc.id = rs.run_case_id
+              LEFT JOIN app_user u ON u.id = rs.executed_by
              WHERE rc.run_id = ? ORDER BY rc.position, rs.position
             """, rs -> {
                 stepsByCase.computeIfAbsent(rs.getObject("run_case_id", UUID.class), k -> new ArrayList<>())
                     .add(new RunStep(rs.getObject("id", UUID.class), rs.getInt("position"), rs.getString("action"),
                         rs.getString("expected_result"), rs.getString("result"), rs.getString("actual_result"),
-                        rs.getObject("executed_by", UUID.class), instant(rs.getTimestamp("executed_at")),
+                        rs.getObject("executed_by", UUID.class), rs.getString("executed_by_name"),
+                        instant(rs.getTimestamp("executed_at")),
                         evidenceByOwner.getOrDefault(rs.getObject("id", UUID.class), List.of()),
                         defectByOwner.get(rs.getObject("id", UUID.class))));
             }, id);
         List<RunCase> cases = jdbc.query("""
-            SELECT id, position, test_case_id, case_key, title, description, result, actual_result, executed_by, executed_at
-              FROM test_run_case WHERE run_id = ? ORDER BY position
+            SELECT c.id, c.position, c.test_case_id, c.case_key, c.title, c.description, c.result, c.actual_result,
+                   c.executed_by, u.display_name AS executed_by_name, c.executed_at
+              FROM test_run_case c LEFT JOIN app_user u ON u.id = c.executed_by
+             WHERE c.run_id = ? ORDER BY c.position
             """, (rs, i) -> {
                 UUID caseId = rs.getObject("id", UUID.class);
                 List<RunStep> steps = stepsByCase.getOrDefault(caseId, List.of());
@@ -438,7 +444,7 @@ public class TestManagementService {
                 return new RunCase(caseId, rs.getInt("position"), rs.getObject("test_case_id", UUID.class),
                     rs.getString("case_key"), rs.getString("title"), rs.getString("description"), steps,
                     caseResult(steps, own), rs.getString("actual_result"), rs.getObject("executed_by", UUID.class),
-                    instant(rs.getTimestamp("executed_at")), evidenceByOwner.getOrDefault(caseId, List.of()),
+                    rs.getString("executed_by_name"), instant(rs.getTimestamp("executed_at")), evidenceByOwner.getOrDefault(caseId, List.of()),
                     requirementsByCase.getOrDefault(caseId, List.of()), defectByOwner.get(caseId));
             }, id);
         int passed = 0, failed = 0, blocked = 0, notRun = 0;

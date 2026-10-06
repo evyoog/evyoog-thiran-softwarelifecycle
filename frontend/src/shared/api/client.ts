@@ -770,6 +770,198 @@ export interface VerificationRecord {
   verifiedAt: string
 }
 
+// ── Manual test management (VYB-0923 to VYB-0927) ───────────────────────────────
+
+export type RunStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED'
+/** What a person records on a step (or on a case that has no steps). */
+export type StepResult = 'PASS' | 'FAIL' | 'BLOCKED'
+/** A case's result is derived from its steps and is never null: NOT_RUN until every step has one. */
+export type CaseResult = StepResult | 'NOT_RUN'
+
+export interface TestPlan {
+  id: string
+  key: string
+  name: string
+  description?: string
+  applicationId: string
+  applicationName: string
+  releaseId?: string
+  createdAt: string
+  suiteCount: number
+  runCount: number
+}
+
+export interface TestSuite {
+  id: string
+  planId: string
+  name: string
+  description?: string
+  position: number
+  caseCount: number
+}
+
+export interface SuiteCase {
+  testCaseId: string
+  key: string
+  title: string
+  position: number
+}
+
+export interface TestRun {
+  id: string
+  suiteId?: string
+  suiteName?: string
+  planId?: string
+  planName?: string
+  kind: 'CI' | 'MANUAL'
+  status: RunStatus
+  buildLabel?: string
+  assignedTo?: string
+  assignedToName?: string
+  createdAt: string
+  startedAt?: string
+  completedAt?: string
+  caseCount: number
+  /** The run this one retests, when it is a retest. */
+  retestOf?: string
+}
+
+/** One file backing a result; download it through the requirement's attachment endpoints. */
+export interface Evidence {
+  id: string
+  attachmentId: string
+  version: number
+  requirementId: string
+  requirementKey: string
+  filename: string
+  contentType?: string
+  sizeBytes?: number
+  addedBy?: string
+  addedAt: string
+}
+
+/** A requirement a case verifies, frozen when the run started; currentRevision above testedRevision means it was edited since. */
+export interface TestedRequirement {
+  requirementId: string
+  key: string
+  testedRevision: number
+  currentRevision: number
+}
+
+export interface RunStep {
+  id: string
+  position: number
+  action: string
+  expectedResult: string
+  result?: StepResult
+  actualResult?: string
+  executedBy?: string
+  executedByName?: string
+  executedAt?: string
+  evidence: Evidence[]
+  defectId?: string
+  defectKey?: string
+}
+
+export interface RunCase {
+  id: string
+  position: number
+  testCaseId?: string
+  key: string
+  title: string
+  description?: string
+  steps: RunStep[]
+  /** Derived from the steps; for a case with no steps, what was recorded on the case itself. */
+  result: CaseResult
+  /** Set only for a case with no steps. */
+  actualResult?: string
+  executedBy?: string
+  executedByName?: string
+  executedAt?: string
+  evidence: Evidence[]
+  requirements: TestedRequirement[]
+  defectId?: string
+  defectKey?: string
+}
+
+export interface RunSummary {
+  total: number
+  passed: number
+  failed: number
+  blocked: number
+  notRun: number
+  /** The verification rows written when the run was completed; 0 until then. */
+  verificationsRecorded: number
+}
+
+export interface TestRunDetail {
+  run: TestRun
+  cases: RunCase[]
+  summary: RunSummary
+}
+
+/** What a defect raised from a failed step would be prefilled with, and the read-only context behind it. */
+export interface DefectDraft {
+  title: string
+  severity: DefectSeverity
+  foundIn: FoundIn
+  requirementId?: string
+  candidates: TestedRequirement[]
+  runId: string
+  buildLabel?: string
+  planName?: string
+  suiteName?: string
+  testKey: string
+  testTitle: string
+  stepPosition?: number
+  action?: string
+  expectedResult?: string
+  actualResult?: string
+  existingDefectId?: string
+  existingDefectKey?: string
+}
+
+export interface RaisedDefect {
+  id: string
+  key: string
+  title: string
+  severity: DefectSeverity
+  requirementId?: string
+  untraced: boolean
+  foundIn: FoundIn
+  state: DefectState
+  runId: string
+  runStepId?: string
+  runCaseId?: string
+}
+
+/**
+ * VYB-0927: per requirement that has a test case. Each case counts once, by its latest result at the
+ * requirement's current revision (CI and manual together). `passRate` is passed of those with a result, and null
+ * (not zero) when none has one; stale and not-run are not failures.
+ */
+export interface PassRate {
+  requirementId: string
+  key: string
+  title: string
+  status: string
+  revision: number
+  cases: number
+  passed: number
+  failed: number
+  stale: number
+  notRun: number
+  passRate?: number
+  lastResultAt?: string
+}
+
+export interface RaiseRunDefectBody {
+  title?: string
+  severity?: DefectSeverity
+  foundIn?: FoundIn
+  requirementId?: string
+}
+
 // ── Defects (VYB-0320–0323) ──────────────────────────────────────────────────────
 
 export type DefectSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
@@ -1773,6 +1965,40 @@ export const api = {
   closeReview: (id: string) => request<Review>(`/reviews/${id}/close`, { method: 'POST' }),
 
   // Test evidence
+  // VYB-0923 to VYB-0927: manual test management. Writes need the Tester role (server-enforced); reads any signed-in person.
+  testPlans: (params: { applicationId?: string } = {}) =>
+    request<TestPlan[]>(`/test-plans${query({ applicationId: params.applicationId })}`),
+  testSuites: (planId: string) => request<TestSuite[]>(`/test-plans/${planId}/suites`),
+  testSuiteCases: (suiteId: string) => request<SuiteCase[]>(`/test-suites/${suiteId}/cases`),
+  testRuns: (params: { suiteId?: string; planId?: string; status?: RunStatus } = {}) =>
+    request<TestRun[]>(`/test-runs${query({ suiteId: params.suiteId, planId: params.planId, status: params.status })}`),
+  testRun: (id: string) => request<TestRunDetail>(`/test-runs/${id}`),
+  createTestRun: (suiteId: string, body: { assignedTo?: string; buildLabel?: string } = {}) =>
+    request<TestRunDetail>(`/test-suites/${suiteId}/runs`, { method: 'POST', body: JSON.stringify(body) }),
+  startTestRun: (id: string) => request<TestRunDetail>(`/test-runs/${id}/start`, { method: 'POST' }),
+  completeTestRun: (id: string) => request<TestRunDetail>(`/test-runs/${id}/complete`, { method: 'POST' }),
+  retestRun: (id: string, body: { buildLabel?: string } = {}) =>
+    request<TestRunDetail>(`/test-runs/${id}/retest`, { method: 'POST', body: JSON.stringify(body) }),
+  recordStepResult: (runId: string, stepId: string, result: StepResult, actualResult?: string) =>
+    request<TestRunDetail>(`/test-runs/${runId}/steps/${stepId}/result`, { method: 'PUT', body: JSON.stringify({ result, actualResult }) }),
+  recordCaseResult: (runId: string, caseId: string, result: StepResult, actualResult?: string) =>
+    request<TestRunDetail>(`/test-runs/${runId}/cases/${caseId}/result`, { method: 'PUT', body: JSON.stringify({ result, actualResult }) }),
+  stepDefectDraft: (runId: string, stepId: string) => request<DefectDraft>(`/test-runs/${runId}/steps/${stepId}/defect-draft`),
+  caseDefectDraft: (runId: string, caseId: string) => request<DefectDraft>(`/test-runs/${runId}/cases/${caseId}/defect-draft`),
+  raiseStepDefect: (runId: string, stepId: string, body: RaiseRunDefectBody) =>
+    request<RaisedDefect>(`/test-runs/${runId}/steps/${stepId}/defects`, { method: 'POST', body: JSON.stringify(body) }),
+  raiseCaseDefect: (runId: string, caseId: string, body: RaiseRunDefectBody) =>
+    request<RaisedDefect>(`/test-runs/${runId}/cases/${caseId}/defects`, { method: 'POST', body: JSON.stringify(body) }),
+  /** VYB-0927: one evidence file, fetched with the bearer token (a plain link cannot carry it) so it can be saved. */
+  downloadEvidence: async (requirementId: string, attachmentId: string, version: number): Promise<Blob> => {
+    const token = tokenProvider()
+    const res = await fetch(`${BASE}/requirements/${requirementId}/attachments/${attachmentId}/versions/${version}/download`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) throw await problemFrom(res)
+    return res.blob()
+  },
+  passRates: (params: { q?: string; page?: number; size?: number }) =>
+    request<Page<PassRate>>(`/quality/pass-rates${query({ q: params.q, page: params.page, size: params.size })}`),
   evidenceSummary: () => request<EvidenceSummary>('/evidence/summary'),
   unverifiedRequirements: () => request<RequirementRef[]>('/evidence/unverified'),
   staleEvidenceRequirements: () => request<RequirementRef[]>('/evidence/stale'),

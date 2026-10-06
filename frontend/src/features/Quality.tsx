@@ -11,8 +11,15 @@ import { TestCaseAuthoringPanel } from './quality/TestCaseAuthoringPanel'
 import { DependenciesTab } from './quality/DependenciesTab'
 import { BulkTestCaseReviewPanel } from './quality/BulkTestCaseReviewPanel'
 import { TestCasesTab } from './quality/TestCasesTab'
+import { TestRunsTab } from './quality/TestRunsTab'
+import { PassRatesTab } from './quality/PassRatesTab'
 
-type Tab = 'verification' | 'dependencies' | 'defects' | 'test-cases'
+type Tab = 'verification' | 'dependencies' | 'defects' | 'test-cases' | 'test-runs' | 'pass-rate'
+
+const TAB_LABEL: Record<Tab, string> = {
+  verification: 'Verification', dependencies: 'Dependencies', defects: 'Defects', 'test-cases': 'Test cases',
+  'test-runs': 'Test runs', 'pass-rate': 'Pass rate',
+}
 
 const SEVERITIES: DefectSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 const FOUND_IN: FoundIn[] = ['DEV', 'QA', 'UAT', 'PRODUCTION']
@@ -38,11 +45,8 @@ export function Quality() {
       desc="Verification and defects. A requirement is Verified only when a test passed against its current revision."
     >
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        {(['verification', 'dependencies', 'defects', 'test-cases'] as Tab[]).map((t) => (
-          <button key={t} className={`btn${t === tab ? ' pri' : ''}`} onClick={() => setTab(t)}>
-            {t === 'verification' ? 'Verification' : t === 'dependencies' ? 'Dependencies'
-              : t === 'defects' ? 'Defects' : 'Test cases'}
-          </button>
+        {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
+          <button key={t} className={`btn${t === tab ? ' pri' : ''}`} onClick={() => setTab(t)}>{TAB_LABEL[t]}</button>
         ))}
       </div>
 
@@ -50,6 +54,8 @@ export function Quality() {
       {tab === 'dependencies' && <DependenciesTab />}
       {tab === 'defects' && <DefectsTab />}
       {tab === 'test-cases' && <TestCasesTab />}
+      {tab === 'test-runs' && <TestRunsTab />}
+      {tab === 'pass-rate' && <PassRatesTab />}
     </Page>
   )
 }

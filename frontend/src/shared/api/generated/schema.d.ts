@@ -1924,6 +1924,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/pass-rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["passRates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/releases": {
         parameters: {
             query?: never;
@@ -4912,6 +4928,24 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
+        PagePassRateView: {
+            content?: components["schemas"]["PassRateView"][];
+            empty?: boolean;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            number?: number;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            size?: number;
+            sort?: components["schemas"]["SortObject"][];
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
         PageRequirementSummaryView: {
             content?: components["schemas"]["RequirementSummaryView"][];
             empty?: boolean;
@@ -5003,6 +5037,27 @@ export interface components {
             rangeStart?: string;
             /** Format: int64 */
             rowCount?: number;
+        };
+        PassRateView: {
+            /** Format: int32 */
+            cases?: number;
+            /** Format: int32 */
+            failed?: number;
+            key?: string;
+            lastResultAt?: string;
+            /** Format: int32 */
+            notRun?: number;
+            /** Format: double */
+            passRate?: number;
+            /** Format: int32 */
+            passed?: number;
+            requirementId?: string;
+            /** Format: int32 */
+            revision?: number;
+            /** Format: int32 */
+            stale?: number;
+            status?: string;
+            title?: string;
         };
         PickerView: {
             displayName?: string;
@@ -5312,6 +5367,7 @@ export interface components {
             evidence?: components["schemas"]["EvidenceView"][];
             executedAt?: string;
             executedBy?: string;
+            executedByName?: string;
             id?: string;
             key?: string;
             /** Format: int32 */
@@ -5330,6 +5386,7 @@ export interface components {
             evidence?: components["schemas"]["EvidenceView"][];
             executedAt?: string;
             executedBy?: string;
+            executedByName?: string;
             expectedResult?: string;
             id?: string;
             /** Format: int32 */
@@ -5600,6 +5657,7 @@ export interface components {
         };
         TestPlanView: {
             applicationId?: string;
+            applicationName?: string;
             createdAt?: string;
             description?: string;
             id?: string;
@@ -5627,6 +5685,7 @@ export interface components {
         };
         TestRunView: {
             assignedTo?: string;
+            assignedToName?: string;
             buildLabel?: string;
             /** Format: int64 */
             caseCount?: number;
@@ -8947,6 +9006,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApplicationView"];
+                };
+            };
+        };
+    };
+    passRates: {
+        parameters: {
+            query: {
+                q?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagePassRateView"];
                 };
             };
         };

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 678 tests cover 52 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 698 tests cover 53 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -837,3 +837,26 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` aCompletedRunStillAllowsItAndARetestsFailureIsItsOwn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
 - `AC8` raisingNeverChangesARunsResultsOrARequirementStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
 - `AC9` raisingIsRefusedWith403ToANonTesterAndWorksForATesterWhileTheDraftIsReadableByAnySignedInPerson (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestDefectFromRunIT.java`)
+
+## VYB-0927: Quality screen: plans, runs, pass rate per requirement [M; F14]
+
+- `AC1` eachCaseCountsOnceByItsLatestResultAndOneWithNoResultIsNotRunNotFailed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+- `AC1` everyResultHasALabelAndAGlyphSoItIsNeverColourAlone (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC1` noStatusUsesTheAmberTokenBecauseAmberMeansAi (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC2` aLaterPassReplacesAnEarlierFailSoAFixedBugStopsCountingAgainstTheRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+- `AC2` aStepThatDidNotPassNeedsAnActualResultAndAPassDoesNot (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC3` aResultFromAnEarlierRevisionIsStaleNotPassedAndTheRateIsNullNotZero (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+- `AC3` onlyATesterOrAnAdministratorSeesTheExecuteButtons (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC4` aCompletedRunIsFinalAndCanBeRetestedOnlyWhenSomethingFailedOrWasBlocked (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC4` aPlannedRunCanOnlyBeStarted (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC4` aRequirementEditedAfterTheRunStartedIsMarkedStale (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC4` aRunInProgressCanRecordAndCompleteOnlyWhenEveryCaseHasAResult (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC4` manualAndCiResultsCountTogetherAndABlockedCaseIsNotRun (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+- `AC4` theSummaryAndTitleReadPlainly (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC5` aRateWithNothingToMeasureReadsNotRunNeverZeroPercent (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC5` anyFailureIsAFailureAndAPassWithGapsIsOnlyPartial (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC5` notRunAndStaleAreNamedAndNeverCountedAsFailed (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC5` onlyRequirementsWithATestCaseAreListedWorstFirstAndSearchableAndPaged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+- `AC5` theBasisSaysHowManyCasesTheRateRestsOn (`frontend/src/features/quality/testRuns.test.ts`)
+- `AC6` anySignedInPersonCanReadItAndNoTokenIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)
+- `AC7` readingItWritesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PassRateIT.java`)

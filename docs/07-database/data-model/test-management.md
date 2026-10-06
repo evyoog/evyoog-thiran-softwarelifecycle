@@ -1,6 +1,6 @@
 # Test management: plans, suites, steps and runs
 
-Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run), VYB-0924b (evidence, retest), VYB-0925 (verification records) and VYB-0926 (defects from a failed step), the last four below (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
+Added by VYB-0923 (entities, run creation), VYB-0924a (executing a run), VYB-0924b (evidence, retest), VYB-0925 (verification records) and VYB-0926 (defects from a failed step), the last four below, and the Quality screen over all of it (VYB-0927) in [`docs/05-ui/screen-requirements/quality-test-runs.md`](../../05-ui/screen-requirements/quality-test-runs.md) (Phase 6, Sprint 5, F14). Migration `database/migrations/V040__test_plans_suites_runs_steps.sql`, schema `vyg_requirement`. Service: `com.vyoog.evidence.TestManagementService`; endpoints: `TestManagementController`.
 
 VYB-0923 is the **entities and the creation of a run**; VYB-0924a is **executing** it (below). Evidence and retest are VYB-0924b, verification records bound to a requirement revision are VYB-0925 (both below), raising a defect from a failed step is VYB-0926 (below) and the Quality screen is VYB-0927. Nothing here ever writes `requirement.status` (CLAUDE.md rule 3).
 
@@ -93,10 +93,16 @@ Migration `V044__defect_raised_from_run.sql`: `defect.raised_from_run_step_id` a
 - It goes through `DefectService.raise`, so routing, notifications and the `defect.raised` audit event are the usual ones; the run also records `test-run.defect-raised`. The run detail shows the defect on the step or case.
 - Write access is Verify (Tester), like raising any defect; the drafts are readable by any signed-in person.
 
+## Pass rate per requirement (VYB-0927)
+
+`GET /api/v1/quality/pass-rates` (any signed-in person), derived on every call from `verification`; nothing is stored. For each requirement with a test case verifying it, each such case is judged by its **latest** result at the requirement's **current** revision (CI and manual together): `passed`, `failed`, `stale` (a result only from an earlier revision) or `notRun` (none at any revision). `passRate` = passed out of passed + failed, and is null (shown as "Not run") when none has a result. Not run and stale are not failures; a BLOCKED case writes nothing and counts as not run. Worst first.
+
+The plan, run and run-detail responses carry display names (`applicationName`, `assignedToName`, `executedByName`) for the screen.
+
 ## Audit events
 
 `test-plan.created|updated|deleted`, `test-suite.created|updated|deleted|cases-set`, `test-step.set` (on the test case), `test-run.created|started|step-recorded|case-recorded|completed|evidence-added|retest-created`.
 
 ## Tests
 
-`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `TestVerificationIT` (`VYB0925_AC1` to `AC6`), `TestDefectFromRunIT` (`VYB0926_AC1` to `AC9`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.
+`TestManagementIT` (`VYB0923_AC1` to `AC7`), `TestExecutionIT` (`VYB0924_AC1` to `AC6`), `TestEvidenceRetestIT` (`VYB0924b_AC1` to `AC6`), `TestVerificationIT` (`VYB0925_AC1` to `AC6`), `TestDefectFromRunIT` (`VYB0926_AC1` to `AC9`), `PassRateIT` (`VYB0927_AC1` to `AC7`), `AccessPolicyTest` (nine new write endpoints, all Verify), `ForeignKeyIndexIT`.

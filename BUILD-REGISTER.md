@@ -330,7 +330,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | DONE on dev, in two sessions (0924a execute, 0924b evidence and retest; 25 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | DONE on dev (9 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0926 | 6 | Manual test execution | Raise a defect from a failed step, prefilled with the test and run [S; F14, F15] | DONE on dev (12 new tests; backend only, no screen; commit only, no PR yet) | S5 |
-| VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | TODO | S5 |
+| VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | DONE on dev (7 backend and 13 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S5 |
 | VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | TODO | S6 |
 | VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | TODO | S6 |
 | VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | TODO | S6 |
@@ -5162,6 +5162,29 @@ Phase 6 Sprint 5. Branch `dev`. **12 new tests**: `TestDefectFromRunIT` (`VYB092
 - No screen to show the draft or the button (VYB-0927).
 - The defect list and the defect view (`GET /defects`) do not yet show the link back to the run; that is VYB-0931.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 82 — VYB-0927 (F14): the Quality screen, test runs and pass rate per requirement
+
+Phase 6 Sprint 5, and the last row of it. Branch `dev`. **20 new tests**: `PassRateIT` 7 (backend, real PostgreSQL, service and HTTP) and `testRuns.test.ts` 13 (frontend logic). The finding text F14 is not in the repository; scope is the register row. This is the first row since VYB-0917 with something to see: **Quality, Test runs** and **Quality, Pass rate**, two new tabs. Screen description: `docs/05-ui/screen-requirements/quality-test-runs.md`.
+
+**Decisions with the product owner this session.** (1) **Scope: read plus execute runs.** People can view plans, suites and runs, and a Tester can start a run, record a result and the actual result on each step, complete it, retest and raise a defect from a failed step. **Planning (creating or editing plans, suites, cases in a suite and steps) and attaching evidence stay API-only for now.** (2) **Pass rate: each test case counts once, by its latest result at the requirement's current revision, CI and manual together**; not run and stale are not failures.
+
+**Backend.** `RequirementPassRateService` and `GET /api/v1/quality/pass-rates` (any signed-in person, paged, searchable, worst first), derived on every call from `verification`. The plan, run and run-detail responses gained display names so the screen does not show ids: `applicationName` on a plan, `assignedToName` on a run, `executedByName` on a step and a case. OpenAPI and `schema.d.ts` regenerated (additive). No new write endpoint, so no new access rule.
+
+**Frontend.** `TestRunsTab.tsx` (Runs list with a status filter; Plans with suites and a New run button), `RunDetailView.tsx` (the run, its cases and steps, the execute controls, evidence list and save, retest, and the prefilled Raise-a-defect dialog), `PassRatesTab.tsx`, `testRuns.ts` (the logic, kept testable) in `features/quality/`; tabs added in `Quality.tsx`; hand-written types and API calls in `client.ts` (checked against the OpenAPI document by `apiContract.test.ts`); badge styles in `tokens.css`. State is a label and a glyph as well as a colour, never amber; absence reads in words ("Not run", never 0%). The action buttons show only for a Tester or administrator (from the person's grants); the server still enforces the rule, and a refusal is shown in words.
+
+**Pass rate rules (not in the specification; change any you disagree with).** `passRate` is passed out of the cases that have a result at the current revision (passed + failed), and is empty, shown as "Not run", when none has: so 1 of 10 cases run and passed reads 100% with "1 of 10 cases have a result", not 10%. If you want passed out of all cases instead, that is one line, but then an unrun case would pull the rate down. A blocked case writes no verification (VYB-0925) and so counts as not run.
+
+**Evidence.** `PassRateIT` covers the latest-result rule both ways (a later pass replaces a fail, a later fail replaces a pass), stale after an edit, CI and manual together, blocked as not run, worst-first order, search (wildcards literal), paging, read access and a 401. The screen was rendered in Chromium against the dev server with mocked API responses, in both themes, as a Tester and as a Viewer: the Viewer sees no action buttons; as a Tester a Failed result with no actual result was refused on the page, and the requests sent (record step result, case result, raise defect, complete) were checked. The contrast test (which parses `tokens.css`) passes for the new classes.
+
+**Not done / to know**
+- The browser check used mocked API responses, not a live backend and Keycloak. The backend endpoints are tested separately over HTTP.
+- The Quality screen's subtitle still says "A requirement is Verified only when a test passed against its current revision", which predates D16; I did not change existing copy.
+- Plans, suites and steps cannot be created or edited, and evidence cannot be added, from the screen. A person must use the API for those. That is the obvious next row if you want manual testing usable without the API.
+- The assignee is shown but not chosen: New run does not take one.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
 
 ---
 

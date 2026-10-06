@@ -2803,6 +2803,55 @@
         },
         "type" : "object"
       },
+      "PagePassRateView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PassRateView"
+            },
+            "type" : "array"
+          },
+          "empty" : {
+            "type" : "boolean"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "numberOfElements" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sort" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SortObject"
+            },
+            "type" : "array"
+          },
+          "totalElements" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "PageRequirementSummaryView" : {
         "properties" : {
           "content" : {
@@ -3048,6 +3097,54 @@
           "rowCount" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PassRateView" : {
+        "properties" : {
+          "cases" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "failed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "lastResultAt" : {
+            "type" : "string"
+          },
+          "notRun" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passRate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "passed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "requirementId" : {
+            "type" : "string"
+          },
+          "revision" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "stale" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -3913,6 +4010,9 @@
           "executedBy" : {
             "type" : "string"
           },
+          "executedByName" : {
+            "type" : "string"
+          },
           "id" : {
             "type" : "string"
           },
@@ -3971,6 +4071,9 @@
             "type" : "string"
           },
           "executedBy" : {
+            "type" : "string"
+          },
+          "executedByName" : {
             "type" : "string"
           },
           "expectedResult" : {
@@ -4712,6 +4815,9 @@
           "applicationId" : {
             "type" : "string"
           },
+          "applicationName" : {
+            "type" : "string"
+          },
           "createdAt" : {
             "type" : "string"
           },
@@ -4793,6 +4899,9 @@
       "TestRunView" : {
         "properties" : {
           "assignedTo" : {
+            "type" : "string"
+          },
+          "assignedToName" : {
             "type" : "string"
           },
           "buildLabel" : {
@@ -9272,6 +9381,39 @@
           }
         },
         "tags" : [ "application-controller" ]
+      }
+    },
+    "/api/v1/quality/pass-rates" : {
+      "get" : {
+        "operationId" : "passRates",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "pageable",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/Pageable"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagePassRateView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "quality-controller" ]
       }
     },
     "/api/v1/releases" : {
