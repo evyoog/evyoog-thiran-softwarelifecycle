@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 827 tests cover 58 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 869 tests cover 59 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -984,7 +984,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC15` theJsonClientRefusesAReplyCutOffAtTheTokenLimitAndOneThatIsNotJson (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
 - `AC16` aRewriteSuggestionAndAJsonCallGoThroughTheSameGateway (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
 - `AC16` embeddingsReachTheProviderThroughTheGatewayWithTheConfiguredKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
-- `AC16` springBuildsExactlyOneGatewayFromTheConfiguration (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC16` springBuildsOneProviderGatewayAndEveryoneIsHandedTheRedactingOneInFrontOfIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
 - `AC2` whenNotConfiguredNothingIsSentAndTheReasonIsInWords (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
 - `AC3` aLongerRetryAfterIsHonouredUpToTheCap (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
 - `AC3` aRetryableStatusIsRetriedAndASecondAttemptThatWorksIsReturned (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
@@ -1004,3 +1004,48 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` opensAfterTheThresholdOfFailuresInARowAndRefusesCalls (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
 - `AC8` refusesNonsenseSettings (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
 - `AC9` anEmbeddingIsReturnedAsReportedWithItsModelAndTokens (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+
+## VYB-0937: Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27]
+
+- `AC1` everyKindOfSecretIsRemovedAndNothingOfItSurvives (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC1` proseThatMerelyMentionsAPasswordIsNotMistakenForOne (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC1` theUserAndPasswordInAUrlGoButTheRestOfTheUrlStays (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC1` theValueOfACredentialAssignmentGoesAndTheNameStays (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC10` textWithNothingToRedactIsSentExactlyAsGiven (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC11` anEmbeddingIsRedactedBeforeItIsSentAndHasNothingToRestore (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC12` aClassTheAdministratorSwitchedOffIsSentAsItIsAndTheOthersStillGo (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC13` aFailureLoadingThePeopleAlsoSendsNothing (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC13` ifTheTextCannotBeCheckedNothingIsSentAndTheCallIsRefused (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC14` aProviderFailureStillReachesTheCallerAsTheSameException (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC14` whenAiIsNotConfiguredTheProviderRefusesAndNothingIsDoneFirst (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC15` modelNamesAndConfiguredPassThrough (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC15` whatWasRedactedIsCountedByClassAndNeverTheValues (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC16` whatLeavesTheSystemHasNoSecretsNoPersonalDataAndTheReplyComesBackWithThemRestored (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC17` anEmbeddingIsRedactedToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC18` anAdministratorSwitchesAClassOffOverHttpThenItIsSentAsItIsAndSecretsStillGoNoMatterWhat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC19` onlyAnAdministratorCanChangeItAndSecretsCannotBeSwitchedOffByAnyRoute (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC2` secretsCannotBeOptedOutEvenIfTheyAreInTheDisabledSet (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC20` aKindIsOnUnlessItIsInTheDisabledList (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC20` aLockedKindIsNeverAddedToTheListToSave (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC20` everyKindHasAnExplanationAndExactlyOneIsLocked (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC20` flippingAKindAddsItToTheListAndFlippingItBackRemovesIt (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC20` secretsAreAlwaysOnAndHaveNoSwitch (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC20` stateIsAWordNotOnlyAColour (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC20` theSummaryNamesWhatIsOffAndSaysSecretsAreStillRemoved (`frontend/src/features/admin/aiRedaction.test.ts`)
+- `AC3` aCardNumberIsReplacedOnlyIfItPassesTheLuhnCheck (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC3` aPhoneNumberInTheThreeShapesIsReplacedAndABareRunOfDigitsIsNot (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC3` anEmailIsReplacedByATokenAndTheSameAddressGetsTheSameToken (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC3` anIpAddressIsReplacedButADateOrAnOutOfRangeNumberIsNot (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC4` aNameShorterThanThreeCharactersIsNotMatchedBecauseItWouldHitOrdinaryWords (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC4` aNameThatIsNotInTheListIsNotFoundWhichIsTheStatedLimit (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC4` thePeopleInTheUserTableAreFoundAsWholeWordsInAnyCaseAndLongestFirst (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC5` eachPersonalDataClassCanBeSwitchedOffOnItsOwn (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC6` insideJsonTheOriginalsAreEscapedSoTheDocumentStillParses (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC6` theOriginalsComeBackInTheReplyAndASecretNeverDoes (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC6` tokensWithDifferentNumbersDoNotCollide (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC7` aLargeDocumentIsHandledInReasonableTimeEvenWhenItIsAdversarial (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC7` emptyAndNullTextPassThrough (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactorTest.java`)
+- `AC8` whatIsSentHasNoSecretsAndNoPersonalDataAndTheSystemPromptIsUntouched (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC9` aJsonShapedReplyFromACallNotFlaggedAsJsonIsStillRestoredAsJson (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC9` aSecretIsNeverPutBackEvenIfTheProviderEchoesTheMarker (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+- `AC9` theReplyComesBackWithTheOriginalValuesPutBackAndTheMetadataIntact (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)

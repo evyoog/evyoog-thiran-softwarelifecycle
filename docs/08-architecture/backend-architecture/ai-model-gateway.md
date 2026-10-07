@@ -21,6 +21,10 @@ Before this row, five classes each built and sent their own request to OpenAI (`
 | Reply | `ChatReply` carries the text, the model and finish reason, and the token counts the provider **reported** (null when it did not say; never estimated). Recording them is VYB-0939. |
 | Failure | Every failure is an `AiProviderUnavailableException` with a reason. "Unknown" is never faked as a zero vector or an empty answer; callers still refuse rather than guess (CLAUDE.md rule 6). |
 
+## Redaction in front of it
+
+Classes are handed `RedactingModelGateway` (`@Primary`), which cleans the text and calls this gateway (VYB-0937, [`../security/ai-redaction.md`](../security/ai-redaction.md)). The provider gateway above is the bean `openAiGateway` and is injected nowhere else.
+
 ## What stayed with each caller
 
 The prompt, how the reply is read, and the refusal to invent an answer: the rewrite advisor, the trace classifier (drops a key it was not offered and a link type that does not exist), the adjudicator, the embedding provider (refuses a vector that is not 1536 wide), and the six JSON agents through `JsonModelClient` (asks for a JSON reply, refuses one cut off at the token limit).
@@ -31,7 +35,7 @@ The prompt, how the reply is read, and the refusal to invent an answer: the rewr
 
 ## Not here (later rows)
 
-Redaction of secrets and personal data before a call (VYB-0937), one review endpoint for AI proposals (VYB-0938), persisting model, prompt version and token counts, budgets and the usage screen (VYB-0939), moving model calls out of database transactions (VYB-0940). The gateway does not show its breaker state anywhere yet.
+One review endpoint for AI proposals (VYB-0938), persisting model, prompt version and token counts, budgets and the usage screen (VYB-0939), moving model calls out of database transactions (VYB-0940). The gateway does not show its breaker state anywhere yet.
 
 ## Tests
 

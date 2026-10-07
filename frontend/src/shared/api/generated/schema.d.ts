@@ -3012,6 +3012,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/ai-redaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setAiRedaction"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/audit-partitions": {
         parameters: {
             query?: never;
@@ -4248,6 +4264,7 @@ export interface components {
         AppConfigView: {
             /** Format: int32 */
             aiCallsPerRunLimit?: number;
+            aiRedactionDisabled?: string[];
             /** Format: int32 */
             auditRetentionDays?: number;
             embeddingModel?: string;
@@ -5857,6 +5874,9 @@ export interface components {
         };
         SetPrefix: {
             prefix?: string;
+        };
+        SetRedaction: {
+            disabled?: string[];
         };
         SetRole: {
             role: string;
@@ -11349,6 +11369,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    setAiRedaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRedaction"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SetRedaction"];
+                };
             };
         };
     };

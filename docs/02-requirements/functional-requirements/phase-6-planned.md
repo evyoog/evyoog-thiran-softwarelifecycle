@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 25, PARTIAL 1, TODO 29.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 26, PARTIAL 1, TODO 28.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -82,7 +82,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | DONE on dev (34 domain unit, 3 integration tests and 1 architecture rule; backend only; commit only, no PR yet) | S8 |
-| VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | TODO | S8 |
+| VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | DONE on dev (31 domain unit, 4 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
 | VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
 | VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |

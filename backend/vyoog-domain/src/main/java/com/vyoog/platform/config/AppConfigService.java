@@ -29,14 +29,17 @@ public class AppConfigService {
         String reqKeyPrefix, Map<String, Integer> stageStallThresholdDays,
         int maxExternalGrantDays, int staleKeyAgeDays, int keyRotationOverlapDays,
         int auditRetentionDays, boolean suspended, String suspendedReason,
-        String embeddingModel, int aiCallsPerRunLimit, BigDecimal noisyDetectorDismissalCeiling) {}
+        String embeddingModel, int aiCallsPerRunLimit, BigDecimal noisyDetectorDismissalCeiling,
+        /** VYB-0937: the kinds of personal data redaction is switched OFF for before text goes to a model provider; empty means all on. */
+        java.util.List<String> aiRedactionDisabled) {}
 
     public AppConfigView current() {
         return jdbc.queryForObject("""
             SELECT req_key_prefix, stage_stall_threshold_days::text AS thresholds,
                    max_external_grant_days, stale_key_age_days, key_rotation_overlap_days,
                    audit_retention_days, suspended, suspended_reason,
-                   embedding_model, ai_calls_per_run_limit, noisy_detector_dismissal_ceiling
+                   embedding_model, ai_calls_per_run_limit, noisy_detector_dismissal_ceiling,
+                   ai_redaction_disabled
             FROM app_config WHERE id = 1
             """,
             (rs, n) -> new AppConfigView(
@@ -45,7 +48,13 @@ public class AppConfigService {
                 rs.getInt("key_rotation_overlap_days"), rs.getInt("audit_retention_days"),
                 rs.getBoolean("suspended"), rs.getString("suspended_reason"),
                 rs.getString("embedding_model"), rs.getInt("ai_calls_per_run_limit"),
-                rs.getBigDecimal("noisy_detector_dismissal_ceiling")));
+                rs.getBigDecimal("noisy_detector_dismissal_ceiling"),
+                redactionDisabled(rs.getArray("ai_redaction_disabled"))));
+    }
+
+    private static java.util.List<String> redactionDisabled(java.sql.Array array) throws java.sql.SQLException {
+        if (array == null) return java.util.List.of();
+        return java.util.Arrays.stream((String[]) array.getArray()).sorted().toList();
     }
 
     @SuppressWarnings("unchecked")

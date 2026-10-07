@@ -1,5 +1,6 @@
 package com.vyoog.api.web;
 
+import com.vyoog.ai.RedactionSettings;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.BootstrapRefusedException;
 import com.vyoog.identity.TenantBootstrapService;
@@ -30,6 +31,7 @@ public class SettingsController {
     private final TenantBootstrapService bootstrap;
     private final com.vyoog.platform.reset.TenantHardResetService hardReset;
     private final AuditRetentionService retention;
+    private final RedactionSettings redaction;
 
     /** VYB-0901: one-time token from the environment. Empty (the default) means bootstrap is switched off. */
     @org.springframework.beans.factory.annotation.Value("${vyoog.bootstrap.token:}")
@@ -38,7 +40,7 @@ public class SettingsController {
     public SettingsController(AppConfigService config, TaskService tasks, TenantExportService export,
                                UserProvisioningService provisioning, AuditService audit, PrincipalGuard guard,
                                TenantBootstrapService bootstrap, com.vyoog.platform.reset.TenantHardResetService hardReset,
-                               AuditRetentionService retention) {
+                               AuditRetentionService retention, RedactionSettings redaction) {
         this.config = config;
         this.tasks = tasks;
         this.export = export;
@@ -48,6 +50,7 @@ public class SettingsController {
         this.bootstrap = bootstrap;
         this.hardReset = hardReset;
         this.retention = retention;
+        this.redaction = redaction;
     }
 
     public record BootstrapStatus(boolean bootstrapped) {}
@@ -201,6 +204,18 @@ public class SettingsController {
         config.setAiCallsPerRunLimit(body.days());
         audit.record(currentUserId(jwt), "settings.ai-calls-per-run-limit-changed", "APP_CONFIG", null,
             null, Map.of("limit", body.days()));
+    }
+
+    public record SetRedaction(List<String> disabled) {}
+
+    /**
+     * VYB-0937: which kinds of personal data an administrator switches redaction off for. The whole list is replaced; an
+     * empty list switches everything back on. Secrets are always removed and are refused here (400).
+     */
+    @PutMapping("/ai-redaction")
+    public SetRedaction setAiRedaction(@RequestBody SetRedaction body, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireAdministrator(jwt);
+        return new SetRedaction(redaction.setDisabled(body.disabled(), currentUserId(jwt)).stream().map(Enum::name).sorted().toList());
     }
 
     public record SetModel(String model) {}

@@ -340,7 +340,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 | VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 | VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | DONE on dev (34 domain unit, 3 integration tests and 1 architecture rule; backend only; commit only, no PR yet) | S8 |
-| VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | TODO | S8 |
+| VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | DONE on dev (31 domain unit, 4 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
 | VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
 | VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |
@@ -5334,6 +5334,32 @@ Phase 6 Sprint 8 (Sprint 7 was blocked, see Session 87, and skipped at the produ
 - Retries and the breaker sit under callers that still hold database transactions open across the call (that is VYB-0940), so a 25 to 300 second wait can now happen inside one.
 - Token counts are carried on the reply and not stored (VYB-0939). No redaction yet (VYB-0937).
 - A timeout after the provider has already started work can cost a second charged call on retry; not avoidable without provider idempotency.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 89 — VYB-0937 (F27): redaction before text goes to a model provider
+
+Phase 6 Sprint 8. Branch `dev`. **42 new tests**: `RedactorTest` 18 and `RedactingModelGatewayTest` 13 (domain unit), 4 added to `ModelGatewayWiringIT` (the real application, a stub provider, real tokens), `aiRedaction.test.ts` 7. The finding text F27 is not in the repository; scope is the register row. Description: `docs/08-architecture/security/ai-redaction.md`, decision D30. Something to see: **Administration, Settings, "Before text goes to the AI provider"**.
+
+**Decisions with the product owner this session.** (1) **Personal data = patterns plus our own users**: email, phone, card, IP, and the display names in this system's user table, matched exactly; no name-recognition model. (2) **Opt-out: an administrator setting, secrets always removed**: each personal-data kind can be switched off in Administration, every change audited; secrets cannot. (3) **Embeddings are redacted too.**
+
+**Backend.** Migration `V048` (`app_config.ai_redaction_disabled`, with a CHECK that refuses `SECRET`). `Redactor` (pure: secrets removed and never restored; personal data replaced by `[EMAIL_1]`-style tokens, the same value getting the same token), `RedactingModelGateway` (`@Primary`, in front of the provider gateway: cleans the user text of a chat call and the text of an embedding, puts the originals back in the reply, escaping them when the reply is JSON, and **fails closed**: if the text cannot be checked nothing is sent), `RedactionSettings` (read on every call; the audited change `settings.ai-redaction-changed`), `KnownPeople` (names held 60 s). `PUT /api/v1/settings/ai-redaction` (administrator only, 400 for `SECRET` or an unknown kind); `GET /api/v1/settings` carries `aiRedactionDisabled`. Metric `ai.redactions{class,endpoint}` and one log line, counts only, never a value. OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Frontend.** `features/admin/AiRedactionCard.tsx` and `aiRedaction.ts` in the Settings tab: each kind with a tick and the word On or Off, secrets shown "Always on" with no switch, a saved-at-once change, the server's refusal shown in words, and a line saying what is off and that secrets are still removed.
+
+**Evidence.** Sending embeddings unredacted and making the "cannot check" path send the original text failed 3 tests, then restored. The integration test found a real wiring defect on its first run (`KnownPeople` had two constructors and Spring could not choose), fixed. The redactor ran about 1.3 MB of ordinary text and about 0.7 MB of hostile input (very long dotted strings, runs of digits, repeated `password=`) inside the test's 10 s bound; I did not record the actual time. The card was rendered in Chromium against the dev server with mocked responses: the secret row was ticked and disabled, flipping Email and Names sent the right bodies, the summary named what was off, and a refusal showed its reason.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Only the user text and embedding text are cleaned; the system prompt is the caller's fixed instruction. (2) Phone numbers are found only as `+`international, `(415) 555-2671`, `415-555-2671` and `98765 43210`; a bare run of digits is not one. (3) Names shorter than three characters are not matched. (4) A credential assignment is caught only when the value is 6 or more characters with a digit or symbol, so prose like "the password must be rotated" is untouched. (5) Each spelling of a name is its own token and returns as written. (6) The same redaction applies to every kind of call; there is no per-caller exemption. (7) No audit event per call; counts only.
+
+**Not done / to know**
+- **A name of anyone not in the user table is not found** (a customer, a person named in a pasted document). That is the stated limit of choice (1); it needs a name-recognition model.
+- A version number written like "1.2.3.4" is taken as an IP address, and IPv6, bank account and national ID numbers are not looked for.
+- A person added in the last minute is not matched yet (60 s hold).
+- A credential written as a bare random string, with no assignment, prefix or URL around it, is not recognised.
+- Redaction changes what the model sees (a token where a name was), so suggestions can read slightly differently; an administrator can switch a kind off.
+- Text with a name now embeds the placeholder, so similarity scores between requirements may shift; I did not measure by how much.
+- The old `*VerificationRunner` classes were not run.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

@@ -20,6 +20,11 @@ public record ChatRequest(String system, String user, int maxTokens, double temp
         if (kind == null) throw new IllegalArgumentException("kind is required");
     }
 
+    /** The same request with other user text (what remains after redaction). */
+    public ChatRequest withUser(String newUser) {
+        return new ChatRequest(system, newUser, maxTokens, temperature, jsonObject, kind, timeout);
+    }
+
     /** A person is waiting: a plain-text reply (the caller parses it), a 12 second attempt. */
     public static ChatRequest interactive(String system, String user, int maxTokens, double temperature) {
         return new ChatRequest(system, user, maxTokens, temperature, false, CallKind.INTERACTIVE, Duration.ofSeconds(12));

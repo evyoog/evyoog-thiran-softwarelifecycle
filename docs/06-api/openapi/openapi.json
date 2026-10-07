@@ -124,6 +124,12 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "aiRedactionDisabled" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "auditRetentionDays" : {
             "format" : "int32",
             "type" : "integer"
@@ -4692,6 +4698,17 @@
         "properties" : {
           "prefix" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SetRedaction" : {
+        "properties" : {
+          "disabled" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -12392,6 +12409,34 @@
         },
         "responses" : {
           "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "settings-controller" ]
+      }
+    },
+    "/api/v1/settings/ai-redaction" : {
+      "put" : {
+        "operationId" : "setAiRedaction",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetRedaction"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SetRedaction"
+                }
+              }
+            },
             "description" : "OK"
           }
         },

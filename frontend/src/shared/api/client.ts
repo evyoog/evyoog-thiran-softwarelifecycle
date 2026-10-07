@@ -1666,6 +1666,8 @@ export interface AppConfigView {
   embeddingModel: string
   aiCallsPerRunLimit: number
   noisyDetectorDismissalCeiling: number
+  /** VYB-0937: the kinds of personal data redaction is switched OFF for before text goes to a model provider; empty means all on. */
+  aiRedactionDisabled: string[]
 }
 
 // ── Global search (VYB-0766) ──────────────────────────────────────────────────────
@@ -2410,6 +2412,8 @@ export const api = {
   setAuditRetentionDays: (days: number) => request<void>('/settings/audit-retention-days', { method: 'PUT', body: JSON.stringify({ days }) }),
   setNoisyDetectorDismissalCeiling: (ceiling: number) =>
     request<void>('/settings/noisy-detector-dismissal-ceiling', { method: 'PUT', body: JSON.stringify({ ceiling }) }),
+  setAiRedaction: (disabled: string[]) =>
+    request<{ disabled: string[] }>('/settings/ai-redaction', { method: 'PUT', body: JSON.stringify({ disabled }) }),
   setAiCallsPerRunLimit: (days: number) => request<void>('/settings/ai-calls-per-run-limit', { method: 'PUT', body: JSON.stringify({ days }) }),
   setEmbeddingModel: (model: string) => request<void>('/settings/embedding-model', { method: 'PUT', body: JSON.stringify({ model }) }),
   suspend: (reason: string) => request<void>('/settings/suspend', { method: 'POST', body: JSON.stringify({ reason }) }),
