@@ -191,7 +191,9 @@ and the graph. Postgres wins on every axis that matters here.
 **Quality** — `review`, `review_item`, `review_participant`, `review_comment`,
 `test_case`, `test_run`, `test_result`, `verification`, `defect`; manual test management
 (VYB-0923, see [`test-management.md`](test-management.md)): `test_plan`, `test_suite`,
-`test_suite_case`, `test_step`, `test_run_case`, `test_run_step`
+`test_suite_case`, `test_step`, `test_run_case`, `test_run_step`; defect lifecycle (VYB-0931, see
+[`../../04-workflows/defect-lifecycle.md`](../../04-workflows/defect-lifecycle.md)): `defect_transition`, `defect_comment`,
+and `defect.test_case_id`, `test_run_id`, `release_id`
 
 **Delivery** — `brief`, `brief_requirement`, `brief_target`
 

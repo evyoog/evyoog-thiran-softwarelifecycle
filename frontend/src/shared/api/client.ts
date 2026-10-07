@@ -984,6 +984,51 @@ export interface Defect {
   testerId?: string
   state: DefectState
   raisedAt: string
+  /** VYB-0931: names, so a screen shows people and requirements rather than ids. */
+  requirementKey?: string
+  developerName?: string
+  testerName?: string
+  releaseId?: string
+  releaseName?: string
+}
+
+/** VYB-0931: a test case, run or release a defect is linked to. */
+export interface DefectRef {
+  id: string
+  label?: string
+}
+
+export interface DefectTransition {
+  id: string
+  from: DefectState
+  to: DefectState
+  reason?: string
+  changedBy?: string
+  changedByName?: string
+  changedAt: string
+}
+
+/** VYB-0931: a defect with its links and its history of moves. */
+export interface DefectDetail {
+  defect: Defect
+  requirementTitle?: string
+  testCase?: DefectRef
+  testRun?: DefectRef
+  release?: DefectRef
+  /** Set when it was raised from a failed step or case of a manual run. */
+  raisedFromRunId?: string
+  raisedFromRunStepId?: string
+  raisedFromRunCaseId?: string
+  raisedFromTestKey?: string
+  transitions: DefectTransition[]
+}
+
+export interface DefectComment {
+  id: string
+  authorId?: string
+  authorName?: string
+  body: string
+  createdAt: string
 }
 
 export interface RootCauseSplit {
@@ -2072,8 +2117,24 @@ export const api = {
     request<VerificationRecord[]>(`/evidence/requirements/${requirementId}/verifications`),
 
   // Defects
-  defects: (params: { state?: DefectState; page?: number; size?: number }) =>
+  defects: (params: { state?: DefectState | 'ALL'; severity?: DefectSeverity; releaseId?: string; assignedTo?: string; q?: string; page?: number; size?: number }) =>
     request<Page<Defect>>(`/defects${query(params)}`),
+  /** VYB-0931: one defect with its links and the history of its moves. */
+  defect: (id: string) => request<DefectDetail>(`/defects/${id}`),
+  defectComments: (id: string) => request<DefectComment[]>(`/defects/${id}/comments`),
+  /** The assigned developer, a Tester or an administrator. */
+  fixDefect: (id: string, note?: string) => request<Defect>(`/defects/${id}/fix`, { method: 'POST', body: JSON.stringify({ note }) }),
+  reopenDefect: (id: string, reason: string) => request<Defect>(`/defects/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  editDefect: (id: string, body: { title: string; severity: DefectSeverity; foundIn: FoundIn }) =>
+    request<Defect>(`/defects/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  /** Replaces who the defect is routed to; undefined means nobody. */
+  assignDefect: (id: string, developerId?: string, testerId?: string) =>
+    request<Defect>(`/defects/${id}/assignment`, { method: 'PUT', body: JSON.stringify({ developerId, testerId }) }),
+  /** Replaces the three links; undefined clears one. */
+  linkDefect: (id: string, testCaseId?: string, testRunId?: string, releaseId?: string) =>
+    request<DefectDetail>(`/defects/${id}/links`, { method: 'PUT', body: JSON.stringify({ testCaseId, testRunId, releaseId }) }),
+  commentOnDefect: (id: string, body: string) =>
+    request<DefectComment>(`/defects/${id}/comments`, { method: 'POST', body: JSON.stringify({ body }) }),
   raiseDefect: (body: { title: string; severity: DefectSeverity; requirementId?: string; foundIn: FoundIn }) =>
     request<Defect>('/defects', { method: 'POST', body: JSON.stringify(body) }),
   classifyDefect: (id: string, rootCause: RootCause) =>

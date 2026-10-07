@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus } from 'lucide-react'
 import {
-  api, type Defect, type DefectSeverity, type FoundIn, type RootCause,
+  api, type DefectSeverity, type FoundIn,
 } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
 import { Modal } from '@/shared/ui/Modal'
@@ -13,6 +13,11 @@ import { BulkTestCaseReviewPanel } from './quality/BulkTestCaseReviewPanel'
 import { TestCasesTab } from './quality/TestCasesTab'
 import { TestRunsTab } from './quality/TestRunsTab'
 import { PassRatesTab } from './quality/PassRatesTab'
+import { DefectDetailPanel } from './quality/DefectDetailPanel'
+import {
+  FILTERS, FILTER_LABEL, STATE_CLASS, STATE_GLYPH, STATE_LABEL, assigneeText, emptyText, type StateFilter,
+} from './quality/defects'
+import { useMe } from '@/shared/useMe'
 
 type Tab = 'verification' | 'dependencies' | 'defects' | 'test-cases' | 'test-runs' | 'pass-rate'
 
@@ -23,10 +28,6 @@ const TAB_LABEL: Record<Tab, string> = {
 
 const SEVERITIES: DefectSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 const FOUND_IN: FoundIn[] = ['DEV', 'QA', 'UAT', 'PRODUCTION']
-const ROOT_CAUSES: RootCause[] = [
-  'REQUIREMENT_AMBIGUITY', 'REQUIREMENT_OMISSION', 'CODING_ERROR', 'ENVIRONMENT', 'DATA', 'UNKNOWN',
-]
-
 /**
  * VYB-0826: review rounds removed from this screen at the product owner's request —
  * the backend review-round endpoints/service are untouched, only this screen's UI for
@@ -159,25 +160,36 @@ function VerificationTab() {
 /** VYB-0364/0365: root cause is visible in the list, and the requirement-vs-coding split is a real figure. */
 function DefectsTab() {
   const qc = useQueryClient()
+  const { data: me } = useMe()
   const [showRaise, setShowRaise] = useState(false)
-  const { data, isLoading } = useQuery({ queryKey: ['defects'], queryFn: () => api.defects({ size: 100 }) })
+  const [state, setState] = useState<StateFilter>('OPEN')
+  const [severity, setSeverity] = useState<DefectSeverity | ''>('')
+  const [text, setText] = useState('')
+  const [q, setQ] = useState('')
+  const [page, setPage] = useState(0)
+  const [selected, setSelected] = useState<string | null>(null)
+
+  // wait for a pause in typing before asking the server
+  useEffect(() => {
+    const t = setTimeout(() => { setQ(text.trim()); setPage(0) }, 250)
+    return () => clearTimeout(t)
+  }, [text])
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['defects', state, severity, q, page],
+    queryFn: () => api.defects({ state, severity: severity || undefined, q: q || undefined, page, size: 25 }),
+  })
   const { data: split } = useQuery({ queryKey: ['defect-split'], queryFn: () => api.defectRootCauseSplit() })
 
   const invalidate = () => { void qc.invalidateQueries({ queryKey: ['defects'] }); void qc.invalidateQueries({ queryKey: ['defect-split'] }) }
-  const classify = useMutation({
-    mutationFn: ({ id, rootCause }: { id: string; rootCause: RootCause }) => api.classifyDefect(id, rootCause),
-    onSuccess: invalidate,
-  })
-  const close = useMutation({ mutationFn: (id: string) => api.closeDefect(id), onSuccess: invalidate })
-  // VYB-0767: key/title/severity/requirement/routed-to columns are grid-navigable;
-  // the classify select and close button (2 remaining columns) stay in the normal
-  // tab order — wrapping already-interactive controls in the same roving tabindex
-  // would fight the browser's own focus handling for them, not help it.
-  const defectGrid = useRovingGrid(data?.content.length ?? 0, 5)
+  // VYB-0767: the list is grid-navigable (arrow keys), and Enter opens the defect in the panel beside it.
+  const rows = data?.content ?? []
+  const defectGrid = useRovingGrid(rows.length, 5, (row) => { if (rows[row]) setSelected(rows[row].id) })
 
   const requirementCaused = split?.filter((s) => s.rootCause === 'REQUIREMENT_AMBIGUITY' || s.rootCause === 'REQUIREMENT_OMISSION')
     .reduce((sum, s) => sum + s.count, 0) ?? 0
   const totalClassified = split?.reduce((sum, s) => sum + s.count, 0) ?? 0
+  const empty = emptyText(state, q !== '' || severity !== '')
 
   return (
     <>
@@ -189,65 +201,68 @@ function DefectsTab() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div role="group" aria-label="Defect state" style={{ display: 'flex', gap: 6 }}>
+            {FILTERS.map((f) => (
+              <button key={f} className={`btn${f === state ? ' pri' : ''}`} aria-pressed={f === state}
+                onClick={() => { setState(f); setPage(0); setSelected(null) }}>{FILTER_LABEL[f]}</button>
+            ))}
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="label" htmlFor="df-q">Search</label>
+            <input id="df-q" className="input" placeholder="Key or title" value={text} onChange={(e) => setText(e.target.value)} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="label" htmlFor="df-sev">Severity</label>
+            <select id="df-sev" className="select" value={severity} onChange={(e) => { setSeverity(e.target.value as DefectSeverity | ''); setPage(0) }}>
+              <option value="">Any</option>
+              {SEVERITIES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
         <button className="btn pri" onClick={() => setShowRaise(true)}><Plus /> Raise a defect</button>
       </div>
 
-      {isLoading && <p className="eyebrow">Loading…</p>}
-      {data && data.content.length === 0 && <Empty title="No open defects" desc="Raise one above." />}
-
-      <div className="tbl-wrap">
-        <table className="tbl" role="grid" aria-rowcount={data?.content.length ?? 0} aria-colcount={5} onKeyDown={defectGrid.onKeyDown}>
-          <thead><tr role="row"><th>Key</th><th>Title</th><th>Severity</th><th>Requirement</th><th>Routed to</th><th>Root cause</th><th>State</th><th /></tr></thead>
-          <tbody>
-            {data?.content.map((d, rowIdx) => (
-              <DefectRow key={d.id} d={d} rowIdx={rowIdx} cellProps={defectGrid.cellProps} onClassify={classify.mutate} onClose={close.mutate} />
-            ))}
-          </tbody>
-        </table>
+      <div style={{ display: 'grid', gridTemplateColumns: selected ? 'minmax(0, 1.1fr) minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
+        <div>
+          {isLoading && <p className="eyebrow">Loading…</p>}
+          {data && rows.length === 0 && <Empty title={empty.title} desc={empty.desc} />}
+          {rows.length > 0 && (
+            <div className="tbl-wrap">
+              <table className="tbl" role="grid" aria-rowcount={rows.length} aria-colcount={5} onKeyDown={defectGrid.onKeyDown}>
+                <thead><tr role="row"><th>Key</th><th>Title</th><th>Severity</th><th>State</th><th>Routed to</th></tr></thead>
+                <tbody>
+                  {rows.map((d, rowIdx) => (
+                    <tr key={d.id} role="row" aria-selected={d.id === selected} onClick={() => setSelected(d.id)}
+                      style={{ cursor: 'pointer', outline: d.id === selected ? '2px solid var(--brand)' : undefined, outlineOffset: -2 }}>
+                      <td className="mono" {...defectGrid.cellProps(rowIdx, 0)}>{d.key}</td>
+                      <td {...defectGrid.cellProps(rowIdx, 1)}>{d.title}{d.requirementKey && <span className="hint muted"> · {d.requirementKey}</span>}</td>
+                      <td {...defectGrid.cellProps(rowIdx, 2)}>{d.severity}</td>
+                      <td {...defectGrid.cellProps(rowIdx, 3)}>
+                        <span className={`badge ${STATE_CLASS[d.state]}`}><span aria-hidden="true">{STATE_GLYPH[d.state]}</span> {STATE_LABEL[d.state]}</span>
+                      </td>
+                      {/* VYB-0322 AC2: the routing itself, not only a notification that fired once. */}
+                      <td className="muted" {...defectGrid.cellProps(rowIdx, 4, { fontSize: 11 })}>{assigneeText(d)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {data && data.totalPages > 1 && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+              <button className="btn" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
+              <span className="hint muted">Page {page + 1} of {data.totalPages}</span>
+              <button className="btn" disabled={page + 1 >= data.totalPages} onClick={() => setPage(page + 1)}>Next</button>
+            </div>
+          )}
+        </div>
+        {selected && <DefectDetailPanel defectId={selected} me={me} onClose={() => setSelected(null)} />}
       </div>
 
       {showRaise && <RaiseDefectModal onClose={() => setShowRaise(false)} onRaised={invalidate} />}
     </>
-  )
-}
-
-function DefectRow({
-  d, rowIdx, cellProps, onClassify, onClose,
-}: {
-  d: Defect
-  rowIdx: number
-  cellProps: (row: number, col: number, extraStyle?: React.CSSProperties) => Record<string, unknown>
-  onClassify: (v: { id: string; rootCause: RootCause }) => void
-  onClose: (id: string) => void
-}) {
-  return (
-    <tr role="row" style={{ cursor: 'default' }}>
-      <td className="mono" {...cellProps(rowIdx, 0)}>{d.key}</td>
-      <td {...cellProps(rowIdx, 1)}>{d.title}</td>
-      <td {...cellProps(rowIdx, 2)}>{d.severity}</td>
-      <td className="mono muted" {...cellProps(rowIdx, 3, { fontSize: 10 })}>{d.untraced ? 'untraced' : d.requirementId?.slice(0, 8)}</td>
-      {/* VYB-0322 AC2: the routing itself, not only a notification that fired once. */}
-      <td className="mono muted" {...cellProps(rowIdx, 4, { fontSize: 10 })}>
-        {d.developerId && <div>dev {d.developerId.slice(0, 8)}</div>}
-        {d.testerId && <div>tester {d.testerId.slice(0, 8)}</div>}
-        {!d.developerId && !d.testerId && '—'}
-      </td>
-      <td>
-        <select className="select" value={d.rootCause ?? ''} onChange={(e) => onClassify({ id: d.id, rootCause: e.target.value as RootCause })}>
-          <option value="" disabled>— classify —</option>
-          {ROOT_CAUSES.map((rc) => <option key={rc} value={rc}>{rc}</option>)}
-        </select>
-      </td>
-      <td>{d.state}</td>
-      <td>
-        {d.state !== 'CLOSED' && (
-          <button className="btn" disabled={!d.rootCause} title={!d.rootCause ? 'Classify the root cause first' : 'Close'} onClick={() => onClose(d.id)}>
-            Close
-          </button>
-        )}
-      </td>
-    </tr>
   )
 }
 

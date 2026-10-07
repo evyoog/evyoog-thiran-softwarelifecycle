@@ -334,7 +334,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S6 |
 | VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | DONE on dev (11 backend and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
 | VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | DONE on dev (12 domain, 15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
-| VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | TODO | S6 |
+| VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | DONE on dev (15 integration and 9 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
 | VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
 | VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | TODO | S7 |
 | VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | TODO | S7 |
@@ -5267,6 +5267,31 @@ Phase 6 Sprint 6. Branch `dev`. **34 new tests**: `ReleaseNotesExporterTest` 12 
 - **The Word file has not been opened in Word or LibreOffice.** LibreOffice here cannot load even a plain text file, so it could not be used. python-docx is a strict independent reader, but a real Word check is worth doing once.
 - The one-release-at-a-time rule is enforced in code (`commit`, and now `commitAll`), not by a database constraint, so two simultaneous commits of the same requirement to different releases could both succeed. Not new, not fixed here.
 - No PDF export, no export of the committed list, no per-capability export.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
+
+---
+
+## Session 86 — VYB-0931 (F15): defect lifecycle
+
+Phase 6 Sprint 6. Branch `dev`. **24 new tests**: `DefectLifecycleIT` 15 (`VYB0931_AC1` to `AC9`, real PostgreSQL, service calls and HTTP with real tokens), `defects.test.ts` 9 (frontend logic). The finding text F15 is not in the repository; scope is the register row. Description: `docs/04-workflows/defect-lifecycle.md`. Something to see: **Quality, Defects** (state filter, search, severity, and the detail panel).
+
+**Decisions with the product owner this session.** (1) **Who: the developer fixes, the Tester decides.** Mark fixed is the defect's assigned developer, a Tester or an administrator; close, reopen, edit, assign and link are Tester (Verify); comment is any signed-in person. No new role or matrix column. (2) **Moves: fix, close and reopen from FIXED or CLOSED.** OPEN to FIXED; FIXED to CLOSED needs a root cause; FIXED or CLOSED back to OPEN is a reopen and needs a written reason; closing straight from OPEN is still allowed; every move is recorded and audited. (3) **Links: one of each, set explicitly:** an optional test case, test run and release. (4) **Scope: backend and the Defects tab.**
+
+**Backend.** Migration `V047__defect_lifecycle.sql` (three nullable links on `defect`, `defect_transition`, append-only `defect_comment` with a trigger, a state index). `DefectLifecycleService` (mark fixed, reopen, edit, assign, link, comment, detail, filtered list); `DefectService.close` now records its move. `DefectController`: `GET /defects` takes `state` (default OPEN, or FIXED, CLOSED, ALL), `severity`, `releaseId`, `assignedTo`, `q`; new `GET /defects/{id}`, `POST .../fix`, `POST .../reopen`, `PUT /defects/{id}`, `PUT .../assignment`, `PUT .../links`, `GET` and `POST .../comments`. Four write endpoints registered in `AccessPolicyTest` (403 proven); fix is guarded in the handler. OpenAPI and `schema.d.ts` regenerated (additive: the defect view gained names and the release).
+
+**Frontend.** `features/quality/DefectDetailPanel.tsx` (state, who it is routed to, links, History, Comments; buttons shown only to those who may, and the server's refusal shown in words), `features/quality/defects.ts` (logic), the rewritten Defects tab in `Quality.tsx` (state filter, search, severity, arrow-key grid, Enter opens the panel, pagination), and `.badge.df-*` in `tokens.css` (label, glyph and colour; never amber).
+
+**Evidence.** Removing the "reopen needs a reason" rule and the "only the assigned developer or a Tester may fix" guard together failed 2 tests (the reopen test, and the HTTP matrix), then restored. The tab was rendered in Chromium against the dev server with mocked API responses, dark as a Tester and light as a Viewer: the filters sent `state=FIXED` and `ALL` and the row counts followed; a Tester saw Mark fixed, Close, Edit, Assign, Links and Comment, a Viewer only Comment; reopening with no reason was refused in words before anything was sent; a comment was posted with the right body.
+
+**A defect found by the tests, fixed.** The first IT run found three of my own mistakes: broken SQL spacing in the list query, reopen validating the state before the reason (409 instead of 400), and a test counting notices where the digest window coalesces them (the test now counts the outbox events, one per call).
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A closed defect cannot be edited; reopen it first. (2) Comments are 1 to 4000 characters and are never edited or deleted. (3) Only a person newly assigned is told, not one whose assignment did not change. (4) Deleting the linked test case, run or release clears the link; it never deletes the defect. (5) `state=ALL` is new; the default stays OPEN as before.
+
+**Not done / to know**
+- **Behaviour change:** none that breaks a caller. `GET /defects` keeps its OPEN default and its 400 for an unknown state; its response only gained fields (requirement key, developer and tester names, release).
+- The test, run and release pickers in the panel are plain selects over the existing lists; no search over very large lists beyond the test-case search.
+- Raising a defect from a step still sets the step link only; the test case and run links on that defect are shown from the step and are not copied into the three new columns.
+- The Quality screen's subtitle still says "A requirement is Verified only when a test passed against its current revision", which predates D16; not touched here.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
 
 ---

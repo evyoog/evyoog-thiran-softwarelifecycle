@@ -79,6 +79,22 @@ public class Defect {
     public void classify(RootCause rootCause) { this.rootCause = rootCause; }
     public void markFixed() { this.state = DefectState.FIXED; }
 
+    /** VYB-0931: back to OPEN from FIXED or CLOSED; the root cause, if one was set, stays. */
+    public void reopen() { this.state = DefectState.OPEN; }
+
+    /** VYB-0931: title, severity and where it was found: the descriptive fields. Never state, root cause or routing. */
+    public void edit(String title, DefectSeverity severity, FoundIn foundIn) {
+        this.title = title;
+        this.severity = severity;
+        this.foundIn = foundIn;
+    }
+
+    /** VYB-0931: who it is routed to; null means nobody. */
+    public void assign(UUID developerId, UUID testerId) {
+        this.developerId = developerId;
+        this.testerId = testerId;
+    }
+
     public UUID getId() { return id; }
     public String getKey() { return key; }
     public String getTitle() { return title; }

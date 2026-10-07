@@ -548,6 +548,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/defects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail"];
+        put: operations["edit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/defects/{id}/assignment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["assign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/defects/{id}/classify": {
         parameters: {
             query?: never;
@@ -574,6 +606,70 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["close_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/defects/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["comments_1"];
+        put?: never;
+        post: operations["addComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/defects/{id}/fix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markFixed"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/defects/{id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["link_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/defects/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reopen_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1409,7 +1505,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["edit"];
+        patch: operations["edit_1"];
         trace?: never;
     };
     "/api/v1/import/candidates/{id}/confirm-acceptance-criteria": {
@@ -4189,6 +4285,12 @@ export interface components {
         ArchiveResult: {
             archived?: string[];
         };
+        Assignment: {
+            /** Format: uuid */
+            developerId?: string;
+            /** Format: uuid */
+            testerId?: string;
+        };
         AttachmentView: {
             /** Format: int32 */
             currentVersion?: number;
@@ -4650,6 +4752,18 @@ export interface components {
         DecideRequest: {
             approve?: boolean;
         };
+        DefectDetailView: {
+            defect?: components["schemas"]["DefectView"];
+            raisedFromRunCaseId?: string;
+            raisedFromRunId?: string;
+            raisedFromRunStepId?: string;
+            raisedFromTestKey?: string;
+            release?: components["schemas"]["RefView"];
+            requirementTitle?: string;
+            testCase?: components["schemas"]["RefView"];
+            testRun?: components["schemas"]["RefView"];
+            transitions?: components["schemas"]["TransitionView"][];
+        };
         DefectDraftView: {
             action?: string;
             actualResult?: string;
@@ -4670,17 +4784,30 @@ export interface components {
             testTitle?: string;
             title?: string;
         };
+        DefectLinks: {
+            /** Format: uuid */
+            releaseId?: string;
+            /** Format: uuid */
+            testCaseId?: string;
+            /** Format: uuid */
+            testRunId?: string;
+        };
         DefectView: {
             developerId?: string;
+            developerName?: string;
             foundIn?: string;
             id?: string;
             key?: string;
             raisedAt?: string;
+            releaseId?: string;
+            releaseName?: string;
             requirementId?: string;
+            requirementKey?: string;
             rootCause?: string;
             severity?: string;
             state?: string;
             testerId?: string;
+            testerName?: string;
             title?: string;
             untraced?: boolean;
         };
@@ -4754,6 +4881,11 @@ export interface components {
             id?: string;
             label?: string;
             toNode?: string;
+        };
+        EditDefect: {
+            foundIn: string;
+            severity: string;
+            title: string;
         };
         EditText: {
             statement: string;
@@ -4983,6 +5115,9 @@ export interface components {
             tables?: components["schemas"]["TableDump"][];
             /** Format: int64 */
             totalRows?: number;
+        };
+        MarkFixed: {
+            note?: string;
         };
         MatchView: {
             key?: string;
@@ -5406,6 +5541,10 @@ export interface components {
         RecordUsage: {
             definition?: string;
         };
+        RefView: {
+            id?: string;
+            label?: string;
+        };
         RelatedRequirementView: {
             direction?: string;
             key?: string;
@@ -5436,6 +5575,9 @@ export interface components {
             name?: string;
             state?: string;
             targetDate?: string;
+        };
+        Reopen: {
+            reason: string;
         };
         Reorder: {
             orderedRequirementIds?: string[];
@@ -5999,15 +6141,12 @@ export interface components {
             target: string;
         };
         TransitionView: {
-            authTime?: string;
             changedAt?: string;
             changedBy?: string;
-            failedGates?: components["schemas"]["GateResultView"][];
+            changedByName?: string;
             from?: string;
             id?: string;
-            overridden?: boolean;
             reason?: string;
-            signatureAcr?: string;
             to?: string;
         };
         TransitionedView: {
@@ -6953,7 +7092,11 @@ export interface operations {
     list_13: {
         parameters: {
             query?: {
-                state?: "OPEN" | "FIXED" | "CLOSED";
+                state?: string;
+                severity?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+                releaseId?: string;
+                assignedTo?: string;
+                q?: string;
                 page?: number;
                 size?: number;
             };
@@ -7020,6 +7163,80 @@ export interface operations {
             };
         };
     };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectDetailView"];
+                };
+            };
+        };
+    };
+    edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditDefect"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectView"];
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Assignment"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectView"];
+                };
+            };
+        };
+    };
     classify: {
         parameters: {
             query?: never;
@@ -7056,6 +7273,132 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectView"];
+                };
+            };
+        };
+    };
+    comments_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommentView"][];
+                };
+            };
+        };
+    };
+    addComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddComment"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommentView"];
+                };
+            };
+        };
+    };
+    markFixed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkFixed"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectView"];
+                };
+            };
+        };
+    };
+    link_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefectLinks"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectDetailView"];
+                };
+            };
+        };
+    };
+    reopen_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reopen"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -8423,7 +8766,7 @@ export interface operations {
             };
         };
     };
-    edit: {
+    edit_1: {
         parameters: {
             query?: never;
             header?: never;

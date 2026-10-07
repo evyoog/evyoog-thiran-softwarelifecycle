@@ -219,6 +219,19 @@
         },
         "type" : "object"
       },
+      "Assignment" : {
+        "properties" : {
+          "developerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "testerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AttachmentView" : {
         "properties" : {
           "currentVersion" : {
@@ -1545,6 +1558,44 @@
         },
         "type" : "object"
       },
+      "DefectDetailView" : {
+        "properties" : {
+          "defect" : {
+            "$ref" : "#/components/schemas/DefectView"
+          },
+          "raisedFromRunCaseId" : {
+            "type" : "string"
+          },
+          "raisedFromRunId" : {
+            "type" : "string"
+          },
+          "raisedFromRunStepId" : {
+            "type" : "string"
+          },
+          "raisedFromTestKey" : {
+            "type" : "string"
+          },
+          "release" : {
+            "$ref" : "#/components/schemas/RefView"
+          },
+          "requirementTitle" : {
+            "type" : "string"
+          },
+          "testCase" : {
+            "$ref" : "#/components/schemas/RefView"
+          },
+          "testRun" : {
+            "$ref" : "#/components/schemas/RefView"
+          },
+          "transitions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TransitionView"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "DefectDraftView" : {
         "properties" : {
           "action" : {
@@ -1605,9 +1656,29 @@
         },
         "type" : "object"
       },
+      "DefectLinks" : {
+        "properties" : {
+          "releaseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "testCaseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "testRunId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "DefectView" : {
         "properties" : {
           "developerId" : {
+            "type" : "string"
+          },
+          "developerName" : {
             "type" : "string"
           },
           "foundIn" : {
@@ -1622,7 +1693,16 @@
           "raisedAt" : {
             "type" : "string"
           },
+          "releaseId" : {
+            "type" : "string"
+          },
+          "releaseName" : {
+            "type" : "string"
+          },
           "requirementId" : {
+            "type" : "string"
+          },
+          "requirementKey" : {
             "type" : "string"
           },
           "rootCause" : {
@@ -1635,6 +1715,9 @@
             "type" : "string"
           },
           "testerId" : {
+            "type" : "string"
+          },
+          "testerName" : {
             "type" : "string"
           },
           "title" : {
@@ -1867,6 +1950,21 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "EditDefect" : {
+        "properties" : {
+          "foundIn" : {
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "foundIn", "severity", "title" ],
         "type" : "object"
       },
       "EditText" : {
@@ -2509,6 +2607,14 @@
           "totalRows" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "MarkFixed" : {
+        "properties" : {
+          "note" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -3675,6 +3781,17 @@
         },
         "type" : "object"
       },
+      "RefView" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "RelatedRequirementView" : {
         "properties" : {
           "direction" : {
@@ -3764,6 +3881,15 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "Reopen" : {
+        "properties" : {
+          "reason" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ],
         "type" : "object"
       },
       "Reorder" : {
@@ -5329,20 +5455,14 @@
       },
       "TransitionView" : {
         "properties" : {
-          "authTime" : {
-            "type" : "string"
-          },
           "changedAt" : {
             "type" : "string"
           },
           "changedBy" : {
             "type" : "string"
           },
-          "failedGates" : {
-            "items" : {
-              "$ref" : "#/components/schemas/GateResultView"
-            },
-            "type" : "array"
+          "changedByName" : {
+            "type" : "string"
           },
           "from" : {
             "type" : "string"
@@ -5350,13 +5470,7 @@
           "id" : {
             "type" : "string"
           },
-          "overridden" : {
-            "type" : "boolean"
-          },
           "reason" : {
-            "type" : "string"
-          },
-          "signatureAcr" : {
             "type" : "string"
           },
           "to" : {
@@ -6723,7 +6837,37 @@
           "required" : false,
           "schema" : {
             "default" : "OPEN",
-            "enum" : [ "OPEN", "FIXED", "CLOSED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "severity",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CRITICAL", "HIGH", "MEDIUM", "LOW" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "releaseId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "assignedTo",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
             "type" : "string"
           }
         }, {
@@ -6816,6 +6960,105 @@
         "tags" : [ "defect-controller" ]
       }
     },
+    "/api/v1/defects/{id}" : {
+      "get" : {
+        "operationId" : "detail",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      },
+      "put" : {
+        "operationId" : "edit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditDefect"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
+    "/api/v1/defects/{id}/assignment" : {
+      "put" : {
+        "operationId" : "assign",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Assignment"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
     "/api/v1/defects/{id}/classify" : {
       "post" : {
         "operationId" : "classify",
@@ -6865,6 +7108,181 @@
             "type" : "string"
           }
         } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
+    "/api/v1/defects/{id}/comments" : {
+      "get" : {
+        "operationId" : "comments_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CommentView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      },
+      "post" : {
+        "operationId" : "addComment",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddComment"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CommentView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
+    "/api/v1/defects/{id}/fix" : {
+      "post" : {
+        "operationId" : "markFixed",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MarkFixed"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
+    "/api/v1/defects/{id}/links" : {
+      "put" : {
+        "operationId" : "link_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DefectLinks"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
+    "/api/v1/defects/{id}/reopen" : {
+      "post" : {
+        "operationId" : "reopen_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Reopen"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {
@@ -8596,7 +9014,7 @@
     },
     "/api/v1/import/candidates/{id}" : {
       "patch" : {
-        "operationId" : "edit",
+        "operationId" : "edit_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",

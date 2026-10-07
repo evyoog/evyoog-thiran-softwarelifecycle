@@ -76,12 +76,17 @@ public class DefectService {
         return d;
     }
 
+    /** From OPEN or FIXED, with a root cause; a closed defect is reopened (with a reason), not closed again. */
     @Transactional
     public Defect close(UUID id, UUID actor) {
         Defect d = defects.findById(id).orElseThrow(NoSuchElementException::new);
+        DefectState from = d.getState();
+        if (from == DefectState.CLOSED) throw new IllegalStateException("This defect is already closed");
         d.close();
         defects.save(d);
-        audit.record(actor, "defect.closed", "DEFECT", d.getId(), null, Map.of());
+        jdbc.update("INSERT INTO defect_transition (defect_id, from_state, to_state, changed_by) VALUES (?, ?, ?, ?)",
+            d.getId(), from.name(), DefectState.CLOSED.name(), actor);
+        audit.record(actor, "defect.closed", "DEFECT", d.getId(), Map.of("state", from.name()), Map.of("state", "CLOSED"));
         return d;
     }
 

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 766 tests cover 56 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 790 tests cover 57 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -937,3 +937,30 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` theSelectionIsNeverMutatedInPlace (`frontend/src/features/releaseScope.test.ts`)
 - `AC9` commitIsBlockedWithAReasonInWordsUntilThereIsASelectionAndAReason (`frontend/src/features/releaseScope.test.ts`)
 - `AC9` theButtonAndTheResultReadInPlainWords (`frontend/src/features/releaseScope.test.ts`)
+
+## VYB-0931: Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15]
+
+- `AC1` aDeveloperMarksAnOpenDefectFixedAndTheMoveIsRecordedAndAuditedAndTheTesterIsToldToVerify (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC10` everyStateHasALabelAndAGlyphSoItIsNeverColourAlone (`frontend/src/features/quality/defects.test.ts`)
+- `AC11` aDeveloperWhoIsNotAssignedMayNotFixItAndAnyoneSignedInMayComment (`frontend/src/features/quality/defects.test.ts`)
+- `AC11` aTesterOrAdministratorDecides (`frontend/src/features/quality/defects.test.ts`)
+- `AC11` closingNeedsARootCauseAndSaysSoInWords (`frontend/src/features/quality/defects.test.ts`)
+- `AC11` theAssignedDeveloperMayMarkItFixedButNothingElse (`frontend/src/features/quality/defects.test.ts`)
+- `AC12` aCommentOrAReopenReasonIsCheckedBeforeItIsSent (`frontend/src/features/quality/defects.test.ts`)
+- `AC12` aDefectSaysWhoItIsRoutedToOrThatNobodyIs (`frontend/src/features/quality/defects.test.ts`)
+- `AC12` aMissingLinkIsSaidNotLeftBlankAndAnEmptyListSaysWhichStateIsEmpty (`frontend/src/features/quality/defects.test.ts`)
+- `AC12` aMoveReadsAsWhoDidWhatAndWhy (`frontend/src/features/quality/defects.test.ts`)
+- `AC2` aDefectCanStillBeClosedStraightFromOpen (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC2` aFixedDefectIsClosedOnlyWithARootCauseAndACLosedOneCannotBeClosedAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC3` aFixedOrClosedDefectIsReopenedWithAReasonThatIsRecordedAndTheDeveloperIsToldTheRootCauseStays (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC3` theDatabaseRefusesAReopenWithNoReasonAndAMoveToTheSameState (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC4` titleSeverityAndWhereItWasFoundCanBeEditedAndStateAndRootCauseAreUntouchedAndAClosedDefectIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC5` assignmentSetsDeveloperAndTesterNotifiesOnlyTheNewlyAssignedAndCanClearBoth (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC6` aDefectLinksToOneTestOneRunAndOneReleaseWhichAreReplacedAsAWholeAndClearedByNull (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC6` deletingALinkedTestCaseClearsTheLinkAndLeavesTheDefect (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC6` theDetailShowsTheRequirementTheNamesAndTheMovesInOrder (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC7` commentsAreAppendedInOrderWithTheirAuthorAndNeverEditedOrDeleted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC8` theListAlsoNarrowsBySeverityReleaseAssigneeAndASearchWhoseWildcardsAreLiteral (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC8` theListFiltersByStateWithOpenTheDefaultAndAllShowingEverythingMostSevereFirst (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC9` theListEndpointTakesTheStateFilterAndRefusesAnUnknownOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+- `AC9` whoMayDoWhatOverHttpTheAssignedDeveloperFixesATesterDecidesAnyoneCanComment (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
