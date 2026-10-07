@@ -58,7 +58,7 @@ class AiOffDetectionNoiseTest {
         when(aiUsage.tryConsume()).thenReturn(true);
         when(gapRules.enabledByRuleKey()).thenReturn(Map.of());
 
-        OpenAiLlmAdjudicator aiOff = new OpenAiLlmAdjudicator(new ObjectMapper()); // enabled=false, no key
+        OpenAiLlmAdjudicator aiOff = new OpenAiLlmAdjudicator(mock(com.vyoog.ai.ModelGateway.class), new ObjectMapper()); // a gateway that is not configured: configured() is false
         var detector = new ConflictingRequirementsDetector(similarity, Optional.of(aiOff), gapRules, aiUsage);
         sweep = new DetectionSweepService(List.of(detector), gapRules, reconciler, aiUsage, new SimpleMeterRegistry());
 

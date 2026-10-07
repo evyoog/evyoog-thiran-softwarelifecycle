@@ -32,9 +32,9 @@ public class OpenAiDocumentGroundingCritic implements DocumentGroundingCritic {
         "guidance":"one short sentence on the pattern behind them, or empty if none"}
         """;
 
-    private final OpenAiChatClient chat;
+    private final JsonModelClient chat;
 
-    public OpenAiDocumentGroundingCritic(OpenAiChatClient chat) {
+    public OpenAiDocumentGroundingCritic(JsonModelClient chat) {
         this.chat = chat;
     }
 

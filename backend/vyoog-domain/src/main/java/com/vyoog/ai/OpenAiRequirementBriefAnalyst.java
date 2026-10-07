@@ -104,9 +104,9 @@ public class OpenAiRequirementBriefAnalyst implements RequirementBriefAnalyst {
         "readiness":"CLEAR|NEEDS_CLARIFICATION|UNDERSPECIFIED"}]}
         """;
 
-    private final OpenAiChatClient chat;
+    private final JsonModelClient chat;
 
-    public OpenAiRequirementBriefAnalyst(OpenAiChatClient chat) {
+    public OpenAiRequirementBriefAnalyst(JsonModelClient chat) {
         this.chat = chat;
     }
 
@@ -138,7 +138,7 @@ public class OpenAiRequirementBriefAnalyst implements RequirementBriefAnalyst {
 
         // Budgeted per finding rather than per call: a batch of six needs roughly six
         // times the room of one, and a reply cut off mid-array is unparseable JSON, which
-        // OpenAiChatClient already surfaces as a provider failure rather than a partial
+        // JsonModelClient already surfaces as a provider failure rather than a partial
         // result. 900 leaves headroom for the longest well-formed brief in the prompt's
         // own shape — raised from 700 when title, type, priority and acceptance criteria
         // were added, since a truncated reply costs the whole batch, not one field.

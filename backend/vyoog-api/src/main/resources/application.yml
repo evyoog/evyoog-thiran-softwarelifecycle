@@ -155,6 +155,16 @@ vyoog:
     # legitimately runs longer than a type classification, and timing it out would be
     # indistinguishable from a provider outage in the error the user sees.
     analysis-timeout-seconds: ${AI_ANALYSIS_TIMEOUT_SECONDS:90}
+    # VYB-0936: every model call goes through one gateway (com.vyoog.ai.ModelGateway). OpenAI is the first and, for
+    # now, the only provider. A person waiting on a call gets two attempts inside interactive-deadline-seconds;
+    # background work (a sweep, document analysis) gets up to four inside batch-deadline-seconds. A circuit breaker
+    # per endpoint kind (chat, embeddings) stops calling after breaker-failure-threshold failed calls in a row, and
+    # tries one call again after breaker-open-seconds.
+    provider: ${AI_PROVIDER:openai}
+    interactive-deadline-seconds: ${AI_INTERACTIVE_DEADLINE_SECONDS:25}
+    batch-deadline-seconds: ${AI_BATCH_DEADLINE_SECONDS:300}
+    breaker-failure-threshold: ${AI_BREAKER_FAILURE_THRESHOLD:5}
+    breaker-open-seconds: ${AI_BREAKER_OPEN_SECONDS:60}
 
 server:
   port: ${SERVER_PORT:8080}

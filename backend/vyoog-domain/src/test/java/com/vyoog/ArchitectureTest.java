@@ -27,4 +27,12 @@ class ArchitectureTest {
         noClasses().that().resideInAPackage("com.vyoog.(*)..")
             .should().dependOnClassesThat().resideInAPackage("com.vyoog.(*).internal..")
             .because("cross-module access goes through published api packages");
+
+    @ArchTest
+    static final ArchRule onlyTheGatewayTalksHttpToAModelProvider =
+        noClasses().that().resideInAPackage("com.vyoog.ai..")
+            .and().doNotHaveFullyQualifiedName("com.vyoog.ai.OpenAiGateway")
+            .should().dependOnClassesThat().resideInAPackage("java.net.http..")
+            .because("VYB-0936: every model call goes through ModelGateway, so timeouts, retries and the circuit "
+                   + "breaker are written once; a second copy of the request block is how they drift apart");
 }

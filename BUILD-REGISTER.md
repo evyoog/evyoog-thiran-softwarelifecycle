@@ -339,7 +339,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 | VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 | VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
-| VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | TODO | S8 |
+| VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | DONE on dev (34 domain unit, 3 integration tests and 1 architecture rule; backend only; commit only, no PR yet) | S8 |
 | VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | TODO | S8 |
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
 | VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
@@ -5311,6 +5311,30 @@ Phase 6 Sprint 7. Branch `dev`. **No code and no tests.** One analysis document,
 **Not done / to know**
 - The Agile Planner analysis assumed Macro Planner owns those four levels. Its own repository does not support that; the Agile Planner analysis was not edited.
 - The MCP finding (Macro and Agile talk MCP, no REST) differs from the REST contract recorded in the Agile Planner analysis; noted there as an observation, to be settled with decision A of D24.
+
+---
+
+## Session 88 — VYB-0936 (F28): one model gateway; retries, timeouts and a circuit breaker; the copied HTTP blocks removed
+
+Phase 6 Sprint 8 (Sprint 7 was blocked, see Session 87, and skipped at the product owner's choice). Branch `dev`. **38 new checks**: `OpenAiGatewayTest` 18 and `GatewayCircuitBreakerTest` 6 (a real HTTP server on localhost, the clock and the waits the test's), `AiCallersOnGatewayTest` 10, `ModelGatewayWiringIT` 3 (the real application context against a stub provider), and one ArchUnit rule. The finding text F28 is not in the repository; scope is the register row. Description: `docs/08-architecture/backend-architecture/ai-model-gateway.md`, decision D29. Backend only, no screen and no endpoint, so OpenAPI is unchanged.
+
+**Decisions with the product owner this session.** (1) **Retries and breaker built in-house** on the connector framework's `RetryPolicy`, no new dependency (Resilience4j was offered and declined). (2) **A person waiting gets two attempts inside about 25 seconds**; background work keeps up to four. (3) **One circuit breaker per endpoint kind** (chat, embeddings), opening after 5 failed calls in a row and trying one call again after 60 seconds.
+
+**Backend.** `ModelGateway` (interface), `OpenAiGateway` (the first provider, and the only class that sends a request to one), `GatewayCircuitBreaker`, `ChatRequest`/`ChatReply`/`EmbeddingReply`/`CallKind`. `OpenAiEmbeddingProvider`, `OpenAiLlmAdjudicator`, `OpenAiRequirementRewriteAdvisor` and `OpenAiTraceRelationClassifier` lost their own HTTP code; `OpenAiChatClient` is replaced by `JsonModelClient`, which the six JSON agents use. They keep their prompts, how they read a reply, and their refusals. `ArchitectureTest` now fails if any other class in `com.vyoog.ai` uses `java.net.http`. New settings in `application.yml` (`AI_PROVIDER`, `AI_INTERACTIVE_DEADLINE_SECONDS`, `AI_BATCH_DEADLINE_SECONDS`, `AI_BREAKER_FAILURE_THRESHOLD`, `AI_BREAKER_OPEN_SECONDS`); the existing keys are unchanged.
+
+**Evidence.** Making every status a definite answer (no retry) and never recording a failure on the breaker failed 8 gateway tests, then restored. The wiring test boots the whole application with AI on and shows Spring builds exactly one gateway, and that embeddings, a rewrite suggestion and a JSON call all reach a stub provider through it with the configured key.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A definite answer (400, 401) and a reply that cannot be read both show the provider is up, so neither counts toward opening the breaker. (2) A retry is only started if its wait plus at least one second of attempt still fits in the total limit. (3) Total limits: 25 s interactive, 300 s batch. (4) An interactive attempt is now 12 s (was 20 s for the single-statement callers); a batch attempt keeps the caller's own timeout (20 s adjudication, 90 s analysis). (5) The sweep's adjudication is a batch call; an embedding on a write, a rewrite suggestion and a trace proposal are interactive. (6) The breaker is in memory and per application instance, so each instance learns separately and a restart closes it. (7) `Retry-After` is honoured only in its seconds form.
+
+**Behaviour changes to know.** (1) A call that used to fail at once on a 429 or 5xx now retries first, so a failing provider takes up to about 25 seconds (interactive) before the caller sees the refusal, where it was up to 20. (2) After 5 failed calls in a row the gateway refuses calls for 60 seconds with "temporarily not being called" and sends nothing; callers already treat that as "AI unavailable". (3) The generic not-configured message for the JSON agents is now "AI is not configured (set AI_ENABLED=true and AI_API_KEY)" instead of one naming document analysis; their callers check `configured()` first, so it is rarely reached.
+
+**Not done / to know**
+- The breaker's state is not shown anywhere (no endpoint, no health screen); it appears only in the refusal message and the logs. The row did not ask for it.
+- The `*VerificationRunner` classes in `vyoog-api/src/test` still compile but are manual runners needing an external mock server; they were not run. `ModelGatewayWiringIT` covers the wiring they covered.
+- Retries and the breaker sit under callers that still hold database transactions open across the call (that is VYB-0940), so a 25 to 300 second wait can now happen inside one.
+- Token counts are carried on the reply and not stored (VYB-0939). No redaction yet (VYB-0937).
+- A timeout after the provider has already started work can cost a second charged call on retry; not avoidable without provider idempotency.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

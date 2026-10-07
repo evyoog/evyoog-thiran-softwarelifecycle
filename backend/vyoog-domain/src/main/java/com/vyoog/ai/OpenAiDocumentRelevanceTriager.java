@@ -54,9 +54,9 @@ public class OpenAiDocumentRelevanceTriager implements DocumentRelevanceTriager 
         "noiseSummary":"one short sentence naming the kinds of content you discarded, or empty if none"}
         """;
 
-    private final OpenAiChatClient chat;
+    private final JsonModelClient chat;
 
-    public OpenAiDocumentRelevanceTriager(OpenAiChatClient chat) {
+    public OpenAiDocumentRelevanceTriager(JsonModelClient chat) {
         this.chat = chat;
     }
 

@@ -2,18 +2,9 @@ package com.vyoog.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,8 +22,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class OpenAiRequirementRewriteAdvisor implements RequirementRewriteAdvisor {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAiRequirementRewriteAdvisor.class);
-
     private static final String SYSTEM_PROMPT = """
         You improve a single software requirement statement. You will be given the
         statement and a scoring breakdown from a deterministic linter (negative
@@ -46,33 +35,22 @@ public class OpenAiRequirementRewriteAdvisor implements RequirementRewriteAdviso
         response-time bound.'"]}
         """;
 
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private final ModelGateway gateway;
     private final ObjectMapper json;
 
-    public OpenAiRequirementRewriteAdvisor(ObjectMapper json) {
+    public OpenAiRequirementRewriteAdvisor(ModelGateway gateway, ObjectMapper json) {
+        this.gateway = gateway;
         this.json = json;
     }
 
-    @Value("${vyoog.ai.enabled:false}")
-    private boolean enabled;
-
-    @Value("${vyoog.ai.api-url:https://api.openai.com/v1/chat/completions}")
-    private String apiUrl;
-
-    @Value("${vyoog.ai.api-key:}")
-    private String apiKey;
-
-    @Value("${vyoog.ai.model:gpt-4o-mini}")
-    private String model;
-
     @Override
     public String modelName() {
-        return model;
+        return gateway.chatModel();
     }
 
     @Override
     public Suggestion suggest(String statement, Map<String, Integer> qualityBreakdown) {
-        if (!enabled || apiKey == null || apiKey.isBlank()) {
+        if (!gateway.configured()) {
             throw new AiProviderUnavailableException(
                 "AI rewrite suggestions are not configured (set AI_ENABLED=true and AI_API_KEY).");
         }
@@ -87,48 +65,11 @@ public class OpenAiRequirementRewriteAdvisor implements RequirementRewriteAdviso
             throw new AiProviderUnavailableException("Could not encode the rewrite request: " + e.getMessage());
         }
 
-        Map<String, Object> requestBody = Map.of(
-            "model", model,
-            "messages", List.of(
-                Map.of("role", "system", "content", SYSTEM_PROMPT),
-                Map.of("role", "user", "content", userContent)),
-            "max_tokens", 400,
-            "temperature", 0.2);
-
-        String body;
-        try {
-            body = json.writeValueAsString(requestBody);
-        } catch (Exception e) {
-            throw new AiProviderUnavailableException("Could not encode the rewrite request: " + e.getMessage());
-        }
-
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(apiUrl))
-            .timeout(Duration.ofSeconds(20))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer " + apiKey)
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build();
-
-        HttpResponse<String> response;
-        try {
-            response = http.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            log.warn("[ai] OpenAI rewrite request failed: {}", e.getMessage());
-            throw new AiProviderUnavailableException("Could not reach the AI provider: " + e.getMessage(), e);
-        }
-
-        if (response.statusCode() != 200) {
-            String detail = readErrorMessage(response.body());
-            log.warn("[ai] OpenAI rewrite returned status={} detail={}", response.statusCode(), detail);
-            throw new AiProviderUnavailableException("AI provider returned an error: " + detail);
-        }
+        ChatReply reply = gateway.chat(ChatRequest.interactive(SYSTEM_PROMPT, userContent, 400, 0.2));
 
         JsonNode content;
         try {
-            JsonNode top = json.readTree(response.body());
-            String text = top.at("/choices/0/message/content").asText();
-            content = json.readTree(text);
+            content = json.readTree(reply.content());
         } catch (Exception e) {
             throw new AiProviderUnavailableException("AI provider's response could not be parsed: " + e.getMessage());
         }
@@ -144,15 +85,5 @@ public class OpenAiRequirementRewriteAdvisor implements RequirementRewriteAdviso
             changesNode.forEach(n -> changes.add(n.asText()));
         }
         return new Suggestion(rewritten, changes);
-    }
-
-    private String readErrorMessage(String body) {
-        try {
-            JsonNode node = json.readTree(body);
-            JsonNode message = node.at("/error/message");
-            return message.isMissingNode() ? body : message.asText();
-        } catch (Exception e) {
-            return body;
-        }
     }
 }

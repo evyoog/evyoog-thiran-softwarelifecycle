@@ -51,9 +51,9 @@ public class OpenAiDocumentDescriptionSynthesizer implements DocumentDescription
         "themes":["3-8 short phrases naming what this document is really about"]}
         """;
 
-    private final OpenAiChatClient chat;
+    private final JsonModelClient chat;
 
-    public OpenAiDocumentDescriptionSynthesizer(OpenAiChatClient chat) {
+    public OpenAiDocumentDescriptionSynthesizer(JsonModelClient chat) {
         this.chat = chat;
     }
 

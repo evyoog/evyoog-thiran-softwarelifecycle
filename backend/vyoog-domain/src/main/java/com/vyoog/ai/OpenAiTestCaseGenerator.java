@@ -97,9 +97,9 @@ public class OpenAiTestCaseGenerator implements TestCaseGenerator {
         "description":"...","rationale":"..."}]}
         """;
 
-    private final OpenAiChatClient chat;
+    private final JsonModelClient chat;
 
-    public OpenAiTestCaseGenerator(OpenAiChatClient chat) {
+    public OpenAiTestCaseGenerator(JsonModelClient chat) {
         this.chat = chat;
     }
 

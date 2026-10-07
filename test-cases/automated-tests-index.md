@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 790 tests cover 57 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 827 tests cover 58 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -964,3 +964,43 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` theListFiltersByStateWithOpenTheDefaultAndAllShowingEverythingMostSevereFirst (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
 - `AC9` theListEndpointTakesTheStateFilterAndRefusesAnUnknownOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
 - `AC9` whoMayDoWhatOverHttpTheAssignedDeveloperFixesATesterDecidesAnyoneCanComment (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DefectLifecycleIT.java`)
+
+## VYB-0936: Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28]
+
+- `AC1` aChatCallSendsTheRequestAndReturnsTheReplyWithWhatTheProviderReported (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC1` aPlainTextRequestAsksForNoJsonMode (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC1` whatTheProviderDoesNotReportStaysNullAndIsNotEstimated (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC10` aReplyThatCannotBeReadIsRefusedNotRetriedAndNotCountedAsAnOutage (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC10` anUnreadableReplyDuringATrialDoesNotLeaveTheBreakerStuckHalfOpen (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC11` aGatewayRefusalReachesTheCallerAsTheSameException (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC11` theRewriteAdvisorAsksAsAnInteractiveCallAndReadsTheSuggestion (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC11` theRewriteAdvisorStillRefusesRatherThanInventAnAnswer (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC12` theTraceClassifierAsksInteractivelyAndDropsKeysItWasNotOfferedAndTypesThatDoNotExist (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC12` theTraceClassifierSendsNothingWhenThereIsNothingToCompare (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC13` theAdjudicatorIsABatchCallAndReadsTheVerdict (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC13` theAdjudicatorRefusesAVerdictItWasNotGiven (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC14` theEmbeddingProviderAsksInterativelyAndRefusesAVectorOfTheWrongWidth (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC15` theJsonClientAsksForABatchJsonReplyWithTheAnalysisTimeoutAndParsesIt (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC15` theJsonClientRefusesAReplyCutOffAtTheTokenLimitAndOneThatIsNotJson (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
+- `AC16` aRewriteSuggestionAndAJsonCallGoThroughTheSameGateway (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC16` embeddingsReachTheProviderThroughTheGatewayWithTheConfiguredKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC16` springBuildsExactlyOneGatewayFromTheConfiguration (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC2` whenNotConfiguredNothingIsSentAndTheReasonIsInWords (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC3` aLongerRetryAfterIsHonouredUpToTheCap (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC3` aRetryableStatusIsRetriedAndASecondAttemptThatWorksIsReturned (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC3` everyStatusMeaningNotNowIsRetried (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC4` aDefiniteAnswerIsNotCountedAgainstTheProvidersHealth (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC4` aDefiniteAnswerIsNotRepeatedAndSaysWhatTheProviderSaid (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC5` aPersonWaitingGetsTwoAttemptsAndABackgroundJobGetsFour (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC6` aRetryIsOnlyStartedIfItCanStillFinishInsideTheTotalLimit (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC7` aServerThatIsNotThereIsAFailureNotAnException (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC7` aTimeoutIsAFailureThatIsRetriedAndThenReportedAsOne (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC8` aSuccessInBetweenResetsTheCount (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
+- `AC8` aSuccessfulTrialClosesItAndAFailedTrialOpensItAgain (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
+- `AC8` afterRepeatedFailuresCallsAreRefusedWithoutBeingSentThenOneTrialRecoversIt (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC8` afterTheOpenPeriodExactlyOneTrialCallIsLetThrough (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
+- `AC8` anAbandonedTrialFreesTheSlotWithoutChangingTheVerdict (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
+- `AC8` anEmbeddingsOutageDoesNotStopChat (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
+- `AC8` opensAfterTheThresholdOfFailuresInARowAndRefusesCalls (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
+- `AC8` refusesNonsenseSettings (`backend/vyoog-domain/src/test/java/com/vyoog/ai/GatewayCircuitBreakerTest.java`)
+- `AC9` anEmbeddingIsReturnedAsReportedWithItsModelAndTokens (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)

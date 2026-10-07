@@ -47,9 +47,9 @@ public class OpenAiRequirementElaborationAdvisor implements RequirementElaborati
         "detail":"3-6 sentences of detailed prose"}]}
         """;
 
-    private final OpenAiChatClient chat;
+    private final JsonModelClient chat;
 
-    public OpenAiRequirementElaborationAdvisor(OpenAiChatClient chat) {
+    public OpenAiRequirementElaborationAdvisor(JsonModelClient chat) {
         this.chat = chat;
     }
 
