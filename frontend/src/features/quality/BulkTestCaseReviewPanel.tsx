@@ -83,7 +83,8 @@ export function BulkTestCaseReviewPanel({
       // reflect exactly one failure at a time.
       for (const g of groups) {
         for (const s of g.suggestions) {
-          await api.draftTestCase(s.title, s.description.trim() || undefined, s.category, g.requirementId)
+          // VYB-0938: a decision on the proposal, which drafts the test case (as proposed; edit a card first to change it)
+          await api.decideProposal(s.proposalId, { decision: 'ACCEPT' })
           markTouched(g.requirementId)
           remove(g.requirementId, s._id)
         }
@@ -175,11 +176,11 @@ function RequirementGroup({
       </div>
       {group.suggestions.length === 0 && <p className="hint muted">Nothing left to review here.</p>}
       {individual.map((s) => (
-        <SuggestionCard key={s._id} suggestion={s} requirementId={group.requirementId}
+        <SuggestionCard key={s._id} suggestion={s}
           onDismiss={() => onDismiss(s._id)} onAdded={() => onAdded(s._id)} />
       ))}
       {dependency.map((s) => (
-        <SuggestionCard key={s._id} suggestion={s} requirementId={group.requirementId}
+        <SuggestionCard key={s._id} suggestion={s}
           onDismiss={() => onDismiss(s._id)} onAdded={() => onAdded(s._id)} />
       ))}
     </section>

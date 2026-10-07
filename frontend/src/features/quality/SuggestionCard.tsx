@@ -34,24 +34,34 @@ export function DescriptionView({ text }: { text: string }) {
   )
 }
 
+/** The fields the person changed; sent only if different, so an untouched suggestion is accepted exactly as proposed. */
+export function editsOf(suggestion: TestCaseSuggestion, title: string, description: string): Record<string, string> | undefined {
+  const edits: Record<string, string> = {}
+  if (title.trim() !== suggestion.title.trim()) edits.title = title.trim()
+  if (description.trim() !== (suggestion.description ?? '').trim() && description.trim()) edits.description = description.trim()
+  return Object.keys(edits).length ? edits : undefined
+}
+
 /**
- * VYB-0824/0826: shared by the single-requirement panel (`TestCaseAuthoringPanel`) and
- * the bulk review panel (`BulkTestCaseReviewPanel`) — one card, one accept/dismiss
- * behaviour, so the two flows can never drift on what "accepting a suggestion" means.
- * An AI-generated title/description is editable before it's ever saved — accepting
- * sends whatever is currently in these fields, not necessarily what the model proposed.
- * Dismissing calls no API at all: nothing was ever persisted for a discarded suggestion.
+ * VYB-0824/0826: shared by the bulk review panel (`BulkTestCaseReviewPanel`) — one card, one accept/dismiss
+ * behaviour. An AI-generated title/description is editable before it is ever saved.
+ * VYB-0938: each suggestion is a recorded proposal. Adding sends a decision (ACCEPT, with the edited title and description
+ * if they differ), which drafts the test case server-side; Dismiss sends a REJECT, so a discarded suggestion is on record too.
  * VYB-0828: a bulleted live preview renders under the editable textarea, so the bullet
  * structure the AI wrote is visible before accepting, not only after.
  */
 export function SuggestionCard({
-  suggestion, requirementId, onDismiss, onAdded,
-}: { suggestion: TestCaseSuggestion; requirementId: string; onDismiss: () => void; onAdded: () => void }) {
+  suggestion, onDismiss, onAdded,
+}: { suggestion: TestCaseSuggestion; onDismiss: () => void; onAdded: () => void }) {
   const [title, setTitle] = useState(suggestion.title)
   const [description, setDescription] = useState(suggestion.description)
   const accept = useMutation({
-    mutationFn: () => api.draftTestCase(title, description.trim() || undefined, suggestion.category, requirementId),
+    mutationFn: () => api.decideProposal(suggestion.proposalId, { decision: 'ACCEPT', edits: editsOf(suggestion, title, description) }),
     onSuccess: onAdded,
+  })
+  const dismiss = useMutation({
+    mutationFn: () => api.decideProposal(suggestion.proposalId, { decision: 'REJECT' }),
+    onSuccess: onDismiss,
   })
 
   return (
@@ -64,12 +74,12 @@ export function SuggestionCard({
         </div>
       )}
       <p className="hint" style={{ color: 'var(--ai-tx)', fontSize: 11, marginBottom: 8 }}>{suggestion.rationale}</p>
-      {accept.isError && <p className="err-text">Could not add.</p>}
+      {(accept.isError || dismiss.isError) && <p className="err-text" role="alert">Could not record that decision.</p>}
       <div style={{ display: 'flex', gap: 6 }}>
-        <button className="btn pri" style={{ flex: 1 }} disabled={!title.trim() || accept.isPending} onClick={() => accept.mutate()}>
+        <button className="btn pri" style={{ flex: 1 }} disabled={!title.trim() || accept.isPending || dismiss.isPending} onClick={() => accept.mutate()}>
           Add
         </button>
-        <button className="btn" style={{ flex: 1 }} onClick={onDismiss}>Dismiss</button>
+        <button className="btn" style={{ flex: 1 }} disabled={accept.isPending || dismiss.isPending} onClick={() => dismiss.mutate()}>Dismiss</button>
       </div>
     </div>
   )

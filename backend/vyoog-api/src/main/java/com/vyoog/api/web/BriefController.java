@@ -7,6 +7,7 @@ import com.vyoog.api.config.RequiresAccess;
 import com.vyoog.ai.AiProviderUnavailableException;
 import com.vyoog.brief.Brief;
 import com.vyoog.brief.BriefPushService;
+import com.vyoog.brief.BriefElaborationDrafter;
 import com.vyoog.brief.BriefService;
 import com.vyoog.brief.BriefStalenessService;
 import com.vyoog.brief.BriefSection;
@@ -40,16 +41,18 @@ public class BriefController {
     private final ApplicationRepository applications;
     private final UserProvisioningService provisioning;
     private final PrincipalGuard guard;
+    private final BriefElaborationDrafter drafter;
 
     public BriefController(BriefService service, BriefStalenessService staleness, BriefPushService push,
                             ApplicationRepository applications, UserProvisioningService provisioning,
-                            PrincipalGuard guard) {
+                            PrincipalGuard guard, BriefElaborationDrafter drafter) {
         this.service = service;
         this.staleness = staleness;
         this.push = push;
         this.applications = applications;
         this.provisioning = provisioning;
         this.guard = guard;
+        this.drafter = drafter;
     }
 
     private UUID currentUserId(Jwt jwt) {
@@ -59,13 +62,14 @@ public class BriefController {
 
     /**
      * {@code sections} null or empty means every section, so an older client is
-     * unaffected. {@code includeAiElaboration} (VYB-0817) is a separate, explicit
-     * opt-in — null/absent means false, same reason: an older client asked for nothing
-     * and must not start incurring a paid AI call it never requested.
+     * unaffected. {@code includeReviewedElaborations} (VYB-0938, was VYB-0817's
+     * {@code includeAiElaboration}) is a separate, explicit opt-in: null/absent means false.
+     * Generating never calls the AI; it adds the elaborations a person accepted at the
+     * review endpoint, for each requirement's current revision.
      */
     public record GenerateBrief(
         @NotBlank String applicationId, List<String> capabilityIds, @NotBlank String target,
-        @NotBlank String developerId, Set<BriefSection> sections, Boolean includeAiElaboration) {}
+        @NotBlank String developerId, Set<BriefSection> sections, Boolean includeReviewedElaborations) {}
     public record BriefView(
         String id, String applicationId, String applicationName, String target, String developerId, String content,
         String generatedAt, boolean stale, List<String> staleBecause) {}
@@ -91,14 +95,49 @@ public class BriefController {
         try {
             Brief brief = service.generate(applicationId, applicationName, capabilityIds,
                 BriefTarget.valueOf(body.target()), UUID.fromString(body.developerId()), currentUserId(jwt),
-                body.sections(), Boolean.TRUE.equals(body.includeAiElaboration()));
+                body.sections(), Boolean.TRUE.equals(body.includeReviewedElaborations()));
             return toView(brief, applicationName);
         } catch (AiProviderUnavailableException e) {
-            // Same treatment as ImportController's analyse endpoint: a named, refused
-            // request rather than a generic 500 or a brief that silently lacks what was
-            // explicitly asked for.
             throw new IllegalStateException(e.getMessage());
         }
+    }
+
+    public record ElaborationScope(@NotBlank String applicationId, List<String> capabilityIds) {}
+    public record DraftedView(int requirementsInScope, int proposals, List<String> proposalIds) {}
+
+    /**
+     * VYB-0938: asks the AI to elaborate the requirements a brief for this scope would carry, and records each answer as a
+     * pending proposal. Nothing is applied and no brief is written; a person decides each proposal at
+     * {@code POST /ai-proposals/{id}/decision}. Same rule as generating a brief.
+     */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/elaborations")
+    @ResponseStatus(HttpStatus.CREATED)
+    public DraftedView draftElaborations(@RequestBody ElaborationScope body, @AuthenticationPrincipal Jwt jwt) {
+        UUID applicationId = UUID.fromString(body.applicationId());
+        String applicationName = applications.findById(applicationId)
+            .orElseThrow(() -> new NoSuchElementException("No such application")).getName();
+        try {
+            var drafted = drafter.draft(applicationId, applicationName, capabilityIdsOf(body.capabilityIds()), currentUserId(jwt));
+            return new DraftedView(drafted.requirementsInScope(), drafted.proposals(),
+                drafted.proposalIds().stream().map(UUID::toString).toList());
+        } catch (AiProviderUnavailableException e) {
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    public record ElaborationStatusView(int requirementsInScope, int accepted, List<AiProposalController.ProposalView> pending) {}
+
+    /** VYB-0938: for a scope, how many requirements have a reviewed elaboration at their current revision, and what is waiting for review. */
+    @GetMapping("/elaborations")
+    public ElaborationStatusView elaborationStatus(@RequestParam UUID applicationId, @RequestParam(required = false) List<UUID> capabilityIds) {
+        var status = drafter.status(applicationId, capabilityIds == null ? List.of() : capabilityIds);
+        return new ElaborationStatusView(status.requirementsInScope(), status.accepted(),
+            status.pending().stream().map(AiProposalController::toView).toList());
+    }
+
+    private static List<UUID> capabilityIdsOf(List<String> raw) {
+        return raw == null ? List.of() : raw.stream().map(UUID::fromString).toList();
     }
 
     /**

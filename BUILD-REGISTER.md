@@ -341,7 +341,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 | VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | DONE on dev (34 domain unit, 3 integration tests and 1 architecture rule; backend only; commit only, no PR yet) | S8 |
 | VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | DONE on dev (31 domain unit, 4 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
-| VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
+| VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | DONE on dev for brief elaboration, rewrite and test-case suggestions (import candidates and document analysis not moved; 6 domain, 21 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
 | VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |
 | VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | TODO | S9 |
@@ -5361,6 +5361,34 @@ Phase 6 Sprint 8. Branch `dev`. **42 new tests**: `RedactorTest` 18 and `Redacti
 - Text with a name now embeds the placeholder, so similarity scores between requirements may shift; I did not measure by how much.
 - The old `*VerificationRunner` classes were not run.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 90 — VYB-0938 (F30): one review endpoint for AI proposals
+
+Phase 6 Sprint 8. Branch `dev`. **34 new tests** (and 4 rewritten): `AiProposalIT` 18 and 3 more in `ModelGatewayWiringIT` (real PostgreSQL, service calls and HTTP with real tokens, a stub provider), `BriefElaborationDrafterTest` 6 (the 4 old `BriefElaborationTest` tests were rewritten for the new rule), `elaborationReview.test.ts` 5 and 2 in `SuggestionCard.test.ts`. The finding text F30 is not in the repository; scope is the register row. Description: `docs/04-workflows/ai-proposal-review.md`, decision D31. Something to see: **Delivery, "Draft elaborations (AI)"**, and the bulk test-case panel and the new-requirement form, which now record decisions.
+
+**Decisions with the product owner this session.** (1) **Scope: the new endpoint plus brief elaboration, rewrite and test-case suggestions.** Import candidate proposals and document analysis findings already need a person per item and keep their own tables; they move in a later row. (2) **Brief elaboration is reviewed first, then briefs include the accepted ones**; generating a brief never calls the AI. (3) **Who decides: whoever could make the change by hand** (rewrite and elaboration: edit a requirement; test case: Tester), no new role.
+
+**What I found first.** Of everything the AI produces, only brief elaboration reached a stored artifact (the brief, and from there the delivery tool) with no decision on each item: it was written into the brief the moment the box was ticked. The other flows already showed a suggestion to a person who then acted, but through separate, unrecorded paths.
+
+**Backend.** Migration `V049` (`ai_proposal`: kind, state PENDING, ACCEPTED, REJECTED or SUPERSEDED, the requirement and revision it was made against, the AI's payload kept beside an edited accepted payload, model, who proposed, who decided and why, what it applied). `AiProposalService.record` and `decide`; `AiProposalController` (`GET /ai-proposals`, `GET /ai-proposals/{id}`, `POST /ai-proposals/{id}/decision`). Accepting applies through the ordinary service: a rewrite edits the requirement (`RequirementService.update`), a test case is drafted (`TestCaseService.draft`), an elaboration becomes eligible for briefs. The producers (`rewrite-suggestion`, `test-case-suggestions`, `.../bulk`) now return a `proposalId` per suggestion; `POST /briefs/elaborations` and `GET /briefs/elaborations` are new; `GenerateBrief.includeAiElaboration` is replaced by `includeReviewedElaborations`. OpenAPI and `schema.d.ts` regenerated.
+
+**Frontend.** The new-requirement form, the bulk test-case cards and the Delivery screen all send decisions. Delivery gets `ElaborationReview`: a status line, "Draft elaborations (AI)", and one editable draft per requirement with Accept, Accept with my edit and Reject. Stale drafts say why they cannot be accepted. AI text uses the AI token, never a status colour.
+
+**Evidence.** Removing the "requirement changed since" refusal failed `AiProposalIT`'s stale test, and no longer dropping malformed AI answers failed a drafter test, then restored. The integration tests prove: nothing is applied on record; accept edits the requirement or drafts the test case; an edit is kept beside the original; a changed requirement and an approved one are refused and leave the proposal pending; two people accepting at once draft exactly one test case; a brief carries only accepted elaborations, uses an edit, drops an older accepted one when a newer is accepted, and ignores one written for earlier words; the wrong role gets 403 for each kind. The Delivery panel was rendered in Chromium against mocked responses (dark): status line, drafting note, stale draft's Accept disabled with its reason, "Accept with my edit" sending only the changed field, Reject.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A proposal is decided once; a rejection's reason is optional. (2) Accepting is refused if the requirement has changed since (the proposal stays pending and can be rejected), and for an approved requirement a rewrite needs a change request as before. (3) A new elaboration draft supersedes an older pending one for the same requirement; only the latest accepted elaboration counts. (4) The brief says "AI elaboration, accepted by a person". (5) Only fields a person can sensibly edit are editable: statement, title and description, detail. (6) Pending proposals do not expire.
+
+**Behaviour changes to know.** (1) The Delivery tick-box "AI elaboration" is now "Reviewed AI elaboration" and no longer calls the AI; a brief generated with it before any elaboration is accepted carries none. (2) A test-case suggestion in the bulk panel is added by a decision on its proposal, not by `POST /test-cases`; "Accept all" adds each as proposed. (3) The suggestion endpoints now record a row per suggestion, including ones nobody acts on. (4) `includeAiElaboration` is gone from the brief request.
+
+**Not done / to know**
+- **Import candidates and document analysis** are not on this endpoint yet, so "every AI proposal" is not literally true until that row.
+- A person can still type or paste any text, AI-written or not, into `POST /test-cases` or a requirement edit; this closes the path from an AI suggestion in this system to a stored artifact, not the keyboard.
+- A rewrite drafted for a requirement not yet created is decided and recorded, then the form takes the text; the requirement created afterwards is not linked back to the proposal. The rewrite and single-requirement test-case endpoints for an existing requirement have no screen.
+- No screen lists all proposals; they are reviewed where they are made.
+- **The integration tests are slow in this environment and getting slower**: a requirement write or test-case draft takes 13 to 20 seconds, so `AiProposalIT` takes about 6 minutes and the full verify took about 100 minutes this time. I did not find the cause; the database also keeps every earlier test's rows, which may be it.
+- The old `*VerificationRunner` classes were not run. Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

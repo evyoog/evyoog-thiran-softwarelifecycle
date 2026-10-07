@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,6 +51,7 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
     private static final List<String> REQUESTS = new CopyOnWriteArrayList<>();
     /** The full body of every request the stub provider received, in order. */
     private static final List<String> BODIES = new CopyOnWriteArrayList<>();
+    private static final com.fasterxml.jackson.databind.ObjectMapper STUB_JSON = new com.fasterxml.jackson.databind.ObjectMapper();
 
     static {
         try {
@@ -73,11 +75,19 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
             BODIES.add(body);
             REQUESTS.add("chat max_tokens=" + (body.contains("\"max_tokens\":400") ? "400" : "other")
                 + " json=" + body.contains("json_object"));
-            // a request that carries tokens gets a reply that uses them, as a model told to keep them would
-            String statement = body.contains("[PERSON_1]") ? "[PERSON_1] can be reached at [EMAIL_1]" : "The system shall answer in 2 s.";
-            byte[] out = ("{\"choices\":[{\"message\":{\"content\":\"{\\\"rewrittenStatement\\\":\\\"" + statement + "\\\","
-                + "\\\"changes\\\":[\\\"bounded it\\\"]}\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":9,\"completion_tokens\":6}}")
-                .getBytes(StandardCharsets.UTF_8);
+            // the reply a model would give for what it was asked; a request that carries tokens gets a reply that uses them
+            String content;
+            if (body.contains("Requirements to elaborate")) {
+                content = "{\"elaborations\":[{\"index\":0,\"detail\":\"STUB-ELABORATION\"}]}";
+            } else if (body.contains("testCases")) {
+                content = "{\"testCases\":[{\"category\":\"INDIVIDUAL\",\"title\":\"Stub case title\",\"description\":\"Stub steps\",\"rationale\":\"why\"}]}";
+            } else {
+                String statement = body.contains("[PERSON_1]") ? "[PERSON_1] can be reached at [EMAIL_1]" : "The system shall answer in 2 s.";
+                content = "{\"rewrittenStatement\":\"" + statement + "\",\"changes\":[\"bounded it\"]}";
+            }
+            byte[] out = STUB_JSON.writeValueAsBytes(java.util.Map.of(
+                "choices", List.of(java.util.Map.of("message", java.util.Map.of("content", content), "finish_reason", "stop")),
+                "usage", java.util.Map.of("prompt_tokens", 9, "completion_tokens", 6)));
             ex.getResponseHeaders().add("Content-Type", "application/json");
             ex.sendResponseHeaders(200, out.length);
             ex.getResponseBody().write(out);
@@ -104,6 +114,9 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
     @Autowired RequirementRewriteAdvisor rewrite;
     @Autowired JsonModelClient jsonClient;
     @Autowired MockMvc mvc;
+    @Autowired com.vyoog.evidence.TestCaseService testCaseService;
+    @Autowired com.vyoog.proposal.AiProposalService aiProposals;
+    @Autowired com.vyoog.brief.BriefService briefService;
     @Autowired KnownPeople knownPeople;
     @Autowired com.vyoog.ai.RedactionSettings redactionSettings;
 
@@ -238,5 +251,93 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
         assertThatThrownBy(() -> jdbc.update("UPDATE app_config SET ai_redaction_disabled = ARRAY['EMAIL','BOGUS'] WHERE id = 1"))
             .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         assertThat(redactionSettings.disabled()).isEmpty();
+    }
+
+    // ------------------------------------------------------------------ VYB-0938: the producers, end to end
+
+    private JwtRequestPostProcessor personWith(AccessRole role, UUID capabilityId) {
+        String id = unique("who");
+        UUID user = users.upsert("sub-" + id, id + "@it.test", id).getId();
+        grants.grant(user, role, ScopeType.CAPABILITY, capabilityId, null, user);
+        return token(id);
+    }
+
+    private static final MediaType JSON_TYPE = MediaType.APPLICATION_JSON;
+
+    @Test
+    void VYB0938_AC20_aRewriteSuggestionIsRecordedPendingAndAppliesNothingUntilAPersonAccepts() throws Exception {
+        Portfolio p = newPortfolio();
+        UUID author = newUser("author");
+        var r = newRequirement(p, author);
+        String before = jdbc.queryForObject("SELECT statement FROM requirement WHERE id = ?", String.class, r.getId());
+        JwtRequestPostProcessor analyst = personWith(AccessRole.BUSINESS_ANALYST, p.capabilityId());
+
+        var made = mvc.perform(post("/api/v1/requirements/rewrite-suggestion").with(analyst).contentType(JSON_TYPE)
+                .content("{\"statement\":\"" + before + "\",\"criteriaCount\":0,\"hasUpstream\":false,\"requirementId\":\"" + r.getId() + "\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.rewrittenStatement").value("The system shall answer in 2 s."))
+            .andExpect(jsonPath("$.proposalId").exists()).andReturn();
+        String proposalId = STUB_JSON.readTree(made.getResponse().getContentAsString()).path("proposalId").asText();
+
+        assertThat(jdbc.queryForObject("SELECT statement FROM requirement WHERE id = ?", String.class, r.getId())).as("nothing applied").isEqualTo(before);
+        assertThat(jdbc.queryForObject("SELECT state FROM ai_proposal WHERE id = ?::uuid", String.class, proposalId)).isEqualTo("PENDING");
+
+        mvc.perform(post("/api/v1/ai-proposals/" + proposalId + "/decision").with(analyst).contentType(JSON_TYPE).content("{\"decision\":\"ACCEPT\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.appliedType").value("REQUIREMENT"));
+        assertThat(jdbc.queryForObject("SELECT statement FROM requirement WHERE id = ?", String.class, r.getId())).isEqualTo("The system shall answer in 2 s.");
+    }
+
+    @Test
+    void VYB0938_AC21_everyTestCaseSuggestionIsAProposalAndNoTestCaseExistsUntilATesterAcceptsOne() throws Exception {
+        Portfolio p = newPortfolio();
+        var r = newRequirement(p, newUser("author"));
+        JwtRequestPostProcessor tester = personWith(AccessRole.TESTER, p.capabilityId());
+
+        var made = mvc.perform(post("/api/v1/requirements/" + r.getId() + "/test-case-suggestions").with(tester))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.suggestions[0].title").value("Stub case title"))
+            .andExpect(jsonPath("$.suggestions[0].proposalId").exists()).andReturn();
+        String proposalId = STUB_JSON.readTree(made.getResponse().getContentAsString()).at("/suggestions/0/proposalId").asText();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM trace_link WHERE to_id = ? AND link_type = 'VERIFIES'", Integer.class, r.getId())).isZero();
+
+        mvc.perform(post("/api/v1/ai-proposals/" + proposalId + "/decision").with(tester).contentType(JSON_TYPE).content("{\"decision\":\"ACCEPT\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.appliedType").value("TEST_CASE"));
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM trace_link WHERE to_id = ? AND link_type = 'VERIFIES'", Integer.class, r.getId())).isEqualTo(1);
+
+        var bulk = mvc.perform(post("/api/v1/requirements/test-case-suggestions/bulk").with(tester).contentType(JSON_TYPE)
+                .content("{\"requirementIds\":[\"" + r.getId() + "\"]}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.perRequirement[0].suggestions[0].proposalId").exists()).andReturn();
+        assertThat(bulk.getResponse().getContentAsString()).contains("Stub case title");
+    }
+
+    @Test
+    void VYB0938_AC22_elaborationsAreDraftedAsProposalsReviewedAndOnlyTheAcceptedOnesReachTheBrief() throws Exception {
+        Portfolio p = newPortfolio();
+        UUID author = newUser("author");
+        UUID admin = newAdministrator();
+        var r = approved(newRequirement(p, author), author, admin);
+        testCaseService.draft("Covers it", "steps", com.vyoog.evidence.TestCase.Category.INDIVIDUAL, r.getId(), author);
+        UUID developer = newUser("dev");
+        JwtRequestPostProcessor analyst = personWith(AccessRole.BUSINESS_ANALYST, p.capabilityId());
+        JwtRequestPostProcessor tester = personWith(AccessRole.TESTER, p.capabilityId());
+        String scope = "{\"applicationId\":\"" + p.applicationId() + "\",\"capabilityIds\":[\"" + p.capabilityId() + "\"]}";
+        String query = "?applicationId=" + p.applicationId() + "&capabilityIds=" + p.capabilityId();
+
+        mvc.perform(post("/api/v1/briefs/elaborations").with(tester).contentType(JSON_TYPE).content(scope)).andExpect(status().isForbidden());
+        var drafted = mvc.perform(post("/api/v1/briefs/elaborations").with(analyst).contentType(JSON_TYPE).content(scope))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.requirementsInScope").value(1)).andExpect(jsonPath("$.proposals").value(1)).andReturn();
+        String proposalId = STUB_JSON.readTree(drafted.getResponse().getContentAsString()).at("/proposalIds/0").asText();
+
+        mvc.perform(get("/api/v1/briefs/elaborations" + query).with(analyst)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.requirementsInScope").value(1)).andExpect(jsonPath("$.accepted").value(0))
+            .andExpect(jsonPath("$.pending[0].payload.detail").value("STUB-ELABORATION")).andExpect(jsonPath("$.pending[0].requirementKey").value(r.getKey()));
+        String generate = "{\"applicationId\":\"" + p.applicationId() + "\",\"capabilityIds\":[\"" + p.capabilityId() + "\"],\"target\":\"HUMAN\",\"developerId\":\""
+            + developer + "\",\"includeReviewedElaborations\":true}";
+        mvc.perform(post("/api/v1/briefs").with(analyst).contentType(JSON_TYPE).content(generate)).andExpect(status().isCreated())
+            .andExpect(jsonPath("$.content").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("STUB-ELABORATION"))));
+
+        mvc.perform(post("/api/v1/ai-proposals/" + proposalId + "/decision").with(analyst).contentType(JSON_TYPE).content("{\"decision\":\"ACCEPT\"}")).andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/briefs/elaborations" + query).with(analyst)).andExpect(jsonPath("$.accepted").value(1)).andExpect(jsonPath("$.pending.length()").value(0));
+        mvc.perform(post("/api/v1/briefs").with(analyst).contentType(JSON_TYPE).content(generate)).andExpect(status().isCreated())
+            .andExpect(jsonPath("$.content").value(org.hamcrest.Matchers.containsString("STUB-ELABORATION")));
     }
 }

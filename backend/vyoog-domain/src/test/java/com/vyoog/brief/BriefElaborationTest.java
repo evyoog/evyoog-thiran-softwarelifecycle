@@ -4,8 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.vyoog.ai.AiProviderUnavailableException;
-import com.vyoog.ai.RequirementElaborationAdvisor;
+import com.vyoog.proposal.AiProposalService;
 import com.vyoog.evidence.TestCaseQueryService;
 import com.vyoog.identity.AppUser;
 import com.vyoog.identity.AppUserRepository;
@@ -30,7 +29,10 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** VYB-0817: AI elaboration is opt-in, refuses rather than degrades silently, and is grounded in what's actually there. */
+/**
+ * VYB-0938 (replaces VYB-0817's tests): generating a brief never calls the AI. AI text reaches a brief only as an elaboration
+ * a person accepted, for the requirement's current revision, and only when the caller asked for reviewed elaborations.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BriefElaborationTest {
@@ -44,7 +46,7 @@ class BriefElaborationTest {
     @Mock JdbcTemplate jdbc;
     @Mock AuditService audit;
     @Mock RequirementScopeService scopes;
-    @Mock RequirementElaborationAdvisor elaborationAdvisor;
+    @Mock AiProposalService proposals;
     @Mock TestCaseQueryService testCaseQuery;
 
     BriefService service;
@@ -56,7 +58,7 @@ class BriefElaborationTest {
     @BeforeEach
     void setUp() {
         service = new BriefService(briefs, requirements, criteria, capabilities, users, traceGraph, jdbc, audit, scopes,
-            elaborationAdvisor, testCaseQuery);
+            proposals, testCaseQuery);
         appId = UUID.randomUUID();
         capId = UUID.randomUUID();
         developerId = UUID.randomUUID();
@@ -87,47 +89,38 @@ class BriefElaborationTest {
     }
 
     @Test
-    void VYB0817_AC1_notRequestedNeverCallsTheAdvisor() {
-        service.generate(appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, false);
+    void VYB0938_AC1_notRequestedNeverConsultsTheProposalsAndTheBriefHasNoAiText() {
+        Brief brief = service.generate(appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, false);
 
-        verifyNoInteractions(elaborationAdvisor);
+        verifyNoInteractions(proposals);
+        assertThat(brief.getContent()).doesNotContain("AI elaboration");
     }
 
     @Test
-    void VYB0817_AC2_requestedButUnavailableRefusesRatherThanFallingBackToThePlainBrief() {
-        when(elaborationAdvisor.available()).thenReturn(false);
+    void VYB0938_AC2_requestedIncludesTheElaborationAPersonAccepted() {
+        when(proposals.acceptedBriefElaborations(any())).thenReturn(java.util.Map.of(approvedId, "Detailed prose about capturing a lead."));
 
-        assertThatThrownBy(() -> service.generate(
-            appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, true))
-            .isInstanceOf(AiProviderUnavailableException.class)
-            .hasMessageContaining("AI elaboration was requested");
-
-        verify(briefs, never()).saveAndFlush(any());
-    }
-
-    @Test
-    void VYB0817_AC3_requestedAndAvailablePopulatesTheElaborationIntoTheGeneratedContent() {
-        when(elaborationAdvisor.available()).thenReturn(true);
-        when(elaborationAdvisor.elaborate(eq("Sales"), anyList())).thenReturn(List.of(
-            new RequirementElaborationAdvisor.Elaboration(0, "Detailed prose about capturing a lead.")));
-
-        Brief brief = service.generate(
-            appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, true);
+        Brief brief = service.generate(appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, true);
 
         assertThat(brief.getContent()).contains("Detailed prose about capturing a lead.");
     }
 
     @Test
-    void VYB0817_AC4_aMisalignedOrMalformedIndexIsDroppedNotMisattributed() {
-        when(elaborationAdvisor.available()).thenReturn(true);
-        when(elaborationAdvisor.elaborate(eq("Sales"), anyList())).thenReturn(List.of(
-            new RequirementElaborationAdvisor.Elaboration(7, "Out of range for a batch of one."),
-            new RequirementElaborationAdvisor.Elaboration(0, null))); // well-formed requires a non-blank detail
+    void VYB0938_AC3_requestedWithNothingAcceptedStillGeneratesAndSaysNothingAboutAi() {
+        when(proposals.acceptedBriefElaborations(any())).thenReturn(java.util.Map.of());
 
-        Brief brief = service.generate(
-            appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, true);
+        Brief brief = service.generate(appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, true);
 
-        assertThat(brief.getContent()).doesNotContain("Out of range for a batch of one.");
-        assertThat(brief.getContent()).doesNotContain("AI elaboration");
+        assertThat(brief.getContent()).contains("The system shall capture a lead.").doesNotContain("AI elaboration");
+        verify(briefs).saveAndFlush(any());
+    }
+
+    @Test
+    void VYB0938_AC4_onlyTheRequirementsInTheBriefAreLookedUp() {
+        when(proposals.acceptedBriefElaborations(any())).thenReturn(java.util.Map.of());
+
+        service.generate(appId, "Sales", List.of(), BriefTarget.HUMAN, developerId, null, BriefSection.ALL, true);
+
+        verify(proposals).acceptedBriefElaborations(List.of(approvedId));
     }
 }

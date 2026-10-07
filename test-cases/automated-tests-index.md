@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 869 tests cover 59 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 903 tests cover 59 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -290,13 +290,6 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC1` testingIsSatisfiedOnlyWhenEveryRequirementIsActuallyVerified (`frontend/src/features/Design.test.ts`)
 - `AC2` anExplicitStartNodeIsStillHonoured (`frontend/src/features/Design.test.ts`)
 - `AC2` manyIndependentSourcesShareOneColumnInsteadOfOneRootStrandingTheRest (`frontend/src/features/Design.test.ts`)
-
-## VYB-0817 (not in the register)
-
-- `AC1` notRequestedNeverCallsTheAdvisor (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
-- `AC2` requestedButUnavailableRefusesRatherThanFallingBackToThePlainBrief (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
-- `AC3` requestedAndAvailablePopulatesTheElaborationIntoTheGeneratedContent (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
-- `AC4` aMisalignedOrMalformedIndexIsDroppedNotMisattributed (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
 
 ## VYB-0818 (not in the register)
 
@@ -1049,3 +1042,44 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC9` aJsonShapedReplyFromACallNotFlaggedAsJsonIsStillRestoredAsJson (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
 - `AC9` aSecretIsNeverPutBackEvenIfTheProviderEchoesTheMarker (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
 - `AC9` theReplyComesBackWithTheOriginalValuesPutBackAndTheMetadataIntact (`backend/vyoog-domain/src/test/java/com/vyoog/ai/RedactingModelGatewayTest.java`)
+
+## VYB-0938: One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30]
+
+- `AC1` notRequestedNeverConsultsTheProposalsAndTheBriefHasNoAiText (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
+- `AC10` aPersonCanEditBeforeAcceptingAndTheOriginalIsKept (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC10` aRewriteWithNoRequirementIsDecidedAndRecordedButNothingIsApplied (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC10` acceptingARewriteEditsTheRequirementThroughTheOrdinaryServiceAndRecordsIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC11` aRequirementThatChangedSinceIsNotOverwrittenAndTheProposalCanStillBeRejected (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC12` anApprovedRequirementStillNeedsAChangeRequestSoAcceptingARewriteIsRefusedAndLeavesItPending (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC13` acceptingATestCaseDraftsItLinkedToTheRequirementAndAnEditIsWhatIsDrafted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC14` aProposalIsDecidedOnceAndARejectionKeepsItsReason (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC14` twoPeopleAcceptingTheSameProposalAtOnceDraftExactlyOneTestCase (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC15` onlyTheFieldsOfThatKindCanBeEditedAndNeverToNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC16` aBriefCarriesOnlyWhatAPersonAcceptedAndGeneratingNeverCallsTheAi (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC16` aRejectedElaborationNeverReachesABriefAndAnEditedOneUsesTheEditedText (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC17` aNewerAcceptedElaborationReplacesTheOlderAndANewPendingOneSupersedesAnOlderPending (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC17` anElaborationWrittenForEarlierWordsIsNotOfferedAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC18` aProposalWithNoRequirementNeedsTheRuleAnywhereAndBadInputIsRefusedInWords (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC18` whoMayDecideIsWhoCouldMakeTheSameChangeByHand (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC19` theListDefaultsToPendingFiltersByStateAndKindAndAnyoneSignedInMayRead (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC2` requestedIncludesTheElaborationAPersonAccepted (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
+- `AC20` aRewriteSuggestionIsRecordedPendingAndAppliesNothingUntilAPersonAccepts (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC21` everyTestCaseSuggestionIsAProposalAndNoTestCaseExistsUntilATesterAcceptsOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC22` elaborationsAreDraftedAsProposalsReviewedAndOnlyTheAcceptedOnesReachTheBrief (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC23` aDraftForARequirementThatChangedCannotBeAcceptedAndSaysWhy (`frontend/src/features/delivery/elaborationReview.test.ts`)
+- `AC23` afterDraftingItSaysNothingIsInABriefUntilAccepted (`frontend/src/features/delivery/elaborationReview.test.ts`)
+- `AC23` anUntouchedDraftIsAcceptedAsProposedAndAnEditIsSentWithItsText (`frontend/src/features/delivery/elaborationReview.test.ts`)
+- `AC23` detailIsReadFromThePayloadAndAnAbsentOneIsEmptyNotUndefined (`frontend/src/features/delivery/elaborationReview.test.ts`)
+- `AC23` theStatusLineSaysWhatIsReviewedAndWhatIsWaitingAndNeverReadsBlank (`frontend/src/features/delivery/elaborationReview.test.ts`)
+- `AC24` anUntouchedSuggestionIsAcceptedAsProposedWithNoEdits (`frontend/src/features/quality/SuggestionCard.test.ts`)
+- `AC24` onlyTheFieldsThePersonChangedAreSentAndABlankedDescriptionIsNotSentAsAnEdit (`frontend/src/features/quality/SuggestionCard.test.ts`)
+- `AC3` requestedWithNothingAcceptedStillGeneratesAndSaysNothingAboutAi (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
+- `AC4` onlyTheRequirementsInTheBriefAreLookedUp (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationTest.java`)
+- `AC5` aScopeWithNothingToBriefIsRefusedInWords (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
+- `AC5` whenAiIsNotConfiguredItRefusesAndRecordsNothing (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
+- `AC6` aMalformedOrMisalignedAnswerIsDroppedNotGuessedAt (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
+- `AC6` eachWellFormedAnswerBecomesAPendingProposalForItsRequirementAndTheModelAndPersonAreRecorded (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
+- `AC7` requirementsAreSentInBatchesOfEight (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
+- `AC8` aProviderFailureReachesTheCallerAndNothingFurtherIsRecorded (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
+- `AC9` aProposalForARequirementThatDoesNotExistIsRefusedAndOneWithNoRequirementIsOnlyAllowedForARewrite (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+- `AC9` recordingAProposalAppliesNothingAndLeavesItPendingAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)

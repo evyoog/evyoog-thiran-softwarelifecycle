@@ -6,6 +6,7 @@ import { ApiError, api, type Brief, type BriefSection, type BriefTarget, type Re
 import { Page, Empty } from '@/shared/ui/Page'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { UserPicker } from '@/shared/ui/UserPicker'
+import { ElaborationReview } from './delivery/ElaborationReview'
 
 type Tab = 'briefs' | 'signals' | 'impact'
 
@@ -169,10 +170,9 @@ function BriefsTab() {
   const [target, setTarget] = useState<BriefTarget>('CLAUDE_CODE')
   const [developerId, setDeveloperId] = useState('')
   const [sections, setSections] = useState<BriefSection[]>(ALL_SECTIONS)
-  // VYB-0817: a separate, explicit opt-in — not one of BRIEF_SECTIONS, since it calls a
-  // real AI provider (a real cost and a few extra seconds) rather than just switching
-  // what Vyoog's own data renders. Off by default.
-  const [includeAiElaboration, setIncludeAiElaboration] = useState(false)
+  // VYB-0938 (was VYB-0817's AI elaboration): a separate, explicit opt-in. Generating a brief never calls the AI; this adds the
+  // elaborations a person accepted in the review panel below, for each requirement as it is now. Off by default.
+  const [includeReviewedElaborations, setIncludeReviewedElaborations] = useState(false)
   const [preview, setPreview] = useState<{ id: string; content: string; filename: string } | null>(null)
   const [showPush, setShowPush] = useState(false)
   const [pushResult, setPushResult] = useState('')
@@ -207,7 +207,7 @@ function BriefsTab() {
   const generate = useMutation({
     mutationFn: () => api.generateBrief({
       applicationId: picker.applicationId, capabilityIds: picker.capabilityIds, target, developerId, sections,
-      includeAiElaboration,
+      includeReviewedElaborations,
     }),
     onSuccess: (brief) => {
       const capNames = liveCaps.filter((c) => picker.capabilityIds.includes(c.id)).map((c) => c.name)
@@ -360,17 +360,18 @@ function BriefsTab() {
               </span>
             </button>
           ))}
-          <button className={`opt-row${includeAiElaboration ? ' on' : ''}`}
-            aria-pressed={includeAiElaboration}
-            onClick={() => setIncludeAiElaboration((v) => !v)}>
-            <span className="opt-cb">{includeAiElaboration ? '✓' : ''}</span>
+          <button className={`opt-row${includeReviewedElaborations ? ' on' : ''}`}
+            aria-pressed={includeReviewedElaborations}
+            onClick={() => setIncludeReviewedElaborations((v) => !v)}>
+            <span className="opt-cb">{includeReviewedElaborations ? '✓' : ''}</span>
             <span>
-              <span className="opt-t">AI elaboration</span>
+              <span className="opt-t">Reviewed AI elaboration</span>
               <span className="opt-d">
-                Expands each requirement's statement into a few sentences of detailed prose for the developer — grounded only in the statement and its acceptance criteria, shown alongside the original, never replacing it. Calls a real AI provider, so this takes a few extra seconds.
+                Adds, for each requirement, the detailed prose a person accepted, shown alongside the original and never replacing it. Generating the brief does not call the AI; draft and review the elaborations below first.
               </span>
             </span>
           </button>
+          <ElaborationReview applicationId={picker.applicationId} capabilityIds={picker.capabilityIds} />
 
           <div className="bg-sec">Target</div>
           <div className="field">

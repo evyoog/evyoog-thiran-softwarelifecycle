@@ -124,6 +124,9 @@ class AccessPolicyTest {
         Map.entry("DesignController#link", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DesignController#unlink", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("BriefController#generate", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        // VYB-0938: drafting elaborations is generating a brief's input; the review reads (GET) are open to any signed-in person and not listed here.
+        // Deciding a proposal is guarded in the handler by the rule of the proposal's kind (see AiProposalController#decide).
+        Map.entry("BriefController#draftElaborations", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         // 6c: releases = Approver / Product Owner (matrix: Baseline)
         Map.entry("ReleaseController#create", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ReleaseController#setTargetDate", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),

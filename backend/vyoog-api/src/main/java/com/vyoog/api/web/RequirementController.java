@@ -6,6 +6,9 @@ import com.vyoog.ai.AiProviderUnavailableException;
 import com.vyoog.ai.RequirementRewriteAdvisor;
 import com.vyoog.changerequest.ChangeRequestService;
 import com.vyoog.evidence.TestCaseSuggestionService;
+import com.vyoog.proposal.AiProposalService;
+import com.vyoog.proposal.ProposalKind;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vyoog.api.config.AccessScopeResolver;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.AccessRole;
@@ -64,6 +67,8 @@ public class RequirementController {
     private final RequirementRewriteAdvisor rewriteAdvisor;
     private final TestCaseSuggestionService testCaseSuggestions;
     private final PrincipalGuard guard;
+    private final AiProposalService proposals;
+    private final ObjectMapper json;
 
     /** VYB-0902: the matrix's "Edit req" column (Business Analyst, Architect); an administrator is never blocked. */
     private static final List<AccessRole> EDIT_ROLES = List.of(AccessRole.BUSINESS_ANALYST, AccessRole.ARCHITECT);
@@ -75,7 +80,7 @@ public class RequirementController {
                                   ChangeRequestService changeRequests, LifecycleHistoryService lifecycleHistory,
                                   QualityScoreService qualityScore, GapPreviewService gapPreview,
                                   RequirementRewriteAdvisor rewriteAdvisor, TestCaseSuggestionService testCaseSuggestions,
-                                  PrincipalGuard guard) {
+                                  PrincipalGuard guard, AiProposalService proposals, ObjectMapper json) {
         this.requirements = requirements;
         this.service = service;
         this.acceptanceCriteria = acceptanceCriteria;
@@ -90,6 +95,8 @@ public class RequirementController {
         this.rewriteAdvisor = rewriteAdvisor;
         this.testCaseSuggestions = testCaseSuggestions;
         this.guard = guard;
+        this.proposals = proposals;
+        this.json = json;
     }
 
     public record RequirementView(
@@ -399,8 +406,10 @@ public class RequirementController {
             gaps.expected().stream().map(g -> new GapPreviewView(g.ruleKey(), g.reason())).toList());
     }
 
-    public record RewriteSuggestionRequest(String statement, int criteriaCount, boolean hasUpstream) {}
-    public record RewriteSuggestionView(String rewrittenStatement, List<String> changes, String model) {}
+    /** @param requirementId optional: the requirement the statement belongs to, so accepting the proposal can edit it; absent while a requirement is still being drafted */
+    public record RewriteSuggestionRequest(String statement, int criteriaCount, boolean hasUpstream, UUID requirementId) {}
+    /** @param proposalId VYB-0938: decide it at {@code POST /ai-proposals/{id}/decision}; nothing has been applied */
+    public record RewriteSuggestionView(String rewrittenStatement, List<String> changes, String model, String proposalId) {}
 
     /**
      * VYB-0794 (Part 2): a real AI-generated rewrite, not baked into {@link
@@ -414,13 +423,19 @@ public class RequirementController {
     // VYB-0906: an AI proposal; a person applies it.
     @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/rewrite-suggestion")
-    public RewriteSuggestionView rewriteSuggestion(@RequestBody RewriteSuggestionRequest body) {
+    public RewriteSuggestionView rewriteSuggestion(@RequestBody RewriteSuggestionRequest body, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt); // a proposal is attributed to a person
         var score = qualityScore.score(body.statement(), body.criteriaCount(), body.hasUpstream());
         var suggestion = rewriteAdvisor.suggest(body.statement(), score.breakdown());
-        return new RewriteSuggestionView(suggestion.rewrittenStatement(), suggestion.changes(), rewriteAdvisor.modelName());
+        // VYB-0938: recorded, applied by nobody until a person decides it.
+        var payload = json.createObjectNode().put("statement", suggestion.rewrittenStatement());
+        suggestion.changes().forEach(payload.putArray("changes")::add);
+        UUID proposalId = proposals.record(ProposalKind.REWRITE, body.requirementId(), payload, rewriteAdvisor.modelName(), currentUserId(jwt));
+        return new RewriteSuggestionView(suggestion.rewrittenStatement(), suggestion.changes(), rewriteAdvisor.modelName(), proposalId.toString());
     }
 
-    public record TestCaseSuggestionView(String category, String title, String description, String rationale) {}
+    /** @param proposalId VYB-0938: accept it (optionally edited) or reject it at {@code POST /ai-proposals/{id}/decision}; no test case exists until then */
+    public record TestCaseSuggestionView(String category, String title, String description, String rationale, String proposalId) {}
     public record RelatedRequirementView(String key, String title, String direction) {}
     public record TestCaseSuggestionsView(
         List<TestCaseSuggestionView> suggestions, List<RelatedRequirementView> relatedRequirements, String model) {}
@@ -436,16 +451,28 @@ public class RequirementController {
     // VYB-0906: an AI proposal; nothing is stored.
     @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/{id}/test-case-suggestions")
-    public TestCaseSuggestionsView testCaseSuggestions(@PathVariable UUID id) {
+    public TestCaseSuggestionsView testCaseSuggestions(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
         var result = testCaseSuggestions.suggest(id);
+        UUID actor = currentUserId(jwt);
         return new TestCaseSuggestionsView(
             result.suggestions().stream()
-                .map(s -> new TestCaseSuggestionView(s.category().name(), s.title(), s.description(), s.rationale()))
+                .map(s -> suggestionView(id, s, result.model(), actor))
                 .toList(),
             result.relatedRequirements().stream()
                 .map(r -> new RelatedRequirementView(r.key(), r.title(), r.direction()))
                 .toList(),
             result.model());
+    }
+
+    /** VYB-0938: each suggestion is recorded as a proposal the moment it is made, so its decision is on record either way. */
+    private TestCaseSuggestionView suggestionView(UUID requirementId, com.vyoog.ai.TestCaseGenerator.Suggestion s, String model, UUID actor) {
+        var payload = json.createObjectNode()
+            .put("category", s.category().name()).put("title", s.title())
+            .put("description", s.description() == null ? "" : s.description())
+            .put("rationale", s.rationale() == null ? "" : s.rationale());
+        UUID proposalId = proposals.record(ProposalKind.TEST_CASE, requirementId, payload, model, actor);
+        return new TestCaseSuggestionView(s.category().name(), s.title(), s.description(), s.rationale(), proposalId.toString());
     }
 
     public record BulkTestCaseSuggestionsRequest(@NotEmpty List<UUID> requirementIds) {}
@@ -464,14 +491,16 @@ public class RequirementController {
     // VYB-0906: an AI proposal; nothing is stored.
     @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/test-case-suggestions/bulk")
-    public BulkTestCaseSuggestionsView testCaseSuggestionsBulk(@RequestBody BulkTestCaseSuggestionsRequest body) {
+    public BulkTestCaseSuggestionsView testCaseSuggestionsBulk(@RequestBody BulkTestCaseSuggestionsRequest body, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireHuman(jwt);
         var result = testCaseSuggestions.suggestBulk(body.requirementIds());
+        UUID actor = currentUserId(jwt);
         return new BulkTestCaseSuggestionsView(
             result.perRequirement().stream()
                 .map(rs -> new RequirementSuggestionsView(
                     rs.requirementId().toString(), rs.requirementKey(), rs.requirementTitle(), rs.pulledInAsDependency(),
                     rs.suggestions().stream()
-                        .map(s -> new TestCaseSuggestionView(s.category().name(), s.title(), s.description(), s.rationale()))
+                        .map(s -> suggestionView(rs.requirementId(), s, result.model(), actor))
                         .toList(),
                     rs.relatedRequirements().stream()
                         .map(r -> new RelatedRequirementView(r.key(), r.title(), r.direction()))

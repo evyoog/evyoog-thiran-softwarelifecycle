@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.vyoog.ai.RequirementElaborationAdvisor;
+import com.vyoog.proposal.AiProposalService;
 import com.vyoog.evidence.TestCaseQueryService;
 import com.vyoog.identity.AppUser;
 import com.vyoog.identity.AppUserRepository;
@@ -47,7 +47,7 @@ class BriefEmptyScopeTest {
     @Mock JdbcTemplate jdbc;
     @Mock AuditService audit;
     @Mock RequirementScopeService scopes;
-    @Mock RequirementElaborationAdvisor elaborationAdvisor;
+    @Mock AiProposalService proposals;
     @Mock TestCaseQueryService testCaseQuery;
 
     BriefService service;
@@ -58,7 +58,7 @@ class BriefEmptyScopeTest {
     @BeforeEach
     void setUp() {
         service = new BriefService(briefs, requirements, criteria, capabilities, users, traceGraph, jdbc, audit, scopes,
-            elaborationAdvisor, testCaseQuery);
+            proposals, testCaseQuery);
         appId = UUID.randomUUID();
         capId = UUID.randomUUID();
         developerId = UUID.randomUUID();

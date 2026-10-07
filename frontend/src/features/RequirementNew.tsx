@@ -82,11 +82,15 @@ export function RequirementNew() {
     mutationFn: () => api.rewriteSuggestion({ statement, criteriaCount: 0, hasUpstream: false }),
     onSuccess: setRewrite,
   })
-  const applyRewrite = () => {
-    if (!rewrite) return
-    setStatement(rewrite.rewrittenStatement)
-    setRewrite(null)
-  }
+  // VYB-0938: using or dismissing the suggestion is a recorded decision on its proposal. The statement field changes only
+  // after the accept has been recorded, and with the text the server holds (what the AI proposed).
+  const decideRewrite = useMutation({
+    mutationFn: (accept: boolean) => api.decideProposal(rewrite!.proposalId, { decision: accept ? 'ACCEPT' : 'REJECT' }),
+    onSuccess: (p) => {
+      if (p.state === 'ACCEPTED') setStatement(String(p.acceptedPayload?.statement ?? p.payload.statement ?? ''))
+      setRewrite(null)
+    },
+  })
 
   const create = useMutation({
     mutationFn: () =>
@@ -267,9 +271,10 @@ export function RequirementNew() {
                       </ul>
                     )}
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn pri" style={{ flex: 1 }} onClick={applyRewrite}>Use this</button>
-                      <button className="btn" style={{ flex: 1 }} onClick={() => setRewrite(null)}>Dismiss</button>
+                      <button className="btn pri" style={{ flex: 1 }} disabled={decideRewrite.isPending} onClick={() => decideRewrite.mutate(true)}>Use this</button>
+                      <button className="btn" style={{ flex: 1 }} disabled={decideRewrite.isPending} onClick={() => decideRewrite.mutate(false)}>Dismiss</button>
                     </div>
+                    {decideRewrite.isError && <p className="err-text" role="alert">Could not record that decision.</p>}
                   </div>
                 )}
               </>

@@ -232,7 +232,7 @@ public final class BriefContentGenerator {
                 // clearly-labelled expansion of it, so a reader can never mistake one
                 // for the other.
                 if (r.aiElaboration() != null && !r.aiElaboration().isBlank()) {
-                    md.append("   *AI elaboration (expands on the statement above; not itself authoritative):*\n\n");
+                    md.append("   *AI elaboration, accepted by a person (expands on the statement above; not itself authoritative):*\n\n");
                     md.append("   ").append(r.aiElaboration()).append("\n\n");
                 }
                 // VYB-0831: always shown, unlike acceptance criteria below — a test case is

@@ -299,17 +299,21 @@ export interface RewriteSuggestion {
   rewrittenStatement: string
   changes: string[]
   model: string
+  /** VYB-0938: the proposal this was recorded as; nothing is applied until a person decides it. */
+  proposalId: string
 }
 
 /** VYB-0824: INDIVIDUAL validates the requirement alone; DEPENDENCY validates it together with something it's trace-linked to. */
 export type TestCaseSuggestionCategory = 'INDIVIDUAL' | 'DEPENDENCY'
 
-/** An AI-proposed test case — never itself saved; accepting one calls draftTestCase like a manual entry. */
+/** An AI-proposed test case — never itself saved; accepting one is a decision on its proposal (VYB-0938), which drafts the test case. */
 export interface TestCaseSuggestion {
   category: TestCaseSuggestionCategory
   title: string
   description: string
   rationale: string
+  /** VYB-0938: accept (optionally edited) or reject it at the review endpoint; no test case exists until then. */
+  proposalId: string
 }
 
 /** A requirement directly trace-linked to the one suggestions were requested for. */
@@ -1670,6 +1674,55 @@ export interface AppConfigView {
   aiRedactionDisabled: string[]
 }
 
+// ── AI proposals (VYB-0938) ───────────────────────────────────────────────────────
+
+export type AiProposalKind = 'REWRITE' | 'TEST_CASE' | 'BRIEF_ELABORATION'
+export type AiProposalState = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUPERSEDED'
+
+/** What the AI proposed (`payload`, never edited) and what was applied if the person edited it first (`acceptedPayload`). */
+export interface AiProposal {
+  id: string
+  kind: AiProposalKind
+  state: AiProposalState
+  requirementId?: string
+  requirementKey?: string
+  requirementTitle?: string
+  requirementRevision?: number
+  currentRevision?: number
+  /** The requirement has changed since this was proposed, so accepting it is refused. */
+  stale: boolean
+  payload: Record<string, unknown>
+  acceptedPayload?: Record<string, unknown>
+  model: string
+  proposedByName?: string
+  proposedAt: string
+  decidedByName?: string
+  decidedAt?: string
+  decisionReason?: string
+  appliedType?: 'REQUIREMENT' | 'TEST_CASE'
+  appliedId?: string
+}
+
+export interface ProposalDecisionBody {
+  decision: 'ACCEPT' | 'REJECT'
+  /** Only on ACCEPT: the payload fields changed first (rewrite: statement; test case: title, description; elaboration: detail). */
+  edits?: Record<string, string>
+  reason?: string
+}
+
+/** VYB-0938: for a brief scope, how many requirements have a reviewed elaboration at their current revision, and what waits for review. */
+export interface ElaborationStatus {
+  requirementsInScope: number
+  accepted: number
+  pending: AiProposal[]
+}
+
+export interface DraftedElaborations {
+  requirementsInScope: number
+  proposals: number
+  proposalIds: string[]
+}
+
 // ── Global search (VYB-0766) ──────────────────────────────────────────────────────
 
 export type SearchResultKind = 'REQUIREMENT' | 'CAPABILITY' | 'GLOSSARY_TERM' | 'FINDING'
@@ -1840,7 +1893,7 @@ export const api = {
   authoringSignals: (body: { statement: string; criteriaCount: number; hasCapability: boolean; hasUpstream: boolean }) =>
     request<AuthoringSignals>('/requirements/authoring-signals', { method: 'POST', body: JSON.stringify(body) }),
   /** VYB-0794: an explicit "Suggest rewrite" action — never called automatically on a keystroke, unlike authoringSignals. */
-  rewriteSuggestion: (body: { statement: string; criteriaCount: number; hasUpstream: boolean }) =>
+  rewriteSuggestion: (body: { statement: string; criteriaCount: number; hasUpstream: boolean; requirementId?: string }) =>
     request<RewriteSuggestion>('/requirements/rewrite-suggestion', { method: 'POST', body: JSON.stringify(body) }),
   /** VYB-0826/0830: also generates for the selection's whole connected dependency component — `pulledInAsDependency` on each result tells a selected requirement apart from one only pulled in. */
   testCaseSuggestionsBulk: (requirementIds: string[]) =>
@@ -2238,8 +2291,18 @@ export const api = {
   /** VYB-0836: applicationId omitted means every application — the Delivery screen's history before one is picked. */
   briefsFor: (applicationId?: string) => request<Brief[]>(`/briefs${query({ applicationId })}`),
   brief: (id: string) => request<Brief>(`/briefs/${id}`),
-  generateBrief: (body: { applicationId: string; capabilityIds: string[]; target: BriefTarget; developerId: string; sections?: BriefSection[]; includeAiElaboration?: boolean }) =>
+  generateBrief: (body: { applicationId: string; capabilityIds: string[]; target: BriefTarget; developerId: string; sections?: BriefSection[]; includeReviewedElaborations?: boolean }) =>
     request<Brief>('/briefs', { method: 'POST', body: JSON.stringify(body) }),
+  // AI proposals (VYB-0938): the one place an AI suggestion is accepted or rejected.
+  aiProposals: (params: { state?: AiProposalState | 'ALL'; kind?: AiProposalKind; requirementId?: string; page?: number; size?: number } = {}) =>
+    request<Page<AiProposal>>(`/ai-proposals${query(params)}`),
+  decideProposal: (id: string, body: ProposalDecisionBody) =>
+    request<AiProposal>(`/ai-proposals/${id}/decision`, { method: 'POST', body: JSON.stringify(body) }),
+  /** Asks the AI to elaborate what a brief for this scope would carry; each answer waits as a pending proposal. Nothing is applied. */
+  draftElaborations: (applicationId: string, capabilityIds: string[]) =>
+    request<DraftedElaborations>('/briefs/elaborations', { method: 'POST', body: JSON.stringify({ applicationId, capabilityIds }) }),
+  elaborationStatus: (applicationId: string, capabilityIds: string[]) =>
+    request<ElaborationStatus>(`/briefs/elaborations${query({ applicationId, capabilityIds: capabilityIds.length ? capabilityIds.join(',') : undefined })}`),
   /** VYB-0818: pushes the generated brief to whatever the "planning" connection is configured with. */
   pushBrief: (id: string) => request<{ success: boolean; statusCode: number; error?: string }>(`/briefs/${id}/push`, { method: 'POST' }),
 

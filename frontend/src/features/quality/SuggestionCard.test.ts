@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { TestCaseSuggestion } from '@/shared/api/client'
-import { groupByCategory, parseBullets } from './SuggestionCard'
+import { editsOf, groupByCategory, parseBullets } from './SuggestionCard'
 
 function suggestion(over: Partial<TestCaseSuggestion> = {}): TestCaseSuggestion {
   return {
-    category: 'INDIVIDUAL', title: 'T', description: 'D', rationale: 'R',
+    category: 'INDIVIDUAL', title: 'T', description: 'D', rationale: 'R', proposalId: 'p1',
     ...over,
   }
 }
@@ -55,5 +55,19 @@ describe('VYB-0828 — bulleted test-case descriptions', () => {
 
   it('VYB0828_AC1_mixedBulletAndProseLinesOnlyKeepsTheBulletedOnes', () => {
     expect(parseBullets('Some context first.\n- Then a real step\n- And another')).toEqual(['Then a real step', 'And another'])
+  })
+})
+
+describe('VYB-0938 — accepting a suggestion is a decision on its proposal', () => {
+  it('VYB0938_AC24_anUntouchedSuggestionIsAcceptedAsProposedWithNoEdits', () => {
+    expect(editsOf(suggestion(), 'T', 'D')).toBeUndefined()
+    expect(editsOf(suggestion(), '  T ', ' D  ')).toBeUndefined()
+  })
+
+  it('VYB0938_AC24_onlyTheFieldsThePersonChangedAreSentAndABlankedDescriptionIsNotSentAsAnEdit', () => {
+    expect(editsOf(suggestion(), 'New title', 'D')).toEqual({ title: 'New title' })
+    expect(editsOf(suggestion(), 'T', '- step one\n- step two')).toEqual({ description: '- step one\n- step two' })
+    expect(editsOf(suggestion(), 'New', 'Changed')).toEqual({ title: 'New', description: 'Changed' })
+    expect(editsOf(suggestion(), 'T', '   ')).toBeUndefined()
   })
 })

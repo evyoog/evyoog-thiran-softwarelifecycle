@@ -203,7 +203,7 @@ and `defect.test_case_id`, `test_run_id`, `release_id`
 
 **Collaboration** — `clarification` (§7.4.7), `notification`, `inbox_item`
 
-**Platform** — `audit_event`, `integration_connection`, `outbox_event`; `app_config.ai_redaction_disabled` (VYB-0937, see [`../../08-architecture/security/ai-redaction.md`](../../08-architecture/security/ai-redaction.md))
+**Platform** — `audit_event`, `integration_connection`, `outbox_event`; `ai_proposal` (VYB-0938, see [`../../04-workflows/ai-proposal-review.md`](../../04-workflows/ai-proposal-review.md)); `app_config.ai_redaction_disabled` (VYB-0937, see [`../../08-architecture/security/ai-redaction.md`](../../08-architecture/security/ai-redaction.md))
 
 ### 5.6 Audit
 
