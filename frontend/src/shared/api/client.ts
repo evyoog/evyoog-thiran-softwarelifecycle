@@ -1331,6 +1331,30 @@ export interface CurrentRelease {
   blocked: BlockedItem[]
 }
 
+/** VYB-0930: one committed requirement, with key and title so a screen shows requirements rather than ids. */
+export interface ScopeItemDetail {
+  requirementId: string
+  key: string
+  title: string
+  status: string
+  capabilityName: string
+}
+
+/** VYB-0930: a requirement the picker can offer; committedToId/Name say which release already holds it (this one included). */
+export interface ReleaseCandidate {
+  requirementId: string
+  key: string
+  title: string
+  status: string
+  committedToId?: string
+  committedToName?: string
+}
+
+export interface BulkScopeResult {
+  committed: string[]
+  alreadyCommitted: string[]
+}
+
 export interface ReleaseNoteItem {
   requirementId: string
   key: string
@@ -2202,6 +2226,22 @@ export const api = {
   /** VYB-0929: undefined (204) when no release is being prepared. */
   currentRelease: () => request<CurrentRelease | undefined>('/releases/current'),
   releaseNotes: (id: string) => request<ReleaseNotes>(`/releases/${id}/notes`),
+  /** VYB-0930: committed requirements with key and title. */
+  releaseScopeItems: (id: string) => request<ScopeItemDetail[]>(`/releases/${id}/scope/items`),
+  /** VYB-0930: the picker's source: searchable, paged, each saying which release already holds it. */
+  releaseCandidates: (id: string, params: { q?: string; page?: number; size?: number }) =>
+    request<Page<ReleaseCandidate>>(`/releases/${id}/candidates${query({ q: params.q, page: params.page, size: params.size })}`),
+  /** VYB-0930: commits several with one reason, all or nothing (Approver). */
+  commitManyToRelease: (id: string, requirementIds: string[], reason: string) =>
+    request<BulkScopeResult>(`/releases/${id}/scope/bulk`, { method: 'POST', body: JSON.stringify({ requirementIds, reason }) }),
+  /** VYB-0930: the release notes as a file (a plain link cannot carry the token), with the name the server gave it. */
+  downloadReleaseNotes: async (id: string, format: 'markdown' | 'docx'): Promise<{ blob: Blob; filename: string }> => {
+    const token = tokenProvider()
+    const res = await fetch(`${BASE}/releases/${id}/notes/export?format=${format}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) throw await problemFrom(res)
+    const named = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
+    return { blob: await res.blob(), filename: named ?? `release-notes.${format === 'docx' ? 'docx' : 'md'}` }
+  },
 
   // Environments and deployment (ingestion itself is CI-only, not called from here)
   environments: () => request<VyoogEnvironment[]>('/environments'),

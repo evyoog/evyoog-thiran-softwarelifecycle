@@ -128,6 +128,7 @@ class AccessPolicyTest {
         Map.entry("ReleaseController#create", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ReleaseController#setTargetDate", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ReleaseController#commit", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ReleaseController#commitMany", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ReleaseController#remove", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),
         // 6c: defects and test cases = Tester (matrix: Verify)
         Map.entry("DefectController#raise", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),

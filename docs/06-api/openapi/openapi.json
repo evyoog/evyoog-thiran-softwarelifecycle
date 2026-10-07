@@ -455,6 +455,38 @@
         },
         "type" : "object"
       },
+      "BulkScopeChange" : {
+        "properties" : {
+          "reason" : {
+            "type" : "string"
+          },
+          "requirementIds" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "reason", "requirementIds" ],
+        "type" : "object"
+      },
+      "BulkScopeResult" : {
+        "properties" : {
+          "alreadyCommitted" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "committed" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "BulkTestCaseSuggestionsRequest" : {
         "properties" : {
           "requirementIds" : {
@@ -2950,6 +2982,55 @@
         },
         "type" : "object"
       },
+      "PageReleaseCandidateView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReleaseCandidateView"
+            },
+            "type" : "array"
+          },
+          "empty" : {
+            "type" : "boolean"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "numberOfElements" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sort" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SortObject"
+            },
+            "type" : "array"
+          },
+          "totalElements" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "PageRequirementSummaryView" : {
         "properties" : {
           "content" : {
@@ -3625,6 +3706,29 @@
         },
         "type" : "object"
       },
+      "ReleaseCandidateView" : {
+        "properties" : {
+          "committedToId" : {
+            "type" : "string"
+          },
+          "committedToName" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ReleaseNotesView" : {
         "properties" : {
           "approvedByCapability" : {
@@ -4279,6 +4383,26 @@
           }
         },
         "required" : [ "reason", "requirementId" ],
+        "type" : "object"
+      },
+      "ScopeItemDetailView" : {
+        "properties" : {
+          "capabilityName" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "SecurityReport" : {
@@ -8382,7 +8506,7 @@
     },
     "/api/v1/import/batches/{id}/candidates" : {
       "get" : {
-        "operationId" : "candidates",
+        "operationId" : "candidates_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -9764,6 +9888,47 @@
         "tags" : [ "release-controller" ]
       }
     },
+    "/api/v1/releases/{id}/candidates" : {
+      "get" : {
+        "operationId" : "candidates",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "pageable",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/Pageable"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageReleaseCandidateView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-controller" ]
+      }
+    },
     "/api/v1/releases/{id}/gates" : {
       "get" : {
         "operationId" : "options",
@@ -9897,6 +10062,41 @@
         "tags" : [ "release-controller" ]
       }
     },
+    "/api/v1/releases/{id}/notes/export" : {
+      "get" : {
+        "operationId" : "exportNotes",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "format",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-controller" ]
+      }
+    },
     "/api/v1/releases/{id}/readiness" : {
       "get" : {
         "operationId" : "readiness",
@@ -9976,6 +10176,73 @@
         },
         "responses" : {
           "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-controller" ]
+      }
+    },
+    "/api/v1/releases/{id}/scope/bulk" : {
+      "post" : {
+        "operationId" : "commitMany",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkScopeChange"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkScopeResult"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "release-controller" ]
+      }
+    },
+    "/api/v1/releases/{id}/scope/items" : {
+      "get" : {
+        "operationId" : "scopeItems",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScopeItemDetailView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
             "description" : "OK"
           }
         },

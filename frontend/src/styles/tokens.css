@@ -2416,3 +2416,7 @@ body {
 .badge.tr-blocked { background: var(--info-dim); color: var(--info); border-color: var(--info-bd); }
 .badge.tr-none    { background: var(--panel-3);  color: var(--tx-2);  border-color: var(--line-2); }
 .tr-case .tbl tbody tr { cursor: default; }
+
+/* VYB-0930: a disabled button looked exactly like an enabled one (there was no rule for it), which is misleading where a
+   screen disables an action on purpose, such as removing from a frozen release's scope. */
+.btn:disabled { opacity: .5; cursor: not-allowed; }

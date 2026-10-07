@@ -38,6 +38,11 @@ public class ReleaseService {
         return releases.findAll();
     }
 
+    /** VYB-0930: one release, or {@link NoSuchElementException}. */
+    public Release find(UUID releaseId) {
+        return releases.findById(releaseId).orElseThrow(() -> new NoSuchElementException("No such release: " + releaseId));
+    }
+
     /** VYB-0372: the one genuinely plannable date this application has — set explicitly, never inferred. */
     @Transactional
     public Release setTargetDate(UUID releaseId, java.time.Instant targetDate, UUID actor) {
@@ -95,6 +100,107 @@ public class ReleaseService {
 
     public List<UUID> scope(UUID releaseId) {
         return jdbc.queryForList("SELECT requirement_id FROM release_scope_item WHERE release_id = ?", UUID.class, releaseId);
+    }
+
+    public record ScopeItem(String requirementId, String key, String title, String status, String capabilityName) {}
+
+    /** VYB-0930: what is committed, with key and title, so a screen shows requirements rather than ids. */
+    public List<ScopeItem> scopeItems(UUID releaseId) {
+        find(releaseId);
+        return jdbc.query("""
+            SELECT r.id, r.key, r.title, r.status, coalesce(c.name, '(unplaced)') AS capability_name
+              FROM release_scope_item s JOIN requirement r ON r.id = s.requirement_id
+              LEFT JOIN capability c ON c.id = r.capability_id
+             WHERE s.release_id = ? ORDER BY r.key
+            """, (rs, n) -> new ScopeItem(rs.getString("id"), rs.getString("key"), rs.getString("title"),
+                rs.getString("status"), rs.getString("capability_name")), releaseId);
+    }
+
+    /** {@code committedTo} is the release the requirement is committed to, when it is (this one included). */
+    public record Candidate(String requirementId, String key, String title, String status, String committedToId,
+                             String committedToName) {}
+
+    /**
+     * VYB-0930: requirements a person can pick for this release's scope, searchable by key or title (wildcards in the
+     * search are literal), each saying which release it is already committed to, if any, so the picker can show it as
+     * taken instead of letting the server refuse it. Deleted requirements are not offered.
+     */
+    public org.springframework.data.domain.Page<Candidate> candidates(UUID releaseId, String q,
+                                                                      org.springframework.data.domain.Pageable pageable) {
+        find(releaseId);
+        List<Object> args = new java.util.ArrayList<>();
+        String filter = "";
+        if (q != null && !q.isBlank()) {
+            filter = " AND (r.key ILIKE ? OR r.title ILIKE ?)";
+            String like = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+            args.add(like);
+            args.add(like);
+        }
+        String from = """
+              FROM requirement r
+              LEFT JOIN release_scope_item s ON s.requirement_id = r.id
+              LEFT JOIN release rl ON rl.id = s.release_id
+             WHERE r.deleted_at IS NULL""" + filter;
+        Long total = jdbc.queryForObject("SELECT count(*) " + from, Long.class, args.toArray());
+        List<Object> pageArgs = new java.util.ArrayList<>(args);
+        pageArgs.add(pageable.getPageSize());
+        pageArgs.add(pageable.getOffset());
+        List<Candidate> rows = jdbc.query("SELECT r.id, r.key, r.title, r.status, rl.id AS release_id, rl.name AS release_name "
+            + from + " ORDER BY r.key LIMIT ? OFFSET ?", (rs, n) -> new Candidate(rs.getString("id"), rs.getString("key"),
+                rs.getString("title"), rs.getString("status"), rs.getString("release_id"), rs.getString("release_name")),
+            pageArgs.toArray());
+        return new org.springframework.data.domain.PageImpl<>(rows, pageable, total == null ? 0 : total);
+    }
+
+    public record BulkResult(List<UUID> committed, List<UUID> alreadyCommitted) {}
+
+    private static final int MAX_BULK = 200;
+
+    /**
+     * VYB-0930: commits several requirements to the release with one reason, all or nothing. Refused as a whole, with
+     * every offending requirement named in one message, if the scope is locked, the reason is missing, a requirement
+     * does not exist, or one is committed to another release; one already committed here is skipped and reported, as
+     * a single commit is. Each commit leaves its own scope movement and audit event, exactly as {@link #commit} does.
+     */
+    @Transactional
+    public BulkResult commitAll(UUID releaseId, List<UUID> requirementIds, UUID actor, String reason) {
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("Committing to a release needs a reason");
+        if (requirementIds == null || requirementIds.isEmpty()) throw new IllegalArgumentException("Pick at least one requirement");
+        List<UUID> ids = requirementIds.stream().distinct().toList();
+        if (ids.size() > MAX_BULK) throw new IllegalArgumentException("Commit at most " + MAX_BULK + " requirements at a time");
+        requireScopeEditable(find(releaseId));
+
+        String placeholders = String.join(",", ids.stream().map(i -> "?").toList());
+        java.util.Map<UUID, String> keys = new java.util.HashMap<>();
+        jdbc.query(("SELECT id, key FROM requirement WHERE deleted_at IS NULL AND id IN (%s)").formatted(placeholders),
+            rs -> { keys.put(UUID.fromString(rs.getString("id")), rs.getString("key")); }, ids.toArray());
+        List<UUID> missing = ids.stream().filter(i -> !keys.containsKey(i)).toList();
+        if (!missing.isEmpty()) throw new NoSuchElementException(missing.size() + " of the requirements do not exist");
+
+        java.util.Map<UUID, UUID> elsewhere = new java.util.HashMap<>();
+        java.util.Set<UUID> here = new java.util.HashSet<>();
+        jdbc.query(("SELECT requirement_id, release_id FROM release_scope_item WHERE requirement_id IN (%s)").formatted(placeholders),
+            rs -> {
+                UUID req = UUID.fromString(rs.getString("requirement_id")), rel = UUID.fromString(rs.getString("release_id"));
+                if (rel.equals(releaseId)) here.add(req); else elsewhere.put(req, rel);
+            }, ids.toArray());
+        if (!elsewhere.isEmpty()) {
+            String taken = String.join(", ", elsewhere.keySet().stream().map(keys::get).sorted().toList());
+            throw new IllegalStateException(elsewhere.size() + " of the requirements are already committed to another release ("
+                + taken + "); remove them there first. Nothing was committed.");
+        }
+
+        List<UUID> committed = new java.util.ArrayList<>();
+        List<UUID> already = new java.util.ArrayList<>();
+        for (UUID id : ids) {
+            if (here.contains(id)) { already.add(id); continue; }
+            jdbc.update("INSERT INTO release_scope_item (release_id, requirement_id) VALUES (?,?)", releaseId, id);
+            movements.save(new ScopeMovement(releaseId, id, MovementDirection.IN, reason, actor));
+            audit.record(actor, "release.scope_added", "RELEASE", releaseId, null,
+                Map.of("requirementId", id.toString(), "reason", reason));
+            committed.add(id);
+        }
+        return new BulkResult(committed, already);
     }
 
     public List<ScopeMovement> movements(UUID releaseId, java.time.Instant from, java.time.Instant to) {

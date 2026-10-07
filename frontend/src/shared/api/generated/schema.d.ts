@@ -1355,7 +1355,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["candidates"];
+        get: operations["candidates_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2036,6 +2036,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/releases/{id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/releases/{id}/gates": {
         parameters: {
             query?: never;
@@ -2100,6 +2116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/releases/{id}/notes/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["exportNotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/releases/{id}/readiness": {
         parameters: {
             query?: never;
@@ -2126,6 +2158,38 @@ export interface paths {
         get: operations["scope"];
         put?: never;
         post: operations["commit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/releases/{id}/scope/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["commitMany"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/releases/{id}/scope/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["scopeItems"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4207,6 +4271,14 @@ export interface components {
             batchId?: string;
             outcomes?: components["schemas"]["RowOutcomeView"][];
         };
+        BulkScopeChange: {
+            reason: string;
+            requirementIds: string[];
+        };
+        BulkScopeResult: {
+            alreadyCommitted?: string[];
+            committed?: string[];
+        };
         BulkTestCaseSuggestionsRequest: {
             requirementIds: string[];
         };
@@ -5074,6 +5146,24 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
+        PageReleaseCandidateView: {
+            content?: components["schemas"]["ReleaseCandidateView"][];
+            empty?: boolean;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            number?: number;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            size?: number;
+            sort?: components["schemas"]["SortObject"][];
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
         PageRequirementSummaryView: {
             content?: components["schemas"]["RequirementSummaryView"][];
             empty?: boolean;
@@ -5327,6 +5417,14 @@ export interface components {
             requirementId?: string;
             title?: string;
         };
+        ReleaseCandidateView: {
+            committedToId?: string;
+            committedToName?: string;
+            key?: string;
+            requirementId?: string;
+            status?: string;
+            title?: string;
+        };
         ReleaseNotesView: {
             approvedByCapability?: {
                 [key: string]: components["schemas"]["NoteItemView"][];
@@ -5555,6 +5653,13 @@ export interface components {
         ScopeChange: {
             reason: string;
             requirementId: string;
+        };
+        ScopeItemDetailView: {
+            capabilityName?: string;
+            key?: string;
+            requirementId?: string;
+            status?: string;
+            title?: string;
         };
         SecurityReport: {
             departedAccounts?: components["schemas"]["FindingSummary"][];
@@ -8252,7 +8357,7 @@ export interface operations {
             };
         };
     };
-    candidates: {
+    candidates_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -9338,6 +9443,31 @@ export interface operations {
             };
         };
     };
+    candidates: {
+        parameters: {
+            query: {
+                q?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageReleaseCandidateView"];
+                };
+            };
+        };
+    };
     options: {
         parameters: {
             query?: never;
@@ -9429,6 +9559,30 @@ export interface operations {
             };
         };
     };
+    exportNotes: {
+        parameters: {
+            query: {
+                format: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
     readiness: {
         parameters: {
             query?: never;
@@ -9494,6 +9648,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    commitMany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkScopeChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BulkScopeResult"];
+                };
+            };
+        };
+    };
+    scopeItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScopeItemDetailView"][];
+                };
             };
         };
     };

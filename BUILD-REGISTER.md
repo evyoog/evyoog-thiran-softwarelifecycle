@@ -333,7 +333,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0927 | 6 | Manual test execution | Quality screen: plans, runs, pass rate per requirement [M; F14] | DONE on dev (7 backend and 13 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S5 |
 | VYB-0928 | 6 | Releases and defects that finish the loop | Release state machine PLANNED, OPEN, FROZEN, RELEASED with configurable readiness gates [M; F13] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S6 |
 | VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | DONE on dev (11 backend and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
-| VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | TODO | S6 |
+| VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | DONE on dev (12 domain, 15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
 | VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | TODO | S6 |
 | VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
 | VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | TODO | S7 |
@@ -5242,6 +5242,32 @@ Phase 6 Sprint 6. Branch `dev`. **18 new tests**: `ReleaseSignOffIT` 11 (backend
 - The step-up path has only been exercised against tokens made in tests, not a Keycloak realm with a step-up flow (as the existing mechanism's own comment says).
 - The Home panel's text for a gate failure is the server's wording, shown as received.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+---
+
+## Session 85 — VYB-0930 (F13): release notes export as Markdown and Word, and the scope picker
+
+Phase 6 Sprint 6. Branch `dev`. **34 new tests**: `ReleaseNotesExporterTest` 12 (domain unit), `ReleaseNotesScopeIT` 15 (real PostgreSQL, service and HTTP with real tokens), `releaseScope.test.ts` 7 (frontend logic). The finding text F13 is not in the repository; scope is the register row. Description: `docs/04-workflows/release-state-machine.md`. Something to see: **Releases, Notes** (two export buttons) and **Releases, Scope** (the picker).
+
+**Decisions with the product owner this session.** (1) **Word file: built by us, no new dependency.** A .docx is a zip of a few XML parts; Apache POI was offered and declined. (2) **Picker: search and pick several, one reason**, committed in a single all-or-nothing call (a new bulk write endpoint, Approver only), and the committed list shows key and title instead of ids.
+
+**Backend.** `ReleaseNotesExporter` (Markdown and .docx from the notes the screen shows; held requirements always in their own section), `GET /releases/{id}/notes/export?format=markdown|docx`, `GET /releases/{id}/scope/items`, `GET /releases/{id}/candidates`, `POST /releases/{id}/scope/bulk` (`ReleaseController#commitMany`, Baseline, registered in `AccessPolicyTest`; 403 proven for a Business Analyst and a Tester). `ReleaseService` gained `find`, `scopeItems`, `candidates` and `commitAll`. OpenAPI and `schema.d.ts` regenerated (additive).
+
+**Frontend.** `features/releases/RequirementPicker.tsx` (search by key or title, tick several across searches, requirements already here or committed to another release shown as such with the release named and not tickable), `features/releaseScope.ts` (logic), the Scope tab (committed list with key, title, status, capability; one reason; "Commit N requirements"; the outcome and any refusal in words; a locked scope says so and offers no add or remove) and the Notes tab (Export as Markdown, Export as Word) in `Releases.tsx`. The file is fetched with the token and then saved. Types in `client.ts`.
+
+**Evidence.** Removing the "committed to another release" refusal from the bulk commit failed 2 tests (the whole call must commit nothing), then restored. The Word file was generated and read back with an independent reader (python-docx): title, Heading 1 and 2, list paragraphs, ampersands, angle brackets, quotes, an arrow and an emoji came out as written. The Scope and Notes tabs were rendered in Chromium against the dev server with mocked API responses, in both themes: a taken or already-here requirement could not be ticked, Commit stayed disabled without a reason, the bulk request body was checked, the search narrowed the list, the download saved as the server-named file, and a frozen release showed the lock message with no add form.
+
+**A defect found by the contract test, fixed.** My first response record was named `CandidateView`, which the import screen already has; OpenAPI schema names are by simple name, so the two collided and the document was wrong for one of them. Renamed `ReleaseCandidateView`. The same test is what would catch it next time.
+
+**Also changed.** A global rule so a disabled `.btn` looks disabled (half opacity, not-allowed cursor). There was none, so every disabled button in the app looked enabled (found because the frozen release's Remove button did). This restyles disabled buttons on every screen.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) The export includes the release's state and target date, when it was generated and the counts, and nothing else (no author, no cost, no estimates). (2) The picker offers requirements of any status, because held (not yet approved) ones can be committed and are listed separately. (3) At most 200 requirements per commit. (4) Deleted requirements are not offered or committed. (5) The export's file name is the release name made safe (letters, digits, dots, dashes), plus `-release-notes.md` or `.docx`.
+
+**Not done / to know**
+- **The Word file has not been opened in Word or LibreOffice.** LibreOffice here cannot load even a plain text file, so it could not be used. python-docx is a strict independent reader, but a real Word check is worth doing once.
+- The one-release-at-a-time rule is enforced in code (`commit`, and now `commitAll`), not by a database constraint, so two simultaneous commits of the same requirement to different releases could both succeed. Not new, not fixed here.
+- No PDF export, no export of the committed list, no per-capability export.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
 
 ---
 

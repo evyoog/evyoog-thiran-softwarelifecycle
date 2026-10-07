@@ -1,6 +1,6 @@
 # Release state machine and readiness gates
 
-Added by VYB-0928 and VYB-0929 (Phase 6, Sprint 6, F13). Migrations `database/migrations/V045__release_lifecycle.sql` and `V046__release_signoff.sql`. Code: `com.vyoog.release` (`ReleaseState`, `ReleaseLifecycleService`, `ReleaseGateConfigService`, `ReleaseGate`), endpoints in `ReleaseLifecycleController`.
+Added by VYB-0928, VYB-0929 and VYB-0930 (Phase 6, Sprint 6, F13). Migrations `database/migrations/V045__release_lifecycle.sql` and `V046__release_signoff.sql`. Code: `com.vyoog.release` (`ReleaseState`, `ReleaseLifecycleService`, `ReleaseGateConfigService`, `ReleaseGate`), endpoints in `ReleaseLifecycleController`.
 
 Before this row a release's state existed (`release.state`, V001) but nothing ever changed it.
 
@@ -58,6 +58,16 @@ Moving **into FROZEN** and **into RELEASED** is a signature event (spec 4.5), so
 
 `GET /api/v1/releases/current` (any signed-in person) returns the release being prepared: among those **OPEN or FROZEN**, the one with the **earliest target date** (a release with no date sorts last, then by name). 204 when none is. It carries the release's state and target date, its available moves each with their readiness gates evaluated (what stands in the way, in words) and the **blocked requirements** (unverified, conflicting, unowned). The Home screen's "Blocking the release" panel reads it: the state and date, whether the next forward move is ready and each failing check, that the move is a sign-off needing step-up, and the blocked requirements. Before VYB-0928 nothing could be OPEN, so that panel was always empty.
 
+## Release notes export and the scope picker (VYB-0930)
+
+**Export.** `GET /api/v1/releases/{id}/notes/export?format=markdown|docx` (any signed-in person) returns the release notes as a file download (`Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, a file name made safe from the release's name). The content is the notes the Notes tab shows: the release name, state and target date (or "no target date"), when it was generated and how many are approved and held; the **Approved** requirements grouped by capability; and, in their own section, the requirements committed but **held** short of Approved, which are never left out. An unknown format is 400 and an unknown release 404.
+
+- **Markdown:** every piece of text from a requirement is escaped so it cannot become formatting, a link or HTML, and line breaks are flattened so one requirement stays one list item.
+- **Word (.docx):** written by `ReleaseNotesExporter` with **no document library**: a .docx is a zip of a few XML parts, and release notes need a title, two heading levels and list lines. Text is XML-escaped and characters XML 1.0 cannot carry are dropped, so a stray control character in a title cannot corrupt the file. The same notes give the same bytes. It has been read back with an independent reader (python-docx); it has **not** been opened in Word or LibreOffice (see the session log).
+- Nothing in the notes is a cost, an estimate or a per-person figure.
+
+**Scope picker.** `GET /releases/{id}/scope/items` returns what is committed with key, title, status and capability. `GET /releases/{id}/candidates?q=&page=&size=` returns the requirements a person can pick, searchable by key or title (wildcards are literal; deleted requirements are not offered), each naming the release that already holds it, if any, so the picker shows it as taken. `POST /releases/{id}/scope/bulk` commits several with **one reason, all or nothing** (Approver, anywhere): the whole call is refused, with every offending requirement named, if the scope is locked, the reason is missing, a requirement does not exist, or one is committed to another release; one already committed here is skipped and reported; at most 200 at a time. Each requirement still gets its own scope movement and `release.scope_added` audit event. On the Releases screen the Scope tab shows key and title instead of ids, the picker (search, tick several across searches, one reason), and, for a frozen or released release, says in words that the scope is locked and offers no way to change it.
+
 ## Data
 
 - `release_transition`: one row per move (`from_state`, `to_state`, `reason`, `overridden`, `failed_gates` JSON, `changed_by`, `changed_at`, and for a freeze or release `signature_acr` and `auth_time`). The database refuses an override recorded without a reason and the gates.
@@ -69,4 +79,4 @@ Moving **into FROZEN** and **into RELEASED** is a signature event (spec 4.5), so
 
 ## Tests
 
-`ReleaseLifecycleIT` (`VYB0928_AC1` to `AC10`), `ReleaseSignOffIT` (`VYB0929_AC1` to `AC7`), `homeRelease.test.ts` (`VYB0929_AC8`); `AccessPolicyTest` (the transition endpoint is Baseline); `ForeignKeyIndexIT`.
+`ReleaseLifecycleIT` (`VYB0928_AC1` to `AC10`), `ReleaseSignOffIT` (`VYB0929_AC1` to `AC7`), `homeRelease.test.ts` (`VYB0929_AC8`), `ReleaseNotesExporterTest` and `ReleaseNotesScopeIT` and `releaseScope.test.ts` (`VYB0930_AC1` to `AC9`); `AccessPolicyTest` (the transition endpoint is Baseline); `ForeignKeyIndexIT`.

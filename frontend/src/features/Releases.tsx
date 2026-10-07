@@ -1,10 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { api } from '@/shared/api/client'
+import { ApiError, api, type ReleaseState } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
 import { Modal } from '@/shared/ui/Modal'
 import { useRovingGrid } from '@/shared/ui/useRovingGrid'
+import { RequirementPicker } from './releases/RequirementPicker'
+import {
+  commitBlockedReason, commitLabel, lockMessage, resultText, scopeLocked, type Selection,
+} from './releaseScope'
 
 type Tab = 'scope' | 'movement' | 'baselines' | 'variants' | 'deployment' | 'notes'
 
@@ -68,7 +72,7 @@ export function Releases() {
       {!releaseId && tab !== 'baselines' && tab !== 'variants' && tab !== 'deployment' && (
         <Empty title="Pick a release above" desc="Scope, movement and notes all need one selected." />
       )}
-      {tab === 'scope' && releaseId && <ScopeTab releaseId={releaseId} />}
+      {tab === 'scope' && releaseId && <ScopeTab releaseId={releaseId} state={selectedRelease?.state} />}
       {tab === 'movement' && releaseId && <MovementTab releaseId={releaseId} />}
       {tab === 'baselines' && <BaselinesTab releaseId={releaseId} />}
       {tab === 'variants' && <VariantsTab />}
@@ -78,32 +82,50 @@ export function Releases() {
   )
 }
 
-/** VYB-0515: committed requirements with verified percentage and open gaps. AC2 — empty scope shows an empty state. */
-function ScopeTab({ releaseId }: { releaseId: string }) {
+/**
+ * VYB-0515: committed requirements with verified percentage and open gaps. AC2: empty scope shows an empty state.
+ * VYB-0930: the committed list shows key, title and status instead of ids, and requirements are added with a picker (search
+ * by key or title, tick several, one reason, committed together or not at all). A frozen or released release's scope is
+ * locked (VYB-0928), which the tab says in words instead of letting the server refuse it.
+ */
+function ScopeTab({ releaseId, state }: { releaseId: string; state: ReleaseState | undefined }) {
   const qc = useQueryClient()
-  const [requirementId, setRequirementId] = useState('')
+  const locked = scopeLocked(state)
+  const [selection, setSelection] = useState<Selection>(new Map())
   const [reason, setReason] = useState('')
+  const [outcome, setOutcome] = useState<string | undefined>()
   const [removing, setRemoving] = useState<string | null>(null)
   const [removeReason, setRemoveReason] = useState('')
-  const { data: scope } = useQuery({ queryKey: ['release-scope', releaseId], queryFn: () => api.releaseScope(releaseId) })
+  const { data: scope } = useQuery({ queryKey: ['release-scope-items', releaseId], queryFn: () => api.releaseScopeItems(releaseId) })
   const { data: readiness } = useQuery({ queryKey: ['release-readiness', releaseId], queryFn: () => api.releaseReadiness(releaseId) })
   const { data: blocked } = useQuery({ queryKey: ['release-blocked', releaseId], queryFn: () => api.releaseBlocked(releaseId) })
 
   const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['release-scope-items', releaseId] })
     void qc.invalidateQueries({ queryKey: ['release-scope', releaseId] })
+    void qc.invalidateQueries({ queryKey: ['release-candidates', releaseId] })
     void qc.invalidateQueries({ queryKey: ['release-readiness', releaseId] })
     void qc.invalidateQueries({ queryKey: ['release-blocked', releaseId] })
+    void qc.invalidateQueries({ queryKey: ['release-current'] })
   }
   const commit = useMutation({
-    mutationFn: () => api.commitToRelease(releaseId, requirementId, reason),
-    onSuccess: () => { setRequirementId(''); setReason(''); invalidate() },
+    mutationFn: () => api.commitManyToRelease(releaseId, [...selection.keys()], reason.trim()),
+    onSuccess: (r) => {
+      setOutcome(resultText(r.committed.length, r.alreadyCommitted.length))
+      setSelection(new Map())
+      setReason('')
+      invalidate()
+    },
+    onError: () => setOutcome(undefined),
   })
-  // VYB-0758: a real modal collecting the reason, not window.prompt — the same
+  // VYB-0758: a real modal collecting the reason, not window.prompt: the same
   // pattern every other consequential action here uses.
   const remove = useMutation({
     mutationFn: (id: string) => api.removeFromRelease(releaseId, id, removeReason),
     onSuccess: () => { setRemoving(null); setRemoveReason(''); invalidate() },
   })
+  const blockedReason = commitBlockedReason(selection.size, reason, locked)
+  const lock = lockMessage(state)
 
   return (
     <>
@@ -138,11 +160,14 @@ function ScopeTab({ releaseId }: { releaseId: string }) {
       )}
 
       <h4 className="section-h">Committed requirements</h4>
-      {scope && scope.length === 0 && <Empty title="Nothing committed yet" desc="Commit a requirement below." />}
-      {scope?.map((id) => (
-        <div key={id} className="list-item">
-          <span className="mono" style={{ flex: 1, fontSize: 11 }}>{id}</span>
-          <button className="btn" onClick={() => setRemoving(id)}>Remove</button>
+      {lock && <p className="hint muted" role="status">{lock}</p>}
+      {scope && scope.length === 0 && <Empty title="Nothing committed yet" desc={locked ? 'This release has nothing committed.' : 'Find requirements below and commit them.'} />}
+      {scope?.map((i) => (
+        <div key={i.requirementId} className="list-item">
+          <span className="mono muted" style={{ fontSize: 11 }}>{i.key}</span>
+          <span style={{ flex: 1 }}>{i.title}</span>
+          <span className="muted" style={{ fontSize: 11 }}>{i.status.replace('_', ' ').toLowerCase()} · {i.capabilityName}</span>
+          <button className="btn" disabled={locked} title={locked ? 'The scope is locked' : undefined} onClick={() => setRemoving(i.requirementId)}>Remove</button>
         </div>
       ))}
 
@@ -163,22 +188,30 @@ function ScopeTab({ releaseId }: { releaseId: string }) {
         </Modal>
       )}
 
-      <div className="row" style={{ marginTop: 12 }}>
-        <div className="field" style={{ flex: 2 }}>
-          <label className="label">Requirement ID</label>
-          <input className="input" value={requirementId} onChange={(e) => setRequirementId(e.target.value)} />
-        </div>
-        <div className="field" style={{ flex: 2 }}>
-          <label className="label">Reason (required — recorded with your name)</label>
-          <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
-        </div>
-        <div className="field" style={{ alignSelf: 'flex-end' }}>
-          <button className="btn pri" disabled={!requirementId.trim() || !reason.trim() || commit.isPending} onClick={() => commit.mutate()}>
-            Commit
-          </button>
-        </div>
-      </div>
-      {commit.isError && <p className="err-text">Could not commit — it may already be committed to another release.</p>}
+      {!locked && (
+        <section style={{ marginTop: 18 }} aria-label="Commit requirements">
+          <h4 className="section-h">Add requirements</h4>
+          <RequirementPicker releaseId={releaseId} selection={selection} onChange={(s) => { setSelection(s); setOutcome(undefined) }} />
+          <div className="row" style={{ marginTop: 12 }}>
+            <div className="field" style={{ flex: 3 }}>
+              <label className="label" htmlFor="commit-reason">Reason (required; recorded with your name, once for all of them)</label>
+              <input id="commit-reason" className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
+            <div className="field" style={{ alignSelf: 'flex-end' }}>
+              <button className="btn pri" disabled={!!blockedReason || commit.isPending} title={blockedReason} onClick={() => commit.mutate()}>
+                {commitLabel(selection.size)}
+              </button>
+            </div>
+          </div>
+          {blockedReason && selection.size > 0 && <p className="hint muted">{blockedReason}</p>}
+          {outcome && <p role="status" aria-live="polite" style={{ color: 'var(--ok)' }}>{outcome}</p>}
+          {commit.isError && (
+            <p className="err-text" role="alert">
+              {commit.error instanceof ApiError ? (commit.error.detail ?? commit.error.title) : 'Could not commit. Nothing was committed.'}
+            </p>
+          )}
+        </section>
+      )}
     </>
   )
 }
@@ -461,11 +494,42 @@ function DeploymentTab() {
 /** VYB-0521/0484. */
 function NotesTab({ releaseId }: { releaseId: string }) {
   const { data } = useQuery({ queryKey: ['release-notes', releaseId], queryFn: () => api.releaseNotes(releaseId) })
+  const [exportError, setExportError] = useState<string | undefined>()
+  const [exporting, setExporting] = useState<'markdown' | 'docx' | null>(null)
   if (!data) return <p className="eyebrow">Loading…</p>
+
+  // VYB-0930: the same notes, as a file. The token cannot ride on a plain link, so the file is fetched and then saved.
+  const download = async (format: 'markdown' | 'docx') => {
+    setExporting(format)
+    setExportError(undefined)
+    try {
+      const { blob, filename } = await api.downloadReleaseNotes(releaseId, format)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setExportError(e instanceof ApiError ? (e.detail ?? e.title) : 'Could not export the release notes.')
+    } finally {
+      setExporting(null)
+    }
+  }
 
   const capabilities = Object.keys(data.approvedByCapability)
   return (
     <>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+        <button className="btn" disabled={exporting !== null} onClick={() => void download('markdown')}>
+          {exporting === 'markdown' ? 'Exporting…' : 'Export as Markdown'}
+        </button>
+        <button className="btn" disabled={exporting !== null} onClick={() => void download('docx')}>
+          {exporting === 'docx' ? 'Exporting…' : 'Export as Word'}
+        </button>
+        <span className="hint muted">Approved requirements by capability; anything held short of approval is listed separately.</span>
+      </div>
+      {exportError && <p className="err-text" role="alert">{exportError}</p>}
       {capabilities.length === 0 && data.held.length === 0 && <Empty title="Nothing committed to this release" desc="" />}
       {capabilities.map((cap) => (
         <div key={cap} style={{ marginBottom: 16 }}>

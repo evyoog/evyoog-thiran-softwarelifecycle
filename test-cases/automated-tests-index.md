@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 732 tests cover 55 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 766 tests cover 56 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -900,3 +900,40 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` onlyTheForwardMovesAreWhatBlocksTheRelease (`frontend/src/features/homeRelease.test.ts`)
 - `AC8` readinessIsSaidInWordsWithTheNumberOfChecksFailing (`frontend/src/features/homeRelease.test.ts`)
 - `AC8` thereIsSomethingToShowOnlyWhenAForwardMoveIsNotReadyOrARequirementIsBlocked (`frontend/src/features/homeRelease.test.ts`)
+
+## VYB-0930: Release notes export as Markdown and Word; scope form with a requirement picker [S; F13]
+
+- `AC1` aReleaseWithNoDateSaysSoAndNothingCommittedIsSaidNotLeftBlank (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC1` aReleaseWithNothingCommittedStillExportsAndSaysSo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC1` anUnknownFormatIsRefusedAnUnknownReleaseIs404AndNoTokenIs401 (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC1` heldItemsAreStillListedWhenNothingIsApprovedYet (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC1` theMarkdownExportHasTheNotesIncludingHeldItemsAndIsAFileDownload (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC1` theMarkdownGroupsApprovedItemsByCapabilityAndListsHeldOnesSeparately (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC1` theWordExportIsAZipWhoseDocumentHoldsTheSameItems (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC2` aLineBreakInATitleDoesNotSplitTheListItemInTwo (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC2` markdownSyntaxInATitleIsEscapedSoItCannotInjectFormattingOrLinksOrHtml (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC2` theCommittedListShowsKeyTitleStatusAndCapabilityNotIds (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC3` theCandidatesAreSearchableByKeyOrTitleAndSayWhichReleaseAlreadyHoldsOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC3` theWordFileCarriesTheSameContentIncludingTheHeldSection (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC3` theWordFileIsAZipOfWellFormedPartsWithTheRequiredEntriesFirst (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC3` wildcardsInTheSearchAreLiteralAndADeletedRequirementIsNotOffered (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC4` aRequirementAlreadyHereIsSkippedAndReportedNotAnError (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC4` aSupplementaryCharacterSurvivesAndALoneSurrogateIsDropped (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC4` severalRequirementsAreCommittedWithOneReasonEachLeavingItsOwnMovementAndAuditEvent (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC4` xmlSpecialCharactersAreEscapedAndCharactersXmlCannotCarryAreDroppedSoTheFileStaysValid (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC5` aLockedScopeRefusesTheBulkCommitToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC5` aMissingRequirementOrAMissingReasonOrAnEmptyListRefusesTheWholeCall (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC5` anEmptyReleaseStillMakesAValidWordFileThatSaysSo (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC5` atMostTwoHundredAtATime (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC5` oneRequirementTakenByAnotherReleaseRefusesTheWholeCallNamingItAndCommitsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC5` theSameNotesGiveTheSameBytes (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC6` aRefusalOverHttpIsAConflictNamingTheRequirementAndNothingIsCommitted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC6` escapingHelpersDoNotChangeOrdinaryText (`backend/vyoog-domain/src/test/java/com/vyoog/release/ReleaseNotesExporterTest.java`)
+- `AC6` onlyAnApproverCanBulkCommitAndEveryoneSignedInCanReadTheCandidatesAndTheList (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReleaseNotesScopeIT.java`)
+- `AC7` aCandidateIsFreeAlreadyHereOrTakenByAnotherReleaseAndSaysSo (`frontend/src/features/releaseScope.test.ts`)
+- `AC7` aFrozenOrReleasedReleaseHasALockedScopeWithAReasonInWords (`frontend/src/features/releaseScope.test.ts`)
+- `AC8` onlyAFreeCandidateCanBeToggledIntoTheSelectionAndAToggleIsReversible (`frontend/src/features/releaseScope.test.ts`)
+- `AC8` selectAllOnThePageTakesOnlyTheFreeOnesAndClearsThemWhenAllAreSelected (`frontend/src/features/releaseScope.test.ts`)
+- `AC8` theSelectionIsNeverMutatedInPlace (`frontend/src/features/releaseScope.test.ts`)
+- `AC9` commitIsBlockedWithAReasonInWordsUntilThereIsASelectionAndAReason (`frontend/src/features/releaseScope.test.ts`)
+- `AC9` theButtonAndTheResultReadInPlainWords (`frontend/src/features/releaseScope.test.ts`)

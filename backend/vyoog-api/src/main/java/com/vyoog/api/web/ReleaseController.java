@@ -6,6 +6,7 @@ import com.vyoog.api.config.RequiresAccess;
 
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.release.Release;
+import com.vyoog.release.ReleaseNotesExporter;
 import com.vyoog.release.ReleaseService;
 import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
@@ -23,10 +24,12 @@ import org.springframework.web.bind.annotation.*;
 public class ReleaseController {
 
     private final ReleaseService service;
+    private final ReleaseNotesExporter exporter;
     private final UserProvisioningService provisioning;
 
-    public ReleaseController(ReleaseService service, UserProvisioningService provisioning) {
+    public ReleaseController(ReleaseService service, ReleaseNotesExporter exporter, UserProvisioningService provisioning) {
         this.service = service;
+        this.exporter = exporter;
         this.provisioning = provisioning;
     }
 
@@ -137,5 +140,73 @@ public class ReleaseController {
         List<NoteItemView> held = n.held().stream()
             .map(i -> new NoteItemView(i.requirementId(), i.key(), i.title(), i.capabilityName())).toList();
         return new ReleaseNotesView(byCapability, held);
+    }
+
+    // ------------------------------------------------------------ VYB-0930
+
+    public record ScopeItemDetailView(String requirementId, String key, String title, String status, String capabilityName) {}
+
+    /** What is committed, with key and title, so a screen shows requirements rather than ids. */
+    @GetMapping("/{id}/scope/items")
+    public List<ScopeItemDetailView> scopeItems(@PathVariable UUID id) {
+        return service.scopeItems(id).stream()
+            .map(i -> new ScopeItemDetailView(i.requirementId(), i.key(), i.title(), i.status(), i.capabilityName())).toList();
+    }
+
+    public record ReleaseCandidateView(String requirementId, String key, String title, String status, String committedToId,
+                                 String committedToName) {}
+
+    /** The requirement picker's source: searchable by key or title, each saying which release (if any) already holds it. */
+    @GetMapping("/{id}/candidates")
+    public org.springframework.data.domain.Page<ReleaseCandidateView> candidates(
+            @PathVariable UUID id, @RequestParam(required = false) String q,
+            @org.springframework.data.web.PageableDefault(size = 20) org.springframework.data.domain.Pageable pageable) {
+        return service.candidates(id, q, pageable).map(c -> new ReleaseCandidateView(c.requirementId(), c.key(), c.title(), c.status(),
+            c.committedToId(), c.committedToName()));
+    }
+
+    public record BulkScopeChange(@jakarta.validation.constraints.NotEmpty List<String> requirementIds, @NotBlank String reason) {}
+
+    public record BulkScopeResult(List<String> committed, List<String> alreadyCommitted) {}
+
+    /** Commits several requirements with one reason, all or nothing. A single refusal (locked scope, taken elsewhere) commits none. */
+    @RequiresAccess(value = AccessRule.BASELINE, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping("/{id}/scope/bulk")
+    public BulkScopeResult commitMany(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid BulkScopeChange body,
+                                       @AuthenticationPrincipal Jwt jwt) {
+        var r = service.commitAll(id, body.requirementIds().stream().map(UUID::fromString).toList(), currentUserId(jwt), body.reason());
+        return new BulkScopeResult(r.committed().stream().map(UUID::toString).toList(),
+            r.alreadyCommitted().stream().map(UUID::toString).toList());
+    }
+
+    /** The release notes as a file: {@code format=markdown} or {@code format=docx}. Held requirements are in it, listed separately. */
+    @GetMapping("/{id}/notes/export")
+    public org.springframework.http.ResponseEntity<byte[]> exportNotes(@PathVariable UUID id, @RequestParam String format) {
+        Release release = service.find(id);
+        var header = new ReleaseNotesExporter.Header(release.getName(), release.getState(), release.getTargetDate(), Instant.now());
+        var notes = service.releaseNotes(id);
+        byte[] bytes;
+        String contentType, extension;
+        switch (format.toLowerCase(java.util.Locale.ROOT)) {
+            case "markdown", "md" -> {
+                bytes = exporter.markdown(header, notes).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                contentType = ReleaseNotesExporter.MARKDOWN_CONTENT_TYPE;
+                extension = "md";
+            }
+            case "docx", "word" -> {
+                bytes = exporter.docx(header, notes);
+                contentType = ReleaseNotesExporter.DOCX_CONTENT_TYPE;
+                extension = "docx";
+            }
+            default -> throw new IllegalArgumentException("Unknown format '" + format + "': use markdown or docx");
+        }
+        String slug = release.getName().replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
+        String filename = (slug.isEmpty() ? "release" : slug) + "-release-notes." + extension;
+        return org.springframework.http.ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, contentType)
+            .header("X-Content-Type-Options", "nosniff")
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                org.springframework.http.ContentDisposition.attachment().filename(filename).build().toString())
+            .body(bytes);
     }
 }
