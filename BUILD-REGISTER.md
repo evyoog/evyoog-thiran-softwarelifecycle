@@ -335,10 +335,10 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0929 | 6 | Releases and defects that finish the loop | Release sign-off with step-up, and Home blocking panel fed from real state [M; F13] | DONE on dev (11 backend and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
 | VYB-0930 | 6 | Releases and defects that finish the loop | Release notes export as Markdown and Word; scope form with a requirement picker [S; F13] | DONE on dev (12 domain, 15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
 | VYB-0931 | 6 | Releases and defects that finish the loop | Defect lifecycle: FIXED, reopen, edit, assign, comment, links to test, run and release, state filter [M; F15] | DONE on dev (15 integration and 9 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S6 |
-| VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
-| VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | TODO | S7 |
-| VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | TODO | S7 |
-| VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | TODO | S7 |
+| VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | BLOCKED: the Macro Planner repository has no Product, Application, Capability or Feature data or API; decision needed, see docs/09-integrations/macro-planner-hierarchy-analysis.md | S7 |
+| VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
+| VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
+| VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 | VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | TODO | S8 |
 | VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | TODO | S8 |
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | TODO | S8 |
@@ -5293,6 +5293,24 @@ Phase 6 Sprint 6. Branch `dev`. **24 new tests**: `DefectLifecycleIT` 15 (`VYB09
 - Raising a defect from a step still sets the step link only; the test case and run links on that defect are shown from the step and are not copied into the three new columns.
 - The Quality screen's subtitle still says "A requirement is Verified only when a test passed against its current revision", which predates D16; not touched here.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only. 10 lint warnings, no new ones.
+
+---
+
+## Session 87 — VYB-0932 (F40): analysed the Macro Planner repository; Sprint 7 blocked, nothing built
+
+Phase 6 Sprint 7. Branch `dev`. **No code and no tests.** One analysis document, `docs/09-integrations/macro-planner-hierarchy-analysis.md`. VYB-0932 to VYB-0935 are marked BLOCKED; none is done.
+
+**What I did.** Attached `evyoog/evyoog-thittam-macro` read-only (commit `06b5abe`) and read its entities, controller inventory, MCP integration and documents. Nothing was changed there.
+
+**What I found.** The Macro Planner is Vyoog PMS, a project-management system. It has **no Product, Application, Capability or Feature entities and no API or events for them**; those words are levels of its documentation, not its data. Its own hierarchy is organisation node, Project, Phase, Activity, Task and Objective. It has no ALM integration. Its one integration is MCP with the Agile Planner, closed to every other client. So there is nothing for VYB-0932 to import, and mapping its objects onto our four levels would be a rule I would be inventing.
+
+**Decision with the product owner.** Asked how to proceed (define the feed here and build our side; map Macro Planner's real structure; skip Sprint 7). **Skip Sprint 7 for now.**
+
+**Needed from the product owner before Sprint 7 can start:** the choice in section 4 of the analysis (the Macro Planner serves the four levels; or a stated mapping from its real objects; or another source of the hierarchy), and the credentials and transport.
+
+**Not done / to know**
+- The Agile Planner analysis assumed Macro Planner owns those four levels. Its own repository does not support that; the Agile Planner analysis was not edited.
+- The MCP finding (Macro and Agile talk MCP, no REST) differs from the REST contract recorded in the Agile Planner analysis; noted there as an observation, to be settled with decision A of D24.
 
 ---
 

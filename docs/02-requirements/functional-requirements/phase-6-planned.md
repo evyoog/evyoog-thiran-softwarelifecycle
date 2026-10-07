@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 1, DONE 24, PARTIAL 1, TODO 34.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 24, PARTIAL 1, TODO 30.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -72,10 +72,10 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | TODO | S7 |
-| VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | TODO | S7 |
-| VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | TODO | S7 |
-| VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | TODO | S7 |
+| VYB-0932 | 6 | Macro Planner hierarchy sync | Read-only import of Product, Application, Capability, Feature from Macro Planner with local mapping [L; F40] | BLOCKED: the Macro Planner repository has no Product, Application, Capability or Feature data or API; decision needed, see docs/09-integrations/macro-planner-hierarchy-analysis.md | S7 |
+| VYB-0933 | 6 | Macro Planner hierarchy sync | Portfolio screens show upstream source and lock edited fields [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
+| VYB-0934 | 6 | Macro Planner hierarchy sync | Conflict queue and drift report for renamed or removed nodes [S; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
+| VYB-0935 | 6 | Macro Planner hierarchy sync | Migration: map existing locally created hierarchy to upstream records [M; F40] | BLOCKED: depends on VYB-0932 (see docs/09-integrations/macro-planner-hierarchy-analysis.md) | S7 |
 
 ## S8: AI governance
 

@@ -14,3 +14,5 @@ What Vyoog talks to, today and planned. Requirements for the built ones are in [
 | Agile Planner, Macro Planner | both | **planned**: a Planner-specific connector (VYB-0914, VYB-0915, VYB-0917; the generic planning push already uses the framework, VYB-0916), inbound sync (S4) and hierarchy sync (S7) | D24 (open), [`phase-6-planned.md`](../02-requirements/functional-requirements/phase-6-planned.md) |
 
 The Agile Planner API or event contract and a test instance are still needed before the Planner-specific rows (VYB-0914 onward) can start (D24). VYB-0913 was built first because it is the generic part and needs neither. What the Planner's own repository actually says, and how it differs from the register, is in [`agile-planner-contract-analysis.md`](agile-planner-contract-analysis.md).
+
+The Macro Planner hierarchy sync (VYB-0932 to VYB-0935) is blocked too: its repository has no Product, Application, Capability or Feature data or API. See [`macro-planner-hierarchy-analysis.md`](macro-planner-hierarchy-analysis.md).
