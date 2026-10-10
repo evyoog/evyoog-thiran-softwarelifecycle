@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 28, PARTIAL 1, TODO 26.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 29, PARTIAL 1, TODO 25.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -85,7 +85,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | DONE on dev (31 domain unit, 4 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | DONE on dev for brief elaboration, rewrite and test-case suggestions (import candidates and document analysis not moved; 6 domain, 21 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | DONE on dev: one ledger row per model call (purpose, prompt version, model, reported tokens, outcome; no user, no text), token budgets per UTC day and month that refuse calls with a reason, Analytics "AI usage" tab, Administration budget card (17 domain, 7 integration and 8 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
-| VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |
+| VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | DONE on dev: AI extraction saves each finished step and a failed one is continued; trace proposals, candidate checks, enrichment, requirement-revision embedding, model-backed rescans and attachment upload no longer call the network inside a transaction; a guard refuses it in tests and logs it in production (32 domain unit, 9 integration, 5 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 
 ## S9: Traceability, review and versioning depth
 

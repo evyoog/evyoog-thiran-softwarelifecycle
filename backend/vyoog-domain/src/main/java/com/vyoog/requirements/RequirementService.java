@@ -1,6 +1,5 @@
 package com.vyoog.requirements;
 
-import com.vyoog.ai.EmbeddingService;
 import com.vyoog.brief.BriefStalenessService;
 import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.platform.audit.AuditService;
@@ -31,7 +30,6 @@ public class RequirementService {
     private final AuditService audit;
     private final DetectionSweepService detection;
     private final BriefStalenessService briefStaleness;
-    private final EmbeddingService embeddings;
     private final QualityScoreService qualityScore;
     private final JdbcTemplate jdbc;
     private final RequirementEnrichmentService enrichment;
@@ -44,7 +42,6 @@ public class RequirementService {
                                AuditService audit,
                                DetectionSweepService detection,
                                BriefStalenessService briefStaleness,
-                               EmbeddingService embeddings,
                                QualityScoreService qualityScore,
                                JdbcTemplate jdbc,
                                RequirementEnrichmentService enrichment,
@@ -56,7 +53,6 @@ public class RequirementService {
         this.audit = audit;
         this.detection = detection;
         this.briefStaleness = briefStaleness;
-        this.embeddings = embeddings;
         this.enrichment = enrichment;
         this.qualityScore = qualityScore;
         this.jdbc = jdbc;
@@ -105,6 +101,23 @@ public class RequirementService {
      * same id both ways). Detection is a secondary concern: if it throws, the write
      * that already committed must not appear to have failed.
      */
+    /**
+     * VYB-0940: runs the work once this transaction has committed (and never if it rolls back). With no transaction
+     * synchronisation to hang the hook off (a plain unit test, or a caller outside a transaction) it runs at once.
+     */
+    private static void afterCommit(Runnable work) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override public void afterCommit() {
+                        work.run();
+                    }
+                });
+        } else {
+            work.run();
+        }
+    }
+
     private void rescan(UUID requirementId) {
         try {
             // The rescan runs raw SQL on the same connection/transaction — without an
@@ -143,20 +156,7 @@ public class RequirementService {
         // one has actually persisted the row it needs to read.
         UUID requirementId = r.getId();
         int revision = r.getRevision();
-        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
-            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                new org.springframework.transaction.support.TransactionSynchronization() {
-                    @Override public void afterCommit() {
-                        enrichment.enrich(requirementId, revision, statement);
-                    }
-                });
-        } else {
-            // No transaction synchronization to hang the after-commit hook off — a plain
-            // unit test constructing this service directly rather than through Spring, or
-            // a caller running outside a transaction entirely. Enrichment still happens,
-            // just synchronously, same as it always did before this existed.
-            enrichment.enrich(requirementId, revision, statement);
-        }
+        afterCommit(() -> enrichment.enrich(requirementId, revision, statement));
         return r;
     }
 
@@ -222,7 +222,11 @@ public class RequirementService {
         briefStaleness.markAffectedBriefsStale(r.getId());
         // VYB-0601 AC1: the statement changed (this is what "material" means for a
         // revision bump), so the embedding this revision needs no longer exists.
-        embeddings.embed(r.getId(), r.getRevision(), r.getStatement());
+        // VYB-0940: made after this transaction commits, not inside it; it is a call to a model provider.
+        UUID requirementId = r.getId();
+        int revision = r.getRevision();
+        String statementNow = r.getStatement();
+        afterCommit(() -> enrichment.embed(requirementId, revision, statementNow));
         return r;
     }
 

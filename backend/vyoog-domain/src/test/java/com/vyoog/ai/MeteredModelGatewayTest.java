@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.vyoog.platform.tx.NetworkCallGuard;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +33,7 @@ class MeteredModelGatewayTest {
         when(delegate.configured()).thenReturn(true);
         when(delegate.chatModel()).thenReturn("chat-model");
         when(delegate.embeddingModel()).thenReturn("embedding-model");
-        gateway = new MeteredModelGateway(delegate, budget, ledger, meters);
+        gateway = new MeteredModelGateway(delegate, budget, ledger, meters, NetworkCallGuard.refusing());
     }
 
     private AiUsageLedger.Entry recorded() {

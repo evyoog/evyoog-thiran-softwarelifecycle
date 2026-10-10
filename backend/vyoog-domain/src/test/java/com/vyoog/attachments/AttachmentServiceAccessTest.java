@@ -28,7 +28,9 @@ class AttachmentServiceAccessTest {
     private final AttachmentVersionRepository versions = mock(AttachmentVersionRepository.class);
     private final S3Client s3 = mock(S3Client.class);
     private final AttachmentService service =
-        new AttachmentService(attachments, versions, s3, new AttachmentPolicy(1_000), "bucket");
+        new AttachmentService(attachments, versions, s3, new AttachmentPolicy(1_000),
+            org.springframework.transaction.support.TransactionOperations.withoutTransaction(),
+            com.vyoog.platform.tx.NetworkCallGuard.refusing(), "bucket");
 
     private final UUID owner = UUID.randomUUID();
     private final UUID other = UUID.randomUUID();

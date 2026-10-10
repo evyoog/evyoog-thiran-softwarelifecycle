@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 /**
  * VYB-0924a: executing a manual run created by {@link TestManagementService#createRun}.
@@ -45,10 +46,12 @@ public class TestExecutionService {
     private final AttachmentService attachments;
     private final EntityManager entityManager;
     private final DetectionSweepService detection;
+    private final TransactionOperations tx;
 
     public TestExecutionService(JdbcTemplate jdbc, AuditService audit, TestManagementService mgmt,
                                  AttachmentService attachments, EntityManager entityManager,
-                                 DetectionSweepService detection) {
+                                 DetectionSweepService detection, TransactionOperations tx) {
+        this.tx = tx;
         this.entityManager = entityManager;
         this.detection = detection;
         this.jdbc = jdbc;
@@ -168,50 +171,59 @@ public class TestExecutionService {
      * The attachment's filename is prefixed with the run, case and step so it cannot collide with, or be mistaken for,
      * the requirement's own files, and the link points at the exact attachment version.
      */
-    @Transactional
     public TestManagementService.RunDetail addStepEvidence(UUID runId, UUID runStepId, UUID requirementId, String filename,
                                                             String contentType, byte[] bytes, UUID actorId) {
-        requireInProgress(runId);
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT rc.test_case_id, rc.case_key, rs.position FROM test_run_step rs JOIN test_run_case rc ON rc.id = rs.run_case_id
-             WHERE rs.id = ? AND rc.run_id = ?
-            """, runStepId, runId);
-        if (rows.isEmpty()) throw new NoSuchElementException("No such step in this run: " + runStepId);
-        Map<String, Object> row = rows.get(0);
-        String label = row.get("case_key") + "-step" + row.get("position");
-        UUID version = store(runId, (UUID) row.get("test_case_id"), requirementId, label, filename, contentType, bytes, actorId);
-        jdbc.update("INSERT INTO test_run_evidence (run_step_id, attachment_version_id, added_by) VALUES (?, ?, ?)",
-            runStepId, version, actorId);
-        audit.record(actorId, "test-run.evidence-added", "TEST_RUN", runId, null,
-            auditMap("stepId", runStepId.toString(), "attachmentVersionId", version.toString()));
-        return mgmt.getRun(runId);
+        // VYB-0940: the file is stored in object storage outside any transaction; what is read before it and what is written
+        // after it are each one short transaction, and the run is checked again at the second because it may have moved on.
+        Plan plan = tx.execute(status -> {
+            requireInProgress(runId);
+            List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT rc.test_case_id, rc.case_key, rs.position FROM test_run_step rs JOIN test_run_case rc ON rc.id = rs.run_case_id
+                 WHERE rs.id = ? AND rc.run_id = ?
+                """, runStepId, runId);
+            if (rows.isEmpty()) throw new NoSuchElementException("No such step in this run: " + runStepId);
+            Map<String, Object> row = rows.get(0);
+            String label = row.get("case_key") + "-step" + row.get("position");
+            return planFor(runId, (UUID) row.get("test_case_id"), requirementId, label, filename);
+        });
+        return storeAndRecord(plan, contentType, bytes, actorId, runId, version -> {
+            requireInProgress(runId);
+            jdbc.update("INSERT INTO test_run_evidence (run_step_id, attachment_version_id, added_by) VALUES (?, ?, ?)",
+                runStepId, version, actorId);
+            audit.record(actorId, "test-run.evidence-added", "TEST_RUN", runId, null,
+                auditMap("stepId", runStepId.toString(), "attachmentVersionId", version.toString()));
+        });
     }
 
     /** As {@link #addStepEvidence}, for a case that has no steps. */
-    @Transactional
     public TestManagementService.RunDetail addCaseEvidence(UUID runId, UUID runCaseId, UUID requirementId, String filename,
                                                             String contentType, byte[] bytes, UUID actorId) {
-        requireInProgress(runId);
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT rc.test_case_id, rc.case_key, (SELECT count(*) FROM test_run_step rs WHERE rs.run_case_id = rc.id) AS steps
-              FROM test_run_case rc WHERE rc.id = ? AND rc.run_id = ?
-            """, runCaseId, runId);
-        if (rows.isEmpty()) throw new NoSuchElementException("No such case in this run: " + runCaseId);
-        Map<String, Object> row = rows.get(0);
-        if (((Number) row.get("steps")).longValue() > 0) {
-            throw new IllegalStateException("This case has steps; attach the evidence to the step it backs");
-        }
-        UUID version = store(runId, (UUID) row.get("test_case_id"), requirementId, (String) row.get("case_key"), filename,
-            contentType, bytes, actorId);
-        jdbc.update("INSERT INTO test_run_evidence (run_case_id, attachment_version_id, added_by) VALUES (?, ?, ?)",
-            runCaseId, version, actorId);
-        audit.record(actorId, "test-run.evidence-added", "TEST_RUN", runId, null,
-            auditMap("caseId", runCaseId.toString(), "attachmentVersionId", version.toString()));
-        return mgmt.getRun(runId);
+        Plan plan = tx.execute(status -> {
+            requireInProgress(runId);
+            List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT rc.test_case_id, rc.case_key, (SELECT count(*) FROM test_run_step rs WHERE rs.run_case_id = rc.id) AS steps
+                  FROM test_run_case rc WHERE rc.id = ? AND rc.run_id = ?
+                """, runCaseId, runId);
+            if (rows.isEmpty()) throw new NoSuchElementException("No such case in this run: " + runCaseId);
+            Map<String, Object> row = rows.get(0);
+            if (((Number) row.get("steps")).longValue() > 0) {
+                throw new IllegalStateException("This case has steps; attach the evidence to the step it backs");
+            }
+            return planFor(runId, (UUID) row.get("test_case_id"), requirementId, (String) row.get("case_key"), filename);
+        });
+        return storeAndRecord(plan, contentType, bytes, actorId, runId, version -> {
+            requireInProgress(runId);
+            jdbc.update("INSERT INTO test_run_evidence (run_case_id, attachment_version_id, added_by) VALUES (?, ?, ?)",
+                runCaseId, version, actorId);
+            audit.record(actorId, "test-run.evidence-added", "TEST_RUN", runId, null,
+                auditMap("caseId", runCaseId.toString(), "attachmentVersionId", version.toString()));
+        });
     }
 
-    private UUID store(UUID runId, UUID testCaseId, UUID requirementId, String label, String filename, String contentType,
-                       byte[] bytes, UUID actorId) {
+    /** Where the file goes and what it is called, decided before it is stored. */
+    private record Plan(UUID target, String name) {}
+
+    private Plan planFor(UUID runId, UUID testCaseId, UUID requirementId, String label, String filename) {
         if (filename == null || filename.isBlank()) throw new IllegalArgumentException("The uploaded file has no name");
         List<UUID> verified = testCaseId == null ? List.of() : jdbc.queryForList("""
             SELECT to_id FROM trace_link WHERE from_type = 'TEST' AND from_id = ? AND to_type = 'REQUIREMENT' AND link_type = 'VERIFIES'
@@ -229,12 +241,29 @@ public class TestExecutionService {
         } else {
             target = verified.get(0);
         }
-        String name = "run-" + runId.toString().substring(0, 8) + "-" + label + "-" + filename;
-        UUID version = attachments.upload(target, name, contentType, bytes, actorId).version().getId();
-        // The attachment version is a JPA entity whose INSERT is still unflushed; the evidence row that follows is raw
-        // SQL with a foreign key to it (the same JPA-then-JDBC ordering TestCaseService.draft flushes for).
-        entityManager.flush();
-        return version;
+        return new Plan(target, "run-" + runId.toString().substring(0, 8) + "-" + label + "-" + filename);
+    }
+
+    /**
+     * Stores the file (no transaction open), then writes the attachment rows and the evidence row together in one. If that fails
+     * the stored file is deleted again, so nothing is left that nothing refers to.
+     */
+    private TestManagementService.RunDetail storeAndRecord(Plan plan, String contentType, byte[] bytes, UUID actorId, UUID runId,
+                                                            java.util.function.Consumer<UUID> evidenceRow) {
+        AttachmentService.StoredFile file = attachments.storeFile(plan.target(), plan.name(), contentType, bytes);
+        try {
+            return tx.execute(status -> {
+                UUID version = attachments.attach(file, actorId).version().getId();
+                // The attachment version is a JPA entity whose INSERT is still unflushed; the evidence row that follows is raw
+                // SQL with a foreign key to it (the same JPA-then-JDBC ordering TestCaseService.draft flushes for).
+                entityManager.flush();
+                evidenceRow.accept(version);
+                return mgmt.getRun(runId);
+            });
+        } catch (RuntimeException e) {
+            attachments.discard(file);
+            throw e;
+        }
     }
 
     // ------------------------------------------------------------ retest (0924b)

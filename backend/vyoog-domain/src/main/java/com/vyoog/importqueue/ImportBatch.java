@@ -46,6 +46,13 @@ public class ImportBatch {
     @Column(name = "raw_text", columnDefinition = "text")
     private String rawText;
 
+    /**
+     * VYB-0940: why the last AI extraction stopped; null unless the state is EXTRACTION_FAILED. Written by
+     * {@link JdbcExtractionProgress} directly, so it is mapped read-only here.
+     */
+    @Column(name = "extraction_error", columnDefinition = "text", insertable = false, updatable = false)
+    private String extractionError;
+
     protected ImportBatch() {}
 
     public ImportBatch(String filename, UUID applicationId, UploadKind uploadKind, UUID uploadedBy, String rawText) {
@@ -65,5 +72,6 @@ public class ImportBatch {
     public UUID getUploadedBy() { return uploadedBy; }
     public Instant getUploadedAt() { return uploadedAt; }
     public String getState() { return state; }
+    public String getExtractionError() { return extractionError; }
     public String getRawText() { return rawText; }
 }

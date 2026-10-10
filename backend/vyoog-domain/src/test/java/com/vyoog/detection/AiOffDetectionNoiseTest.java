@@ -60,7 +60,8 @@ class AiOffDetectionNoiseTest {
 
         OpenAiLlmAdjudicator aiOff = new OpenAiLlmAdjudicator(mock(com.vyoog.ai.ModelGateway.class), new ObjectMapper()); // a gateway that is not configured: configured() is false
         var detector = new ConflictingRequirementsDetector(similarity, Optional.of(aiOff), gapRules, aiUsage);
-        sweep = new DetectionSweepService(List.of(detector), gapRules, reconciler, aiUsage, new SimpleMeterRegistry());
+        sweep = new DetectionSweepService(List.of(detector), gapRules, reconciler, aiUsage, new SimpleMeterRegistry(),
+            new com.vyoog.platform.tx.AfterCommitRunner(Runnable::run));
 
         root = (Logger) LoggerFactory.getLogger("com.vyoog");
         logs = new ListAppender<>();

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 935 tests cover 60 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 981 tests cover 61 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1118,3 +1118,52 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` theTimeASlowCallTookIsRecordedInMilliseconds (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
 - `AC9` aFailedOrRefusedCallHasNoTotalEvenIfSomeNumberCameBack (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiUsageLedgerTest.java`)
 - `AC9` theTotalIsThePromptPlusTheCompletionTokensReportedAndNullWhenNeitherWas (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiUsageLedgerTest.java`)
+
+## VYB-0940: Move network calls out of database transactions; resumable extraction [M; F31]
+
+- `AC1` aRunThatFailsOnALaterChunkIsContinuedNotRestarted (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC10` aFailureIsRecordedWithItsReasonAndThePreviousStateAndNoCandidateIsMade (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+- `AC11` aFailureWhileWritingTheCandidatesIsRecordedToo (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+- `AC12` aReExtractionOfAnExtractedBatchPutsItsStateBackIfItFails (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+- `AC13` stepsMadeFromOtherTextAreNeverReusedBecauseTheDigestFollowsTheText (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+- `AC14` withNoModelConfiguredExtractionClaimsNothingAndKeepsNoSteps (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+- `AC15` outsideATransactionACallIsAlwaysAllowed (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC16` insideATransactionFailModeRefusesAndNamesTheCall (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC17` insideATransactionWarnModeLetsTheCallGoAheadButCountsIt (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC18` aModeThatIsNeitherWarnNorFailIsRefusedAtStartup (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC19` workMarkedAsAfterTheCommitIsNotInsideTheTransactionEvenWhileSpringStillReportsOne (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC2` aContinuedRunEndsWithExactlyWhatAnUninterruptedRunProduces (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC20` afterCommitWorkRunsOnlyOnCommitAndOutsideTheTransaction (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC21` afterCommitWorkIsDroppedIfTheTransactionRollsBack (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC22` withNoTransactionTheWorkIsHandedToTheExecutorAtOnce (`backend/vyoog-domain/src/test/java/com/vyoog/platform/tx/NetworkCallGuardTest.java`)
+- `AC23` insideATransactionTheModelDetectorWaitsForTheCommitAndTheOthersRunNow (`backend/vyoog-domain/src/test/java/com/vyoog/detection/DeferredModelDetectionTest.java`)
+- `AC24` withNoTransactionEverythingRunsAtOnceAsBefore (`backend/vyoog-domain/src/test/java/com/vyoog/detection/DeferredModelDetectionTest.java`)
+- `AC25` aDetectorIsNotDeferredUnlessItCallsAModel (`backend/vyoog-domain/src/test/java/com/vyoog/detection/DeferredModelDetectionTest.java`)
+- `AC26` theFileIsStoredBeforeTheTransactionOpensAndOutsideIt (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC27` ifTheRowsCannotBeWrittenTheFileIsDeletedAgainAndTheFailureStillReachesTheCaller (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC28` aFailureToDeleteTheFileDoesNotHideTheRealFailure (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC29` ifTheStoreRefusesTheFileNoRowIsWrittenAndNothingIsDeleted (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC3` aFailureInTheCheckKeepsTheChunksAndTheDescriptionAndOnlyTheCheckIsMadeAgain (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC30` anUploadCalledInsideSomeoneElsesTransactionIsRefusedBeforeAnythingIsSent (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC31` eachUploadGetsItsOwnKeyEvenForTheSameFilename (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC32` anExtractionMakesItsModelCallsOutsideATransactionAndLeavesNoStepsBehind (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC33` aFailurePartWayKeepsTheFinishedStepsSaysWhyAndMakesNoCandidate (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC34` extractingAgainContinuesFromTheLastSavedStepAndFinishesWithEveryCandidate (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC35` stepsMadeFromDifferentTextAreNotReusedIfTheDocumentChangedBetweenAttempts (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC36` onlyOneExtractionOfABatchRunsAtATimeAndAnAbandonedClaimIsTakenOver (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC37` theBatchViewShowsAFailedExtractionAndItsReasonAndExtractingFromTheScreenContinuesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC38` aCandidatesChecksAndTraceProposalsMakeTheirModelCallsOutsideATransaction (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC39` aWriteDefersItsEmbeddingToAfterTheCommitAndItStillArrives (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC4` aFailureOnALaterBatchOfBriefsKeepsTheEarlierBatches (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC40` anAttachmentUploadWritesItsRowsAfterTheFileAndEachVersionHasItsOwnKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ResumableExtractionIT.java`)
+- `AC41` eachStateOfABatchHasAPhase (`frontend/src/features/importqueue/extractionState.test.ts`)
+- `AC41` theExtractButtonStaysUntilTheBatchIsExtracted (`frontend/src/features/importqueue/extractionState.test.ts`)
+- `AC42` aFailedExtractionOffersToContinueNotToStartAgain (`frontend/src/features/importqueue/extractionState.test.ts`)
+- `AC43` theStopReasonIsShownInWordsAndAMissingOneSaysSo (`frontend/src/features/importqueue/extractionState.test.ts`)
+- `AC44` aRunningExtractionSaysSoAndOtherStatesSayNothing (`frontend/src/features/importqueue/extractionState.test.ts`)
+- `AC45` storingTheFileAndWritingItsRowsCanBeSeparatedSoACallerCanPutTheRowsInItsOwnTransaction (`backend/vyoog-domain/src/test/java/com/vyoog/attachments/AttachmentUploadTransactionTest.java`)
+- `AC5` aStepAlreadyDoneSpendsNoShareOfThePerRunBudget (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC6` withNoStepsNothingIsRememberedAndEveryCallIsMadeAgain (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC7` aSavedStepThatCannotBeReadBackIsMadeAgainNeverGuessed (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
+- `AC8` theStepsOfThisBatchAreHandedToThePipelineAndSuccessCompletesTheExtraction (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+- `AC9` aSecondRequestWhileOneIsRunningIsRefusedAndNothingIsCalled (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)

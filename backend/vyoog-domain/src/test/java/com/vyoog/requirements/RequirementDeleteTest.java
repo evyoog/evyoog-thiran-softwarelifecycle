@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.vyoog.ai.EmbeddingService;
 import com.vyoog.brief.BriefStalenessService;
 import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.platform.audit.AuditService;
@@ -31,7 +30,6 @@ class RequirementDeleteTest {
     @Mock AuditService audit;
     @Mock DetectionSweepService detection;
     @Mock BriefStalenessService briefStaleness;
-    @Mock EmbeddingService embeddings;
     @Mock JdbcTemplate jdbc;
     @Mock RequirementEnrichmentService enrichment;
     @Mock com.vyoog.identity.GrantResolver grantResolver;
@@ -44,7 +42,7 @@ class RequirementDeleteTest {
     @BeforeEach
     void setUp() {
         service = new RequirementService(
-            requirements, revisions, criteria, keys, audit, detection, briefStaleness, embeddings,
+            requirements, revisions, criteria, keys, audit, detection, briefStaleness,
             new QualityScoreService(), jdbc, enrichment, new RequirementTransitionAuthorizer(grantResolver));
         actor = UUID.randomUUID();
         id = UUID.randomUUID();

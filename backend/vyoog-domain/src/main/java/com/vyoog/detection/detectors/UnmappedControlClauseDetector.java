@@ -42,6 +42,11 @@ public class UnmappedControlClauseDetector implements Detector {
     }
 
     @Override
+    public boolean callsModel() {
+        return true;
+    }
+
+    @Override
     public String ruleKey() {
         return "compl";
     }

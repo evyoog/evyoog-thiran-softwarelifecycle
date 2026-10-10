@@ -336,6 +336,9 @@
           "applicationId" : {
             "type" : "string"
           },
+          "extractionError" : {
+            "type" : "string"
+          },
           "filename" : {
             "type" : "string"
           },

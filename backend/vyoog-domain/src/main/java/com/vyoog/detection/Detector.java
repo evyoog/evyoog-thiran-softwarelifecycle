@@ -28,4 +28,12 @@ public interface Detector {
      * query from an unbounded one.
      */
     List<Candidate> scanOne(UUID objectId);
+
+    /**
+     * VYB-0940: true if scanning calls a model provider (an embedding, an adjudication). Such a detector is never run inside
+     * the caller's database transaction: {@link DetectionSweepService#rescanObject} runs it after the commit instead.
+     */
+    default boolean callsModel() {
+        return false;
+    }
 }

@@ -76,7 +76,12 @@ public class ImportController {
             jwt.getSubject(), jwt.getClaimAsString("email"), jwt.getClaimAsString("preferred_username")).getId();
     }
 
-    public record BatchView(String id, String filename, String applicationId, String uploadKind, String uploadedAt, String state) {}
+    /**
+     * {@code state} is UPLOADED, EXTRACTING, EXTRACTION_FAILED or EXTRACTED (and later states). VYB-0940: after a failed AI
+     * extraction {@code extractionError} says why and extracting again continues from the steps already done.
+     */
+    public record BatchView(String id, String filename, String applicationId, String uploadKind, String uploadedAt, String state,
+                            String extractionError) {}
     public record CandidateView(
         String id, String batchId, String tag, String statement, String originalText, String sourceLocation,
         String capabilityId, String productId, String applicationId, String placementLevel,
@@ -91,7 +96,7 @@ public class ImportController {
     private static BatchView toView(ImportBatch b) {
         return new BatchView(b.getId().toString(), b.getFilename(),
             b.getApplicationId() == null ? null : b.getApplicationId().toString(),
-            b.getUploadKind().name(), b.getUploadedAt().toString(), b.getState());
+            b.getUploadKind().name(), b.getUploadedAt().toString(), b.getState(), b.getExtractionError());
     }
 
     private static CandidateView toView(ImportCandidate c) {

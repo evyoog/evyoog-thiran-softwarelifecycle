@@ -50,7 +50,7 @@ The used tokens are summed from the ledger and held for **10 seconds**, plus wha
 ## Not here
 
 - **No purge of `ai_call`.** One row a call grows without bound; a retention job is a later decision.
-- **The ledger row is written in its own transaction** (so a call that was made is on record even if the caller's transaction rolls back). A caller that makes an AI call *inside* a database transaction holds a second connection while it does so; moving the calls out of transactions is VYB-0940. A failure to write the row is logged and never thrown.
+- **The ledger row is written in its own transaction** (so a call that was made is on record even if the caller's transaction rolls back). A caller that made an AI call *inside* a database transaction would hold a second connection while it did so; VYB-0940 moved the known paths out of transactions and refuses the call in tests if one comes back ([`network-calls-and-transactions.md`](network-calls-and-transactions.md)). A failure to write the row is logged and never thrown.
 - The old per-sweep call limit (`ai_calls_per_run_limit`, "AI usage, this sweep") is unchanged and separate: it limits calls per sweep, this limits tokens per period.
 - Embeddings share the one purpose `embedding`.
 

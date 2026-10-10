@@ -1,5 +1,6 @@
 package com.vyoog.ai;
 
+import com.vyoog.platform.tx.NetworkCallGuard;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * VYB-0939 (F29, F30): the {@link ModelGateway} everything is handed. In front of the redacting gateway it
  * <ol>
+ *   <li><b>refuses a call made inside a database transaction</b> in tests and logs it in production ({@link NetworkCallGuard}, VYB-0940);</li>
  *   <li><b>checks the token budget</b> and refuses the call, with a reason in words, once the day's or the month's cap is
  *       reached ({@link AiBudgetService});</li>
  *   <li>makes the call (redaction, then the provider);</li>
@@ -25,13 +27,15 @@ public class MeteredModelGateway implements ModelGateway {
     private final AiBudgetService budget;
     private final AiUsageLedger ledger;
     private final MeterRegistry meters;
+    private final NetworkCallGuard guard;
 
     public MeteredModelGateway(@Qualifier("redactingModelGateway") ModelGateway delegate, AiBudgetService budget,
-                               AiUsageLedger ledger, MeterRegistry meters) {
+                               AiUsageLedger ledger, MeterRegistry meters, NetworkCallGuard guard) {
         this.delegate = delegate;
         this.budget = budget;
         this.ledger = ledger;
         this.meters = meters;
+        this.guard = guard;
     }
 
     @Override
@@ -52,6 +56,7 @@ public class MeteredModelGateway implements ModelGateway {
     @Override
     public ChatReply chat(ChatRequest request) {
         if (!delegate.configured()) return delegate.chat(request); // refuses, naming why; not a call, so nothing to record
+        guard.beforeNetworkCall("AI call: " + request.purpose());
         String version = request.promptVersion();
         refuseIfOverBudget(request.purpose(), version, "CHAT", delegate.chatModel(), request.kind());
         long start = System.nanoTime();
@@ -70,6 +75,7 @@ public class MeteredModelGateway implements ModelGateway {
     @Override
     public EmbeddingReply embed(String text, CallKind kind) {
         if (!delegate.configured()) return delegate.embed(text, kind);
+        guard.beforeNetworkCall("AI call: embedding");
         refuseIfOverBudget("embedding", "n/a", "EMBEDDINGS", delegate.embeddingModel(), kind);
         long start = System.nanoTime();
         try {

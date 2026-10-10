@@ -91,7 +91,7 @@ class ImportExtractionTest {
     @Test
     void VYB0667_AC1_candidatesComeFromMeaningNotFromParagraphSplitting() {
         when(analysis.available()).thenReturn(true);
-        when(analysis.run(eq("picking-notes.txt"), anyList(), eq(true))).thenReturn(runOf(new DocumentFinding(
+        when(analysis.run(eq("picking-notes.txt"), anyList(), eq(true), any())).thenReturn(runOf(new DocumentFinding(
             "PROBLEM",
             "A short-picked bin is silently ignored: the screen goes blank and the shortfall is never counted.",
             "shows an empty screen and the picker moves on, so the shortfall is never counted",
@@ -115,7 +115,7 @@ class ImportExtractionTest {
         when(analysis.available()).thenReturn(true);
         DocumentAnalysisService.Run run = runOf(new DocumentFinding("PROBLEM", "A shortfall goes uncounted.",
             "the shortfall is never counted", "paragraph 2", "HIGH"));
-        when(analysis.run(any(), anyList(), eq(true))).thenReturn(run);
+        when(analysis.run(any(), anyList(), eq(true), any())).thenReturn(run);
 
         service.extractCandidates(batchId);
 
@@ -129,7 +129,7 @@ class ImportExtractionTest {
         when(analysis.available()).thenReturn(true);
         DocumentFinding finding = new DocumentFinding("PROBLEM",
             "A shortfall goes uncounted.", "the shortfall is never counted", "paragraph 2", "HIGH");
-        when(analysis.run(any(), anyList(), eq(true))).thenReturn(runOf(
+        when(analysis.run(any(), anyList(), eq(true), any())).thenReturn(runOf(
             Map.of(0, new RequirementBriefAnalyst.Brief(0,
                 "Picking shortfall capture",
                 "The system shall record a picking shortfall against the order line when a bin is short-picked.",
@@ -166,7 +166,7 @@ class ImportExtractionTest {
     @Test
     void VYB0667_AC4_aCandidateWithNoBriefKeepsTheTriageReadingAndSaysWhy() {
         when(analysis.available()).thenReturn(true);
-        when(analysis.run(any(), anyList(), eq(true))).thenReturn(runOf(
+        when(analysis.run(any(), anyList(), eq(true), any())).thenReturn(runOf(
             Map.of(), DocumentAnalysisService.Run.BRIEFS_BUDGET,
             new DocumentFinding("PROBLEM", "A shortfall goes uncounted.",
                 "the shortfall is never counted", "paragraph 2", "HIGH")));
@@ -247,7 +247,7 @@ class ImportExtractionTest {
         DocumentFinding finding = new DocumentFinding("BUSINESS_RULE",
             "Overtime past a threshold must alert someone.",
             "the shortfall is never counted", "paragraph 2", "HIGH");
-        when(analysis.run(any(), anyList(), eq(true))).thenReturn(runOf(
+        when(analysis.run(any(), anyList(), eq(true), any())).thenReturn(runOf(
             Map.of(0, new RequirementBriefAnalyst.Brief(0,
                 "Overtime compliance alerting",
                 "The system shall raise a labour-compliance alert when overtime exceeds 12 hours in a rolling week.",
@@ -363,7 +363,7 @@ class ImportExtractionTest {
     @Test
     void VYB0667_AC5_aConfiguredProviderThatFailsIsAnErrorNotAQuietFallback() {
         when(analysis.available()).thenReturn(true);
-        when(analysis.run(any(), anyList(), eq(true))).thenThrow(new AiProviderUnavailableException("provider timed out"));
+        when(analysis.run(any(), anyList(), eq(true), any())).thenThrow(new AiProviderUnavailableException("provider timed out"));
 
         assertThatThrownBy(() -> service.extractCandidates(batchId))
             .isInstanceOf(AiProviderUnavailableException.class)

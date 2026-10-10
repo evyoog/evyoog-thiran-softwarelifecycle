@@ -582,7 +582,10 @@ export interface ImportBatchInfo {
   applicationId?: string
   uploadKind: UploadKind
   uploadedAt: string
+  /** UPLOADED, EXTRACTING, EXTRACTION_FAILED, EXTRACTED, and later states (VYB-0940 added the two extraction ones). */
   state: string
+  /** Why the last AI extraction stopped; set only while the state is EXTRACTION_FAILED. */
+  extractionError?: string | null
 }
 
 export interface ImportCandidateInfo {

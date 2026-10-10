@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.vyoog.ai.EmbeddingService;
 import com.vyoog.brief.BriefStalenessService;
 import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.identity.AccessRole;
@@ -35,7 +34,6 @@ class RequirementServiceTest {
     @Mock AuditService audit;
     @Mock DetectionSweepService detection;
     @Mock BriefStalenessService briefStaleness;
-    @Mock EmbeddingService embeddings;
     @Mock JdbcTemplate jdbc;
     @Mock RequirementEnrichmentService enrichment;
     @Mock GrantResolver grantResolver;
@@ -48,7 +46,7 @@ class RequirementServiceTest {
         // A real authorizer over a mocked GrantResolver: the tests below exercise the
         // actual author/SoD/role logic, not a mock standing in for it.
         service = new RequirementService(
-            requirements, revisions, criteria, keys, audit, detection, briefStaleness, embeddings,
+            requirements, revisions, criteria, keys, audit, detection, briefStaleness,
             new QualityScoreService(), jdbc, enrichment, new RequirementTransitionAuthorizer(grantResolver));
         actor = UUID.randomUUID();
         lenient().when(requirements.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -84,7 +82,7 @@ class RequirementServiceTest {
         Requirement r = service.create("Title", "Statement", null, null, Placement.unplaced(), actor);
 
         verify(enrichment).enrich(r.getId(), r.getRevision(), "Statement");
-        verifyNoInteractions(detection, embeddings);
+        verifyNoInteractions(detection);
     }
 
     @Test

@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * VYB-0666: the AI-backed work a new requirement gets — a duplicate/conflict scan
@@ -56,13 +55,26 @@ public class RequirementEnrichmentService {
      * embedding's own existence check would be reading a row that is not there yet.
      */
     @Async("requirementEnrichmentExecutor")
-    @Transactional
     public void enrich(UUID requirementId, int revision, String statement) {
-        try {
-            detection.rescanObject(requirementId);
-        } catch (Exception e) {
-            log.warn("[detection] async rescan failed for {}: {}", requirementId, e.getMessage());
-        }
-        embeddings.embed(requirementId, revision, statement); // already catches its own exceptions
+        // VYB-0940: no transaction of its own. Detection and embedding are model calls; each database write inside them
+        // (a finding reconciled, an embedding stored) is its own short transaction. When the executor's queue is full
+        // this runs in the committing thread, whose transaction is already committed: outsideTransaction says so.
+        com.vyoog.platform.tx.NetworkCallGuard.outsideTransaction(() -> {
+            try {
+                detection.rescanObject(requirementId);
+            } catch (Exception e) {
+                log.warn("[detection] async rescan failed for {}: {}", requirementId, e.getMessage());
+            }
+            embeddings.embed(requirementId, revision, statement); // already catches its own exceptions
+        });
+    }
+
+    /**
+     * VYB-0940: the embedding alone, for a revision of an existing requirement (its detectors are rescanned inline by
+     * {@link RequirementService}; only the model-backed ones are deferred). Same rules as {@link #enrich}.
+     */
+    @Async("requirementEnrichmentExecutor")
+    public void embed(UUID requirementId, int revision, String statement) {
+        com.vyoog.platform.tx.NetworkCallGuard.outsideTransaction(() -> embeddings.embed(requirementId, revision, statement));
     }
 }

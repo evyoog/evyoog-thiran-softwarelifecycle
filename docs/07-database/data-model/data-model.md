@@ -179,6 +179,7 @@ and the graph. Postgres wins on every axis that matters here.
 
 **Documents and intake** — `document`, `document_section`, `import_batch`,
 `import_candidate` (with `candidate_flag` child rows for detector output),
+`import_extraction_step` (VYB-0940: the finished steps of an AI extraction, kept so a failed one can be continued; `import_batch.state` gains EXTRACTING and EXTRACTION_FAILED, with `extraction_started_at` and `extraction_error`; see [`../../08-architecture/backend-architecture/network-calls-and-transactions.md`](../../08-architecture/backend-architecture/network-calls-and-transactions.md)),
 `change_request`, `change_impact`
 
 **Design** — `design_flow` (one per application), `design_node`, `design_edge`,

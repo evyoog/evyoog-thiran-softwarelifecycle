@@ -35,7 +35,7 @@ The prompt, how the reply is read, and the refusal to invent an answer: the rewr
 
 ## Not here (later rows)
 
-The review endpoint for AI proposals is done (VYB-0938, [`../../04-workflows/ai-proposal-review.md`](../../04-workflows/ai-proposal-review.md)). Persisting model, prompt version and token counts, budgets and the usage screen are done (VYB-0939). A later row: moving model calls out of database transactions (VYB-0940). The gateway does not show its breaker state anywhere yet.
+The review endpoint for AI proposals is done (VYB-0938, [`../../04-workflows/ai-proposal-review.md`](../../04-workflows/ai-proposal-review.md)). Persisting model, prompt version and token counts, budgets and the usage screen are done (VYB-0939). Moving model calls out of database transactions is done (VYB-0940, [`network-calls-and-transactions.md`](network-calls-and-transactions.md)). The gateway does not show its breaker state anywhere yet.
 
 ## Tests
 

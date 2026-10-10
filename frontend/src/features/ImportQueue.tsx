@@ -5,6 +5,7 @@ import {
   ApiError, api, type Capability, type ImportCandidateInfo, type ImportCommitOutcome,
   type RequirementType, type UploadKind,
 } from '@/shared/api/client'
+import { awaitingExtraction, extractButtonLabel, failureNote, phaseOf, runningNote, stateLabel } from './importqueue/extractionState'
 import { Page, Empty } from '@/shared/ui/Page'
 import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -223,7 +224,7 @@ export function ImportQueue() {
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.filename}</div>
-                <div className="mono muted" style={{ fontSize: 10 }}>{b.uploadKind} · {b.state}</div>
+                <div className="mono muted" style={{ fontSize: 10 }}>{b.uploadKind} · {stateLabel(b.state)}</div>
               </div>
               <button
                 className="icon-btn" title="Delete this batch"
@@ -288,7 +289,10 @@ function BatchPanel({ batchId }: { batchId: string }) {
       void qc.invalidateQueries({ queryKey: ['document-analysis', batchId] })
     },
     // VYB-0660/0631 AC1: name which rule the document failed, not a generic error.
-    onError: (e) => setExtractError(errorMessage(e, 'Extraction failed')),
+    onError: (e) => {
+      setExtractError(errorMessage(e, 'Extraction failed'))
+      invalidateBatch() // VYB-0940: a failed AI extraction leaves the batch EXTRACTION_FAILED with its reason
+    },
   })
   const lint = useMutation({ mutationFn: (id: string) => api.lintCandidate(id), onSuccess: invalidateCandidates })
   const proposeCap = useMutation({
@@ -323,7 +327,10 @@ function BatchPanel({ batchId }: { batchId: string }) {
 
   if (!batch) return <p className="eyebrow">Loading…</p>
 
-  const needsExtract = batch.state === 'UPLOADED'
+  const needsExtract = awaitingExtraction(batch.state)
+  const running = extract.isPending || phaseOf(batch.state) === 'RUNNING'
+  const failure = failureNote(batch.state, batch.extractionError)
+  const runningMessage = runningNote(batch.state)
   const selected = candidates?.filter((c) => c.selected) ?? []
 
   return (
@@ -331,7 +338,7 @@ function BatchPanel({ batchId }: { batchId: string }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
           <strong>{batch.filename}</strong>
-          <span className="mono muted" style={{ fontSize: 10, marginLeft: 8 }}>{batch.uploadKind} · {batch.state}</span>
+          <span className="mono muted" style={{ fontSize: 10, marginLeft: 8 }}>{batch.uploadKind} · {stateLabel(batch.state)}</span>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* Only offered once a run exists — there is nothing to open before that, and a
@@ -347,12 +354,12 @@ function BatchPanel({ batchId }: { batchId: string }) {
             </button>
           )}
           {needsExtract ? (
-            <button className="btn pri" disabled={extract.isPending} onClick={() => extract.mutate()}>
+            <button className="btn pri" disabled={running} onClick={() => extract.mutate()}>
               {/* Extraction reads the whole document through four agents — on a long spec
                   that is tens of seconds. A disabled button with no motion is
                   indistinguishable from one that didn't register the click. */}
-              {extract.isPending ? <Loader2 className="spin" /> : null}
-              {extract.isPending ? 'Extracting…' : 'Extract candidates'}
+              {running ? <Loader2 className="spin" /> : null}
+              {extractButtonLabel(batch.state, extract.isPending)}
             </button>
           ) : (
             <button
@@ -374,6 +381,9 @@ function BatchPanel({ batchId }: { batchId: string }) {
           failed a validation rule, one with no readable text, or the analysis agents
           being unreachable or misconfigured. The message is the backend's own. */}
       {extractError && <p className="err-text">{extractError}</p>}
+      {/* VYB-0940: a stopped extraction says why, in words with a glyph, and says that extracting again continues it. */}
+      {failure && !extractError && <p className="err-text" role="status"><span aria-hidden="true">■</span> {failure}</p>}
+      {runningMessage && <p className="hint muted" role="status"><span aria-hidden="true">●</span> {runningMessage}</p>}
 
       {/* VYB-0667: what the agents read the document to be about, from the same run that
           produced the candidates below. Behind the header's Summary toggle — the

@@ -59,6 +59,10 @@ spring:
           # once it exists — see docs/vyoog-getting-started.md.
 
 vyoog:
+  # VYB-0940: a network call (a model provider, object storage) made while a database transaction is open is logged
+  # at ERROR and counted (network.calls.in-transaction) when 'warn'; the tests set 'fail', which refuses it.
+  network-calls:
+    in-transaction: ${NETWORK_CALLS_IN_TRANSACTION:warn}
   # VYB-0910: how long the bookkeeping tables keep rows before the nightly purge deletes them.
   # Both must be at least 1; the application refuses to start otherwise (0 would delete everything).
   # webhook-delivery-days is also the window in which a replayed, correctly signed webhook is refused:

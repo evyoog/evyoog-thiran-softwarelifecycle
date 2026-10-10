@@ -42,10 +42,27 @@ class SearchScopeIT extends IntegrationTestBase {
             Placement.capability(two.capabilityId()), author);
         unplaced = requirementService.create(token + " unplaced", "The system shall " + token + " nowhere.", "FUNCTIONAL", "MEDIUM",
             Placement.unplaced(), author);
+        // The after-commit enrichment of each create rescans the requirement and ends by embedding it. Its rescan resolves any
+        // finding of that rule it does not re-raise, so the findings below are inserted only once it has finished.
+        for (var r : List.of(reqOne, reqTwo, unplaced)) awaitEnrichment(r.getId());
         findingOne = finding("REQUIREMENT", reqOne.getId());
         findingTwo = finding("REQUIREMENT", reqTwo.getId());
         glossary = jdbc.queryForObject("INSERT INTO glossary_term (term, definition) VALUES (?, 'a term') RETURNING id",
             UUID.class, token + " term");
+    }
+
+    private void awaitEnrichment(UUID requirementId) {
+        for (int i = 0; i < 200; i++) {
+            Integer embedded = jdbc.queryForObject("SELECT count(*) FROM requirement_embedding WHERE requirement_id = ?", Integer.class, requirementId);
+            if (embedded != null && embedded > 0) return;
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        throw new AssertionError("the enrichment of " + requirementId + " did not finish within 10 seconds");
     }
 
     private UUID finding(String type, UUID objectId) {

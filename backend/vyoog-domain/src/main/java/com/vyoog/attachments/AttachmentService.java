@@ -1,5 +1,6 @@
 package com.vyoog.attachments;
 
+import com.vyoog.platform.tx.NetworkCallGuard;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -7,10 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
@@ -32,10 +34,14 @@ public class AttachmentService {
     private final S3Client s3;
     private final String bucket;
     private final AttachmentPolicy policy;
+    private final TransactionOperations tx;
+    private final NetworkCallGuard guard;
 
     public AttachmentService(AttachmentRepository attachments, AttachmentVersionRepository versions, S3Client s3,
-                              AttachmentPolicy policy,
+                              AttachmentPolicy policy, TransactionOperations tx, NetworkCallGuard guard,
                               @Value("${vyoog.storage.bucket:vyoog-attachments}") String bucket) {
+        this.tx = tx;
+        this.guard = guard;
         this.attachments = attachments;
         this.versions = versions;
         this.s3 = s3;
@@ -67,25 +73,68 @@ public class AttachmentService {
 
     public record UploadResult(Attachment attachment, AttachmentVersion version) {}
 
-    @Transactional
+    /** A file already in object storage whose rows are not written yet (VYB-0940). */
+    public record StoredFile(UUID requirementId, String filename, String storageKey, String contentType, int size) {}
+
+    /**
+     * VYB-0940: the file goes to object storage first, outside any database transaction, under a key made from a fresh id; the
+     * rows are then written in one short transaction. The transaction used to wrap the upload, holding a connection for as long as
+     * the store took, and a rollback left the file behind. Now, if the rows cannot be written the file is deleted again (best
+     * effort; a failure to delete is logged, and the file is then an unreferenced object that nothing reads).
+     */
     public UploadResult upload(UUID requirementId, String rawFilename, String contentType, byte[] bytes, UUID actor) {
+        StoredFile file = storeFile(requirementId, rawFilename, contentType, bytes);
+        try {
+            return attach(file, actor);
+        } catch (RuntimeException e) {
+            discard(file);
+            throw e;
+        }
+    }
+
+    /**
+     * The first half of an upload: checks the file, then puts it to object storage. Writes no row. Must not be called inside a
+     * database transaction (the guard refuses it in tests). A caller that needs the rows to land in a transaction of its own,
+     * with other rows, calls this first, then {@link #attach} inside that transaction, and {@link #discard} if it fails.
+     */
+    public StoredFile storeFile(UUID requirementId, String rawFilename, String contentType, byte[] bytes) {
         // VYB-0901: size, type and name are checked here, and it is the sanitised name that
         // reaches both the database and the object-store key.
         String filename = policy.check(rawFilename, contentType, bytes.length);
-        Attachment attachment = attachments.findByRequirementIdAndFilename(requirementId, filename)
-            .map(a -> { a.bumpVersion(); return a; })
-            .orElseGet(() -> new Attachment(requirementId, filename));
-        attachment = attachments.save(attachment);
+        String storageKey = "requirements/%s/%s-%s".formatted(requirementId, UUID.randomUUID(), filename);
 
-        String storageKey = "requirements/%s/%s/v%d-%s"
-            .formatted(requirementId, attachment.getId(), attachment.getCurrentVersion(), filename);
+        guard.beforeNetworkCall("object storage upload");
         s3.putObject(
             PutObjectRequest.builder().bucket(bucket).key(storageKey).contentType(contentType).build(),
             RequestBody.fromBytes(bytes));
+        return new StoredFile(requirementId, filename, storageKey, contentType, bytes.length);
+    }
 
-        AttachmentVersion version = versions.save(new AttachmentVersion(
-            attachment.getId(), attachment.getCurrentVersion(), storageKey, contentType, bytes.length, actor));
-        return new UploadResult(attachment, version);
+    /** The second half: the attachment and version rows for a file already stored. Joins the caller's transaction if there is one. */
+    public UploadResult attach(StoredFile file, UUID actor) {
+        return tx.execute(status -> {
+            Attachment attachment = attachments.findByRequirementIdAndFilename(file.requirementId(), file.filename())
+                .map(a -> { a.bumpVersion(); return a; })
+                .orElseGet(() -> new Attachment(file.requirementId(), file.filename()));
+            attachment = attachments.save(attachment);
+            AttachmentVersion version = versions.save(new AttachmentVersion(
+                attachment.getId(), attachment.getCurrentVersion(), file.storageKey(), file.contentType(), file.size(), actor));
+            return new UploadResult(attachment, version);
+        });
+    }
+
+    /** Deletes a stored file whose rows were not written; best effort. */
+    public void discard(StoredFile file) {
+        deleteQuietly(file.storageKey());
+    }
+
+    private void deleteQuietly(String storageKey) {
+        try {
+            s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(storageKey).build());
+        } catch (RuntimeException e) {
+            log.warn("[attachments] the rows for {} could not be written and the file could not be deleted again ({}); "
+                + "it is an unreferenced object in the store", storageKey, e.getMessage());
+        }
     }
 
     public List<Attachment> list(UUID requirementId) {

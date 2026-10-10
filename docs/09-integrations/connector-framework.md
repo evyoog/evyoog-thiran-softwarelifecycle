@@ -115,4 +115,4 @@ Metrics: `vyoog_connector_operations_total{connection,outcome}` (`succeeded`, `f
 
 ## Not part of this row
 
-Field ownership (VYB-0914), the approval-triggered event (VYB-0915) and inbound sync (S4) are later rows, and VYB-0914, 0915, 0918 and 0919 wait on the decisions in [`agile-planner-contract-analysis.md`](agile-planner-contract-analysis.md). Moving network calls out of database transactions elsewhere in the application is VYB-0940.
+Field ownership (VYB-0914), the approval-triggered event (VYB-0915) and inbound sync (S4) are later rows, and VYB-0914, 0915, 0918 and 0919 wait on the decisions in [`agile-planner-contract-analysis.md`](agile-planner-contract-analysis.md). Moving network calls out of database transactions elsewhere in the application is done (VYB-0940, [`../08-architecture/backend-architecture/network-calls-and-transactions.md`](../08-architecture/backend-architecture/network-calls-and-transactions.md)); the connector executor itself does not ask the guard.

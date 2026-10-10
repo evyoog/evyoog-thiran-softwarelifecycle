@@ -46,6 +46,11 @@ public class ConflictingRequirementsDetector implements Detector {
     }
 
     @Override
+    public boolean callsModel() {
+        return true;
+    }
+
+    @Override
     public String ruleKey() {
         return "conflict";
     }

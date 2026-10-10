@@ -4441,6 +4441,7 @@ export interface components {
         };
         BatchView: {
             applicationId?: string;
+            extractionError?: string;
             filename?: string;
             id?: string;
             state?: string;

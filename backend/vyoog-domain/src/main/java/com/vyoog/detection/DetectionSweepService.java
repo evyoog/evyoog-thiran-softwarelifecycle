@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class DetectionSweepService {
     private final FindingReconciler reconciler;
     private final AiUsageTracker aiUsage;
     private final MeterRegistry meters;
+    private final com.vyoog.platform.tx.AfterCommitRunner afterCommit;
 
     // VYB-0163 AC1: two sweeps never run in parallel inside one instance. Across instances the
     // nightly trigger is serialised by SchedulerLock (VYB-0909); a manual sweep is only guarded here.
@@ -42,12 +44,14 @@ public class DetectionSweepService {
     private volatile Instant lastCompletedAt;
 
     public DetectionSweepService(List<Detector> detectors, GapRuleService gapRules,
-                                  FindingReconciler reconciler, AiUsageTracker aiUsage, MeterRegistry meters) {
+                                  FindingReconciler reconciler, AiUsageTracker aiUsage, MeterRegistry meters,
+                                  com.vyoog.platform.tx.AfterCommitRunner afterCommit) {
         this.detectors = detectors;
         this.gapRules = gapRules;
         this.reconciler = reconciler;
         this.aiUsage = aiUsage;
         this.meters = meters;
+        this.afterCommit = afterCommit;
     }
 
     /** Manual trigger — subject to the concurrency guard and the rate limit. */
@@ -73,16 +77,32 @@ public class DetectionSweepService {
      * {@code WHERE id = ?} per detector ({@link Detector#scanOne}), not the full
      * {@link #sweep} filtered down.
      *
+     * <p>VYB-0940: when the caller has a transaction open, a detector that calls a model ({@link Detector#callsModel}) is not
+     * run here but after the commit, on the enrichment executor, so the model call is never inside the transaction. Its result is
+     * then not in the list returned. With no transaction open everything runs here, as before.
+     *
      * <p>Not subject to the sweep's concurrency guard or rate limit — those exist to
      * stop two expensive full scans overlapping, and this is neither: it's one row's
      * worth of bounded queries, safe to run inline on every write.
      */
     public List<FindingReconciler.ReconcileResult> rescanObject(UUID objectId) {
         Map<String, Boolean> enabledByRule = gapRules.enabledByRuleKey();
-        return detectors.stream()
-            .filter(d -> enabledByRule.getOrDefault(d.ruleKey(), true))
-            .map(d -> runOne(d, null, () -> reconciler.reconcileOne(d.ruleKey(), objectId, d.scanOne(objectId))))
-            .toList();
+        boolean inTransaction = com.vyoog.platform.tx.NetworkCallGuard.inTransaction();
+        List<Detector> deferred = new ArrayList<>();
+        List<FindingReconciler.ReconcileResult> results = new ArrayList<>();
+        for (Detector d : detectors) {
+            if (!enabledByRule.getOrDefault(d.ruleKey(), true)) continue;
+            if (inTransaction && d.callsModel()) {
+                deferred.add(d); // VYB-0940: a model call is never made inside the caller's transaction
+            } else {
+                results.add(runOne(d, null, () -> reconciler.reconcileOne(d.ruleKey(), objectId, d.scanOne(objectId))));
+            }
+        }
+        if (!deferred.isEmpty()) {
+            afterCommit.run(() -> deferred.forEach(d ->
+                runOne(d, null, () -> reconciler.reconcileOne(d.ruleKey(), objectId, d.scanOne(objectId)))));
+        }
+        return results;
     }
 
     /** VYB-0784: named so "a slow endpoint is attributable to a query from the trace" extends to the scheduled path too, not only the manual one an HTTP trace would already show. */

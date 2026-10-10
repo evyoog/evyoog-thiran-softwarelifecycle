@@ -19,8 +19,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 /**
  * VYB-0667: the multi-agent pipeline that reads an imported document and proposes a
@@ -104,12 +106,25 @@ public class DocumentAnalysisService {
     private final AiUsageTracker usage;
     private final AuditService audit;
     private final ObjectMapper json;
+    private final TransactionOperations tx;
 
+    /** Without a transaction template: for code that builds this by hand (no database), where there is nothing to open. */
     public DocumentAnalysisService(ImportBatchRepository batches, DocumentAnalysisRepository analyses,
                                    List<DocumentParser> parserList, DocumentRelevanceTriager triager,
                                    DocumentDescriptionSynthesizer synthesizer, DocumentGroundingCritic critic,
                                    RequirementBriefAnalyst briefAnalyst,
                                    AiUsageTracker usage, AuditService audit, ObjectMapper json) {
+        this(batches, analyses, parserList, triager, synthesizer, critic, briefAnalyst, usage, audit, json,
+            TransactionOperations.withoutTransaction());
+    }
+
+    @Autowired
+    public DocumentAnalysisService(ImportBatchRepository batches, DocumentAnalysisRepository analyses,
+                                   List<DocumentParser> parserList, DocumentRelevanceTriager triager,
+                                   DocumentDescriptionSynthesizer synthesizer, DocumentGroundingCritic critic,
+                                   RequirementBriefAnalyst briefAnalyst,
+                                   AiUsageTracker usage, AuditService audit, ObjectMapper json, TransactionOperations tx) {
+        this.tx = tx;
         this.batches = batches;
         this.analyses = analyses;
         this.parsers = parserList.stream().collect(Collectors.toMap(DocumentParser::kind, p -> p));
@@ -181,6 +196,9 @@ public class DocumentAnalysisService {
         return run(filename, blocks, false);
     }
 
+    /** A brief reply as saved between attempts (a list cannot be saved as a bare value). */
+    record BriefStep(List<RequirementBriefAnalyst.Brief> briefs) {}
+
     /**
      * Runs the agents over an already-parsed document and returns everything they
      * produced. Persisting is the caller's business: extraction stores this alongside the
@@ -194,6 +212,18 @@ public class DocumentAnalysisService {
      *     propagated, never downgraded to a silent structural fallback
      */
     public Run run(String filename, List<ExtractedCandidate> blocks, boolean withBriefs) {
+        return run(filename, blocks, withBriefs, ExtractionSteps.NONE);
+    }
+
+    /**
+     * VYB-0940: the same run, but each finished step (a chunk's triage, the description, its check, each batch of briefs) is
+     * saved through {@code steps} as it completes, and a step that is already saved is reused instead of called again. A run that
+     * fails part way can then be made again and continues from the last saved step. A reused step costs no model call and no
+     * share of the per-run budget, and is not counted in {@link Run#aiCalls}.
+     *
+     * <p>This method opens no transaction: it is a sequence of model calls, and each save is its own short one.
+     */
+    public Run run(String filename, List<ExtractedCandidate> blocks, boolean withBriefs, ExtractionSteps steps) {
         List<Chunk> chunks = chunk(blocks);
         usage.beginRun();
 
@@ -203,16 +233,22 @@ public class DocumentAnalysisService {
         int analysed = 0;
         int calls = 0;
 
-        for (Chunk c : chunks) {
-            // VYB-0620: stop at the budget instead of running the document to the end.
-            // The chunks not read are reported as unread; they are not "read, nothing found".
-            if (!usage.tryConsume()) {
-                log.info("[ai] document analysis stopped at the per-run AI budget after {}/{} chunks",
-                    analysed, chunks.size());
-                break;
+        for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
+            Chunk c = chunks.get(chunkIndex);
+            String stepKey = "triage:" + chunkIndex;
+            DocumentRelevanceTriager.Triage triage = steps.load(stepKey, DocumentRelevanceTriager.Triage.class).orElse(null);
+            if (triage == null) {
+                // VYB-0620: stop at the budget instead of running the document to the end.
+                // The chunks not read are reported as unread; they are not "read, nothing found".
+                if (!usage.tryConsume()) {
+                    log.info("[ai] document analysis stopped at the per-run AI budget after {}/{} chunks",
+                        analysed, chunks.size());
+                    break;
+                }
+                triage = triager.triage(c.text(), c.location());
+                calls++;
+                steps.save(stepKey, triage);
             }
-            DocumentRelevanceTriager.Triage triage = triager.triage(c.text(), c.location());
-            calls++;
             analysed++;
             noiseBlocks += triage.discardedCount();
 
@@ -236,16 +272,35 @@ public class DocumentAnalysisService {
 
         List<DocumentFinding> deduped = dedupe(kept);
 
-        DocumentDescriptionSynthesizer.Synthesis draft = synthesizer.synthesize(filename, deduped, List.of());
-        calls++;
-        DocumentGroundingCritic.Critique verdict = critic.critique(draft.description(), deduped);
-        calls++;
+        DocumentDescriptionSynthesizer.Synthesis draft = steps.load("synthesis:0", DocumentDescriptionSynthesizer.Synthesis.class).orElse(null);
+        if (draft == null) {
+            draft = synthesizer.synthesize(filename, deduped, List.of());
+            calls++;
+            steps.save("synthesis:0", draft);
+        }
+        DocumentGroundingCritic.Critique verdict = steps.load("critique:0", DocumentGroundingCritic.Critique.class).orElse(null);
+        if (verdict == null) {
+            verdict = critic.critique(draft.description(), deduped);
+            calls++;
+            steps.save("critique:0", verdict);
+        }
 
         boolean revised = false;
         if (!verdict.grounded()) {
-            draft = synthesizer.synthesize(filename, deduped, verdict.unsupportedClaims());
-            verdict = critic.critique(draft.description(), deduped);
-            calls += 2;
+            DocumentDescriptionSynthesizer.Synthesis revisedDraft = steps.load("synthesis:1", DocumentDescriptionSynthesizer.Synthesis.class).orElse(null);
+            if (revisedDraft == null) {
+                revisedDraft = synthesizer.synthesize(filename, deduped, verdict.unsupportedClaims());
+                calls++;
+                steps.save("synthesis:1", revisedDraft);
+            }
+            draft = revisedDraft;
+            DocumentGroundingCritic.Critique revisedVerdict = steps.load("critique:1", DocumentGroundingCritic.Critique.class).orElse(null);
+            if (revisedVerdict == null) {
+                revisedVerdict = critic.critique(draft.description(), deduped);
+                calls++;
+                steps.save("critique:1", revisedVerdict);
+            }
+            verdict = revisedVerdict;
             revised = true;
         }
 
@@ -256,7 +311,7 @@ public class DocumentAnalysisService {
         } else if (!briefAnalyst.available()) {
             briefsUnavailable = Run.BRIEFS_UNCONFIGURED;
         } else {
-            calls += brief(filename, draft.description(), deduped, briefs);
+            calls += brief(filename, draft.description(), deduped, briefs, steps);
             if (briefs.size() < deduped.size()) {
                 // Which reason applies is decided by what actually stopped it: the budget
                 // check below is the only thing that can end the loop early, so anything
@@ -285,19 +340,25 @@ public class DocumentAnalysisService {
      * @return how many model calls this stage made
      */
     private int brief(String filename, String description, List<DocumentFinding> findings,
-                      Map<Integer, RequirementBriefAnalyst.Brief> out) {
+                      Map<Integer, RequirementBriefAnalyst.Brief> out, ExtractionSteps steps) {
         int calls = 0;
         for (int start = 0; start < findings.size(); start += BRIEF_BATCH_SIZE) {
-            if (!usage.tryConsume()) {
-                log.info("[ai] requirement briefs stopped at the per-run AI budget after {}/{} findings",
-                    out.size(), findings.size());
-                break;
-            }
             int end = Math.min(start + BRIEF_BATCH_SIZE, findings.size());
             List<DocumentFinding> slice = List.copyOf(findings.subList(start, end));
-            calls++;
+            String stepKey = "briefs:" + start;
+            List<RequirementBriefAnalyst.Brief> reply = steps.load(stepKey, BriefStep.class).map(BriefStep::briefs).orElse(null);
+            if (reply == null) {
+                if (!usage.tryConsume()) {
+                    log.info("[ai] requirement briefs stopped at the per-run AI budget after {}/{} findings",
+                        out.size(), findings.size());
+                    break;
+                }
+                calls++;
+                reply = briefAnalyst.analyse(filename, description, slice);
+                steps.save(stepKey, new BriefStep(reply));
+            }
 
-            for (RequirementBriefAnalyst.Brief b : briefAnalyst.analyse(filename, description, slice)) {
+            for (RequirementBriefAnalyst.Brief b : reply) {
                 if (!b.isWellFormed() || b.index() >= slice.size()) continue;
                 int absolute = start + b.index();
                 // First brief for an index wins: a model that returns the same index twice
@@ -348,10 +409,11 @@ public class DocumentAnalysisService {
      * @throws AiProviderUnavailableException if the provider is unconfigured or fails
      * @throws IllegalStateException if the batch has no text to analyse
      */
-    @Transactional
     public DocumentAnalysis analyse(UUID batchId, UUID actor) {
+        // VYB-0940: the pipeline is model calls and runs outside any transaction; only saving the result is one.
         ImportBatch batch = batches.findById(batchId).orElseThrow(NoSuchElementException::new);
-        return save(batchId, run(batch.getFilename(), blocksOf(batch)), actor);
+        Run run = run(batch.getFilename(), blocksOf(batch));
+        return tx.execute(status -> save(batchId, run, actor));
     }
 
     /**

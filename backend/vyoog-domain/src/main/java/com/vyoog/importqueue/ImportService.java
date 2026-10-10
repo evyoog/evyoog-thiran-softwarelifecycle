@@ -27,8 +27,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 /**
  * VYB-0630–0638: upload → extract → lint → propose a capability → (edit) → selective
@@ -67,10 +69,14 @@ public class ImportService {
     /** VYB-0666: the deterministic reader for the standard PRD template. */
     private final com.vyoog.importqueue.prd.PrdTemplateParser prdParser;
     private final com.vyoog.importqueue.prd.PrdTemplateResolver prdResolver;
+    /** VYB-0940: short transactions around the database work; the model calls between them run outside any. */
+    private final TransactionOperations tx;
+    private final ExtractionProgress progress;
 
     /** VYB-0630: how many embedding-nearby existing requirements get offered to {@link #traceClassifier} for a judgment call. */
     private static final int TRACE_SHORTLIST_SIZE = 5;
 
+    /** For code that builds this by hand with no database (unit tests): no transactions to open, no progress to keep. */
     public ImportService(ImportBatchRepository batches, ImportCandidateRepository candidates,
                           List<DocumentParser> parserList, CapabilityRepository capabilities,
                           SimilaritySearchService similarity, RequirementService requirementService,
@@ -79,6 +85,23 @@ public class ImportService {
                           RequirementRepository requirements, DocumentAnalysisService documentAnalysis,
                           com.vyoog.importqueue.prd.PrdTemplateParser prdParser,
                           com.vyoog.importqueue.prd.PrdTemplateResolver prdResolver) {
+        this(batches, candidates, parserList, capabilities, similarity, requirementService, traceGraph, audit, json,
+            traceClassifier, acceptanceCriteria, requirements, documentAnalysis, prdParser, prdResolver,
+            TransactionOperations.withoutTransaction(), ExtractionProgress.NONE);
+    }
+
+    @Autowired
+    public ImportService(ImportBatchRepository batches, ImportCandidateRepository candidates,
+                          List<DocumentParser> parserList, CapabilityRepository capabilities,
+                          SimilaritySearchService similarity, RequirementService requirementService,
+                          TraceGraphService traceGraph, AuditService audit, ObjectMapper json,
+                          TraceRelationClassifier traceClassifier, AcceptanceCriterionService acceptanceCriteria,
+                          RequirementRepository requirements, DocumentAnalysisService documentAnalysis,
+                          com.vyoog.importqueue.prd.PrdTemplateParser prdParser,
+                          com.vyoog.importqueue.prd.PrdTemplateResolver prdResolver,
+                          TransactionOperations tx, ExtractionProgress progress) {
+        this.tx = tx;
+        this.progress = progress;
         this.batches = batches;
         this.candidates = candidates;
         this.parsers = parserList.stream().collect(Collectors.toMap(DocumentParser::kind, p -> p));
@@ -130,14 +153,16 @@ public class ImportService {
      * through), never a quiet downgrade to the weaker extraction — a user who asked for
      * the good one is owed the failure, not a worse result that looks like success.
      */
-    @Transactional
     public List<ImportCandidate> extractCandidates(UUID batchId) {
+        // VYB-0940: no transaction around this method. Extraction by meaning is many model calls that can take minutes; they run
+        // outside any transaction, each finished step is saved as it completes, and the candidates are written together in one
+        // short transaction at the end. The other paths make no model call and are one short transaction each.
         ImportBatch batch = batches.findById(batchId).orElseThrow(NoSuchElementException::new);
         if (batch.getUploadKind() == UploadKind.PRD_TEMPLATE) {
             // The template path shares nothing with the others: it has no DocumentParser,
             // runs no agents, and produces candidates with their fields already filled in
             // from the columns rather than inferred from prose.
-            return extractFromTemplate(batchId, batch);
+            return tx.execute(status -> extractFromTemplate(batchId, batch));
         }
         DocumentParser parser = parsers.get(batch.getUploadKind());
         if (parser == null) {
@@ -153,13 +178,15 @@ public class ImportService {
                 "No readable text was found in this document, so there was nothing to extract.");
         }
 
-        List<ImportCandidate> saved = documentAnalysis.available()
-            ? extractByMeaning(batchId, batch, blocks)
-            : extractStructurally(batchId, blocks);
-
-        batch.setState("EXTRACTED");
-        batches.save(batch);
-        return saved;
+        if (!documentAnalysis.available()) {
+            return tx.execute(status -> {
+                List<ImportCandidate> saved = extractStructurally(batchId, blocks);
+                batch.setState("EXTRACTED");
+                batches.save(batch);
+                return saved;
+            });
+        }
+        return extractByMeaning(batchId, batch, blocks);
     }
 
     /**
@@ -280,7 +307,42 @@ public class ImportService {
      * readings of one document.
      */
     private List<ImportCandidate> extractByMeaning(UUID batchId, ImportBatch batch, List<ExtractedCandidate> blocks) {
-        DocumentAnalysisService.Run run = documentAnalysis.run(batch.getFilename(), blocks, true);
+        java.util.Optional<String> previous = progress.claim(batchId);
+        if (previous.isEmpty()) {
+            throw new IllegalStateException("This document is already being extracted. Wait for it to finish, then reload.");
+        }
+        DocumentAnalysisService.Run run;
+        try {
+            // Outside any transaction. A step finished by an earlier attempt at this same text is reused, not called again.
+            run = documentAnalysis.run(batch.getFilename(), blocks, true,
+                progress.steps(batchId, digestOf(batch)));
+        } catch (RuntimeException e) {
+            progress.fail(batchId, e.getMessage(), previous.get());
+            throw e;
+        }
+        try {
+            return tx.execute(status -> saveExtraction(batchId, batch, run));
+        } catch (RuntimeException e) {
+            progress.fail(batchId, e.getMessage(), previous.get());
+            throw e;
+        }
+    }
+
+    /** A hash of what the steps were made from: a step made from other text or another name is never reused. */
+    private static String digestOf(ImportBatch batch) {
+        try {
+            java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-256");
+            d.update(batch.getFilename().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            d.update((byte) 0);
+            d.update(String.valueOf(batch.getRawText()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(d.digest());
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** The one short transaction that ends an extraction: the description, every candidate, the batch's state, the steps forgotten. */
+    private List<ImportCandidate> saveExtraction(UUID batchId, ImportBatch batch, DocumentAnalysisService.Run run) {
         documentAnalysis.save(batchId, run, batch.getUploadedBy());
 
         List<ImportCandidate> saved = new ArrayList<>();
@@ -340,6 +402,9 @@ public class ImportService {
             c.setLintResult(criteriaCount, null, writeJson(flags));
             saved.add(candidates.save(c));
         }
+        batch.setState("EXTRACTED");
+        batches.save(batch);
+        progress.complete(batchId);
         return List.copyOf(saved);
     }
 
@@ -362,8 +427,15 @@ public class ImportService {
      * fixing an ambiguous word and re-linting has to remove the old flag, not leave it
      * behind next to a clean result.
      */
-    @Transactional
     public ImportCandidate lint(UUID candidateId) {
+        // VYB-0940: the duplicate check embeds the statement (a model call when a provider is configured), so it is made
+        // before the transaction that writes the result, never inside it.
+        String statement = candidates.findById(candidateId).orElseThrow(NoSuchElementException::new).getStatement();
+        var dupMatches = similarity.similarToText(statement, 1);
+        return tx.execute(status -> lintWith(candidateId, dupMatches));
+    }
+
+    private ImportCandidate lintWith(UUID candidateId, List<SimilaritySearchService.Match> dupMatches) {
         ImportCandidate c = candidates.findById(candidateId).orElseThrow(NoSuchElementException::new);
         Map<String, Object> flags = new HashMap<>(readJson(c.getFlags()));
         flags.keySet().removeAll(LINT_OWNED_KEYS);
@@ -378,7 +450,6 @@ public class ImportService {
             flags.put("suggestedFixText", annotatedWithFixes(c.getStatement(), wordingMatches));
         }
 
-        var dupMatches = similarity.similarToText(c.getStatement(), 1);
         boolean isDuplicate = !dupMatches.isEmpty() && dupMatches.get(0).similarity() >= DUPLICATE_THRESHOLD;
         if (isDuplicate) {
             var best = dupMatches.get(0);
@@ -469,17 +540,18 @@ public class ImportService {
      * are deliberately separate calls — nearby is cheap and always available,
      * "genuinely related" needs judgment an embedding distance alone can't make.
      */
-    @Transactional
     public ImportCandidate proposeTraceLinks(UUID candidateId) {
-        ImportCandidate c = candidates.findById(candidateId).orElseThrow(NoSuchElementException::new);
-        List<SimilaritySearchService.Match> nearby = similarity.similarToText(c.getStatement(), TRACE_SHORTLIST_SIZE);
+        // VYB-0940: the nearest-neighbour search and the classifier are model calls; they run outside any transaction and
+        // only the write of the proposal is one.
+        String statement = candidates.findById(candidateId).orElseThrow(NoSuchElementException::new).getStatement();
+        List<SimilaritySearchService.Match> nearby = similarity.similarToText(statement, TRACE_SHORTLIST_SIZE);
         // VYB-0630: the classifier judges relevance from the real statement, not the
         // title alone — Match doesn't carry statement text, so it's fetched here.
         List<TraceRelationClassifier.Candidate> shortlist = nearby.stream()
             .map(m -> new TraceRelationClassifier.Candidate(
                 m.key(), requirements.findById(m.requirementId()).map(Requirement::getStatement).orElse(m.title())))
             .toList();
-        List<TraceRelationClassifier.ProposedLink> proposed = traceClassifier.classify(c.getStatement(), shortlist);
+        List<TraceRelationClassifier.ProposedLink> proposed = traceClassifier.classify(statement, shortlist);
 
         Map<String, String> keyToRequirementId = new HashMap<>();
         for (SimilaritySearchService.Match m : nearby) keyToRequirementId.put(m.key(), m.requirementId().toString());
@@ -494,12 +566,16 @@ public class ImportService {
                 return m;
             })
             .toList();
+        String traceModel = traceClassifier.modelName();
 
-        Map<String, Object> flags = readJson(c.getFlags());
-        flags.put("proposedTraceLinks", proposedView);
-        flags.put("traceModel", traceClassifier.modelName());
-        c.setLintResult(c.getCriteriaCount(), c.getQualityScore(), writeJson(flags));
-        return candidates.save(c);
+        return tx.execute(status -> {
+            ImportCandidate c = candidates.findById(candidateId).orElseThrow(NoSuchElementException::new);
+            Map<String, Object> flags = readJson(c.getFlags());
+            flags.put("proposedTraceLinks", proposedView);
+            flags.put("traceModel", traceModel);
+            c.setLintResult(c.getCriteriaCount(), c.getQualityScore(), writeJson(flags));
+            return candidates.save(c);
+        });
     }
 
     public record TraceLinkChoice(UUID requirementId, String linkType) {}
