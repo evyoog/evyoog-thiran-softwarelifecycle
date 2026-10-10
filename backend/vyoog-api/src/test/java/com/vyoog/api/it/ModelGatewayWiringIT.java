@@ -121,10 +121,11 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
     @Autowired com.vyoog.ai.RedactionSettings redactionSettings;
 
     @Test
-    void VYB0936_AC16_springBuildsOneProviderGatewayAndEveryoneIsHandedTheRedactingOneInFrontOfIt() {
-        assertThat(context.getBeansOfType(ModelGateway.class)).as("the provider and the redacting front for it").hasSize(2);
+    void VYB0936_AC16_springBuildsOneProviderGatewayAndEveryoneIsHandedTheMeteringOneInFrontOfTheRedactingOneInFrontOfIt() {
+        assertThat(context.getBeansOfType(ModelGateway.class)).as("the provider, the redacting front for it and the metering front for that").hasSize(3);
+        assertThat(context.getBean("redactingModelGateway")).isInstanceOf(RedactingModelGateway.class);
         assertThat(context.getBean("openAiGateway")).isInstanceOf(OpenAiGateway.class);
-        assertThat(gateway).as("what is injected everywhere").isInstanceOf(RedactingModelGateway.class);
+        assertThat(gateway).as("what is injected everywhere").isInstanceOf(com.vyoog.ai.MeteredModelGateway.class);
         assertThat(gateway.configured()).isTrue();
         assertThat(gateway.chatModel()).isEqualTo("gpt-4o-mini");
         assertThat(gateway.embeddingModel()).isEqualTo("text-embedding-3-small");
@@ -148,7 +149,7 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
         assertThat(suggestion.changes()).containsExactly("bounded it");
         assertThat(REQUESTS).contains("chat max_tokens=400 json=false");
 
-        var json = jsonClient.completeJson("sys", "usr", 900, 0.2);
+        var json = jsonClient.completeJson("test-json", "sys", "usr", 900, 0.2);
         assertThat(json.path("rewrittenStatement").asText()).isEqualTo("The system shall answer in 2 s.");
         assertThat(REQUESTS).contains("chat max_tokens=other json=true");
     }
@@ -339,5 +340,137 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
         mvc.perform(get("/api/v1/briefs/elaborations" + query).with(analyst)).andExpect(jsonPath("$.accepted").value(1)).andExpect(jsonPath("$.pending.length()").value(0));
         mvc.perform(post("/api/v1/briefs").with(analyst).contentType(JSON_TYPE).content(generate)).andExpect(status().isCreated())
             .andExpect(jsonPath("$.content").value(org.hamcrest.Matchers.containsString("STUB-ELABORATION")));
+    }
+
+    // ---- VYB-0939: the usage ledger, the budgets and the usage screen ----
+
+    @Autowired com.vyoog.ai.AiBudgetService budget;
+
+    private Map<String, Object> latestCall(String purpose) {
+        return jdbc.queryForMap("SELECT * FROM ai_call WHERE purpose = ? ORDER BY called_at DESC LIMIT 1", purpose);
+    }
+
+    private long callCount(String purpose) {
+        return jdbc.queryForObject("SELECT count(*) FROM ai_call WHERE purpose = ?", Long.class, purpose);
+    }
+
+    @Test
+    void VYB0939_AC13_aRewriteAndAnEmbeddingEachLeaveOneLedgerRowWithTheTokensTheProviderReported() {
+        long rewrites = callCount("rewrite-suggestion");
+        long embedded = callCount("embedding");
+
+        rewrite.suggest("The system should be fast.", Map.of("wording", -10));
+        embeddings.embed("A sentence to embed " + unique("e"));
+
+        assertThat(callCount("rewrite-suggestion")).isEqualTo(rewrites + 1);
+        Map<String, Object> r = latestCall("rewrite-suggestion");
+        assertThat(r).containsEntry("outcome", "OK").containsEntry("endpoint", "CHAT").containsEntry("model", "gpt-4o-mini")
+            .containsEntry("prompt_tokens", 9).containsEntry("completion_tokens", 6).containsEntry("total_tokens", 15);
+        assertThat((String) r.get("prompt_version")).matches("[0-9a-f]{8}");
+        assertThat(callCount("embedding")).isEqualTo(embedded + 1);
+        assertThat(latestCall("embedding")).containsEntry("endpoint", "EMBEDDINGS").containsEntry("prompt_version", "n/a")
+            .containsEntry("prompt_tokens", 5).containsEntry("total_tokens", 5);
+    }
+
+    @Test
+    void VYB0939_AC14_theLedgerHoldsNoPromptNoReplyAndNoPerson() {
+        assertThat(jdbc.queryForList("SELECT column_name FROM information_schema.columns WHERE table_name = 'ai_call' AND table_schema = current_schema()", String.class))
+            .containsExactlyInAnyOrder("id", "called_at", "purpose", "prompt_version", "endpoint", "model", "call_kind", "outcome",
+                "prompt_tokens", "completion_tokens", "total_tokens", "duration_ms");
+    }
+
+    @Test
+    void VYB0939_AC15_oncePastTheDailyBudgetACallIsRefusedWithTheReasonAndNothingReachesTheProvider() {
+        gateway.chat(com.vyoog.ai.ChatRequest.interactive("budget-it-day", "You help.", "hello", 50, 0));
+        budget.invalidate();
+        long usedToday = budget.used().today();
+        String purpose = "budget-it-" + UUID.randomUUID().toString().substring(0, 8);
+        try {
+            budget.setLimits(usedToday, null, newAdministrator());
+            int sent = BODIES.size();
+
+            assertThatThrownBy(() -> gateway.chat(com.vyoog.ai.ChatRequest.interactive(purpose, "You help.", "hello", 50, 0)))
+                .isInstanceOf(com.vyoog.ai.AiProviderUnavailableException.class)
+                .hasMessageContaining("token budget for today is used up").hasMessageContaining("00:00 UTC").hasMessageContaining("raise it");
+            assertThatThrownBy(() -> embeddings.embed("never sent " + purpose)).isInstanceOf(com.vyoog.ai.AiProviderUnavailableException.class);
+
+            assertThat(BODIES.size()).as("the provider was not called").isEqualTo(sent);
+            assertThat(latestCall(purpose)).containsEntry("outcome", "BUDGET_REFUSED").containsEntry("total_tokens", null);
+        } finally {
+            budget.setLimits(null, null, newAdministrator());
+        }
+        gateway.chat(com.vyoog.ai.ChatRequest.interactive(purpose, "You help.", "hello again", 50, 0)); // lifted: allowed again
+        assertThat(latestCall(purpose)).containsEntry("outcome", "OK");
+    }
+
+    @Test
+    void VYB0939_AC16_theTighterOfTheTwoBudgetsDecidesAndAMonthlyCapNamesTheMonth() {
+        gateway.chat(com.vyoog.ai.ChatRequest.interactive("budget-it-month", "You help.", "hello", 50, 0));
+        budget.invalidate();
+        long usedMonth = budget.used().month();
+        try {
+            budget.setLimits(usedMonth + 1_000_000, usedMonth, newAdministrator());
+
+            assertThatThrownBy(() -> gateway.chat(com.vyoog.ai.ChatRequest.interactive("budget-it-month", "You help.", "hello", 50, 0)))
+                .isInstanceOf(com.vyoog.ai.AiProviderUnavailableException.class).hasMessageContaining("token budget for this month is used up");
+
+            budget.setLimits(null, null, newAdministrator());
+            assertThat(budget.limits()).isEqualTo(new com.vyoog.ai.AiBudgetService.Limits(null, null));
+            gateway.chat(com.vyoog.ai.ChatRequest.interactive("budget-it-month", "You help.", "hello", 50, 0));
+        } finally {
+            budget.setLimits(null, null, newAdministrator());
+        }
+    }
+
+    @Test
+    void VYB0939_AC17_onlyAnAdministratorSetsTheBudgetAndANonsenseLimitIsRefused() throws Exception {
+        String body = "{\"daily\":5000,\"monthly\":90000}";
+        JwtRequestPostProcessor admin = anAdministrator();
+        int audited = jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = 'settings.ai-token-budget-changed' AND (after->>'daily')::bigint = 5000 AND before->'daily' = 'null'::jsonb", Integer.class);
+        try {
+            mvc.perform(put("/api/v1/settings/ai-token-budget").with(anOrdinaryUser()).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+            mvc.perform(put("/api/v1/settings/ai-token-budget").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isUnauthorized());
+            assertThat(budget.limits().daily()).as("refused calls changed nothing").isNull();
+
+            mvc.perform(put("/api/v1/settings/ai-token-budget").with(admin).contentType(MediaType.APPLICATION_JSON).content("{\"daily\":0,\"monthly\":null}")).andExpect(status().isBadRequest());
+            mvc.perform(put("/api/v1/settings/ai-token-budget").with(admin).contentType(MediaType.APPLICATION_JSON).content("{\"daily\":null,\"monthly\":-5}")).andExpect(status().isBadRequest());
+
+            mvc.perform(put("/api/v1/settings/ai-token-budget").with(admin).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.daily").value(5000)).andExpect(jsonPath("$.monthly").value(90000));
+            mvc.perform(get("/api/v1/settings").with(admin)).andExpect(jsonPath("$.aiTokenBudgetDaily").value(5000)).andExpect(jsonPath("$.aiTokenBudgetMonthly").value(90000));
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = 'settings.ai-token-budget-changed' AND (after->>'daily')::bigint = 5000 AND before->'daily' = 'null'::jsonb", Integer.class))
+                .as("one new audit event with before and after").isEqualTo(audited + 1);
+        } finally {
+            budget.setLimits(null, null, newAdministrator());
+        }
+    }
+
+    @Test
+    void VYB0939_AC18_anySignedInPersonSeesTheUsageButNeverByPersonAndNeverAsMoney() throws Exception {
+        rewrite.suggest("The system should be fast.", Map.of("wording", -10));
+
+        var result = mvc.perform(get("/api/v1/ai/usage/summary?days=7").with(anOrdinaryUser())).andExpect(status().isOk())
+            .andExpect(jsonPath("$.byDay.length()").value(7)).andExpect(jsonPath("$.usedToday").isNumber())
+            .andExpect(jsonPath("$.thisMonth[?(@.purpose == 'rewrite-suggestion')].totalTokens").isNotEmpty()).andReturn();
+        String json = result.getResponse().getContentAsString();
+        assertThat(json.toLowerCase()).doesNotContain("user").doesNotContain("person").doesNotContain("cost").doesNotContain("price").doesNotContain("currency");
+        mvc.perform(get("/api/v1/ai/usage/summary")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/ai/usage/summary?days=0").with(anOrdinaryUser())).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/ai/usage/summary?days=1000").with(anOrdinaryUser())).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void VYB0939_AC19_theReportTotalsMatchTheLedgerAndTheBudgetShownBesideThem() throws Exception {
+        budget.invalidate();
+        long inLedger = jdbc.queryForObject("SELECT COALESCE(SUM(total_tokens), 0) FROM ai_call WHERE called_at >= date_trunc('month', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'", Long.class);
+        try {
+            budget.setLimits(123456L, 7654321L, newAdministrator());
+
+            mvc.perform(get("/api/v1/ai/usage/summary").with(anOrdinaryUser())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.usedThisMonth").value(inLedger)).andExpect(jsonPath("$.limits.daily").value(123456))
+                .andExpect(jsonPath("$.limits.monthly").value(7654321)).andExpect(jsonPath("$.byDay.length()").value(30));
+        } finally {
+            budget.setLimits(null, null, newAdministrator());
+        }
     }
 }

@@ -6,11 +6,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
- * VYB-0937 (F27): the {@link ModelGateway} everything else is handed. It cleans what goes out, calls the provider's
+ * VYB-0937 (F27): the {@link ModelGateway} the metering layer ({@link MeteredModelGateway}) calls. It cleans what goes out, calls the provider's
  * gateway, and puts personal data back in what comes in:
  * <ol>
  *   <li>Secrets are removed and personal data is replaced by tokens ({@link Redactor}), in the user text of a chat call
@@ -27,7 +26,6 @@ import org.springframework.stereotype.Component;
  * <p>Only counts and class names are logged and measured ({@code ai.redactions}), never a value.
  */
 @Component
-@Primary
 public class RedactingModelGateway implements ModelGateway {
 
     private static final Logger log = LoggerFactory.getLogger(RedactingModelGateway.class);

@@ -52,7 +52,7 @@ public class OpenAiDocumentGroundingCritic implements DocumentGroundingCritic {
                 .append("\n  evidence: \"").append(f.evidence()).append("\"\n\n");
         }
 
-        JsonNode result = chat.completeJson(SYSTEM_PROMPT, user.toString(), 1500, 0.0);
+        JsonNode result = chat.completeJson("document-critique", SYSTEM_PROMPT, user.toString(), 1500, 0.0);
 
         List<String> claims = new ArrayList<>();
         for (JsonNode c : result.path("unsupportedClaims")) {

@@ -89,8 +89,8 @@ class OpenAiGatewayTest {
         return gateway(true, "sk-test", Duration.ofSeconds(25), Duration.ofSeconds(300), 5, Duration.ofSeconds(60));
     }
 
-    private static ChatRequest interactive() { return ChatRequest.interactive("be brief", "hello", 50, 0.2); }
-    private static ChatRequest batch() { return ChatRequest.batchJson("be brief", "hello", 50, 0.2, Duration.ofSeconds(5)); }
+    private static ChatRequest interactive() { return ChatRequest.interactive("test", "be brief", "hello", 50, 0.2); }
+    private static ChatRequest batch() { return ChatRequest.batchJson("test", "be brief", "hello", 50, 0.2, Duration.ofSeconds(5)); }
 
     @Test
     void VYB0936_AC1_aChatCallSendsTheRequestAndReturnsTheReplyWithWhatTheProviderReported() throws Exception {
@@ -244,7 +244,7 @@ class OpenAiGatewayTest {
     @Test
     void VYB0936_AC7_aTimeoutIsAFailureThatIsRetriedAndThenReportedAsOne() {
         script.add(Reply.slow(1500));
-        ChatRequest quick = new ChatRequest("s", "u", 10, 0.1, false, CallKind.INTERACTIVE, Duration.ofMillis(200));
+        ChatRequest quick = new ChatRequest("test", "s", "u", 10, 0.1, false, CallKind.INTERACTIVE, Duration.ofMillis(200));
 
         assertThatThrownBy(() -> gateway().chat(quick)).isInstanceOf(AiProviderUnavailableException.class)
             .hasMessageContaining("after 2 attempts").hasMessageContaining("could not reach the AI provider");

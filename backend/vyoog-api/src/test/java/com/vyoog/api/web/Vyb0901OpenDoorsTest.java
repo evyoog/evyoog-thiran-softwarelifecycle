@@ -121,7 +121,7 @@ class Vyb0901OpenDoorsTest {
     private final TenantBootstrapService bootstrap = mock(TenantBootstrapService.class);
 
     private SettingsController settings(String configuredToken) {
-        SettingsController c = new SettingsController(null, null, null, provisioning, null, guard, bootstrap, null, null, null);
+        SettingsController c = new SettingsController(null, null, null, provisioning, null, guard, bootstrap, null, null, null, null);
         ReflectionTestUtils.setField(c, "bootstrapToken", configuredToken);
         AppUser u = mock(AppUser.class);
         when(u.getId()).thenReturn(UUID.randomUUID());

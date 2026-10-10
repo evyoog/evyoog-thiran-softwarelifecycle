@@ -2425,3 +2425,11 @@ body {
 .badge.df-open   { background: var(--crit-dim); color: var(--crit); border-color: var(--crit-bd); }
 .badge.df-fixed  { background: var(--info-dim); color: var(--info); border-color: var(--info-bd); }
 .badge.df-closed { background: var(--ok-dim);   color: var(--ok);   border-color: var(--ok-bd); }
+
+/* VYB-0939: where the AI token budget stands. A word and a glyph as well as a colour; never amber (amber means AI). */
+.badge.ai-bud-none { background: var(--panel-3);  color: var(--tx-2); border-color: var(--line-2); }
+.badge.ai-bud-ok   { background: var(--ok-dim);   color: var(--ok);   border-color: var(--ok-bd); }
+.badge.ai-bud-near { background: var(--info-dim); color: var(--info); border-color: var(--info-bd); }
+.badge.ai-bud-over { background: var(--crit-dim); color: var(--crit); border-color: var(--crit-bd); }
+.ai-bar { height: 8px; border-radius: 4px; background: var(--panel-3); border: 1px solid var(--line-2); overflow: hidden; min-width: 80px; }
+.ai-bar > span { display: block; height: 100%; background: var(--info); }

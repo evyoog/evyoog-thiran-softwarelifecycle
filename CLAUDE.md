@@ -67,7 +67,8 @@ Platform → Product → App → Capability → Requirement
    for another status needs its own decision, not this one.
 6. **AI proposes, the human decides.** No AI output is ever applied automatically.
 7. **No money, no hours.** No cost, budget, effort estimate, velocity or per-person
-   productivity anywhere. Finance and the delivery tool own those.
+   productivity anywhere. Finance and the delivery tool own those. (D32: the AI token limit an
+   administrator sets is a count of tokens, not money, and is never reported per person.)
 8. **Borrowed data looks borrowed.** Anything from an external system renders hatched
    with a source tag. Absence renders "not connected", never blank or zero.
 9. **No real credentials in the repo.** Database, Keycloak client and SSO secrets come

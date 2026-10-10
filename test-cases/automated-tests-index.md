@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 903 tests cover 59 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 935 tests cover 60 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -977,7 +977,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC15` theJsonClientRefusesAReplyCutOffAtTheTokenLimitAndOneThatIsNotJson (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiCallersOnGatewayTest.java`)
 - `AC16` aRewriteSuggestionAndAJsonCallGoThroughTheSameGateway (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
 - `AC16` embeddingsReachTheProviderThroughTheGatewayWithTheConfiguredKey (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
-- `AC16` springBuildsOneProviderGatewayAndEveryoneIsHandedTheRedactingOneInFrontOfIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC16` springBuildsOneProviderGatewayAndEveryoneIsHandedTheMeteringOneInFrontOfTheRedactingOneInFrontOfIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
 - `AC2` whenNotConfiguredNothingIsSentAndTheReasonIsInWords (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
 - `AC3` aLongerRetryAfterIsHonouredUpToTheCap (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
 - `AC3` aRetryableStatusIsRetriedAndASecondAttemptThatWorksIsReturned (`backend/vyoog-domain/src/test/java/com/vyoog/ai/OpenAiGatewayTest.java`)
@@ -1083,3 +1083,38 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` aProviderFailureReachesTheCallerAndNothingFurtherIsRecorded (`backend/vyoog-domain/src/test/java/com/vyoog/brief/BriefElaborationDrafterTest.java`)
 - `AC9` aProposalForARequirementThatDoesNotExistIsRefusedAndOneWithNoRequirementIsOnlyAllowedForARewrite (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
 - `AC9` recordingAProposalAppliesNothingAndLeavesItPendingAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AiProposalIT.java`)
+
+## VYB-0939: Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30]
+
+- `AC1` aReplyThatReportsNoTokensIsRecordedWithNullNotAGuess (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC1` aSuccessfulChatCallIsRecordedWithPurposePromptVersionModelAndTheTokensTheProviderReported (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC10` everySuccessfulCallIsWrittenButARefusalRowIsWrittenOncePerMinutePerPurpose (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiUsageLedgerTest.java`)
+- `AC11` aFailureToWriteTheRowIsNotThrownSoTheAiCallThePersonWaitsOnStillSucceeds (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiUsageLedgerTest.java`)
+- `AC12` aChangedSystemPromptIsANewVersion (`backend/vyoog-domain/src/test/java/com/vyoog/ai/ChatRequestPromptVersionTest.java`)
+- `AC12` theKnownVersionOfAKnownPromptIsPinnedSoAnAccidentalChangeToTheHashingIsCaught (`backend/vyoog-domain/src/test/java/com/vyoog/ai/ChatRequestPromptVersionTest.java`)
+- `AC12` theSameSystemPromptAlwaysGivesTheSameEightCharacterVersion (`backend/vyoog-domain/src/test/java/com/vyoog/ai/ChatRequestPromptVersionTest.java`)
+- `AC12` theUserTextDoesNotChangeTheVersionBecauseItIsNotThePrompt (`backend/vyoog-domain/src/test/java/com/vyoog/ai/ChatRequestPromptVersionTest.java`)
+- `AC13` aRewriteAndAnEmbeddingEachLeaveOneLedgerRowWithTheTokensTheProviderReported (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC14` theLedgerHoldsNoPromptNoReplyAndNoPerson (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC15` oncePastTheDailyBudgetACallIsRefusedWithTheReasonAndNothingReachesTheProvider (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC16` theTighterOfTheTwoBudgetsDecidesAndAMonthlyCapNamesTheMonth (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC17` onlyAnAdministratorSetsTheBudgetAndANonsenseLimitIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC18` anySignedInPersonSeesTheUsageButNeverByPersonAndNeverAsMoney (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC19` theReportTotalsMatchTheLedgerAndTheBudgetShownBesideThem (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ModelGatewayWiringIT.java`)
+- `AC2` anEmbeddingCallIsRecordedUnderItsOwnPurposeWithNoPromptVersion (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC20` noLimitIsSaidInWordsAndIsNeverShownAsZeroOrFull (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC20` theBarNeverPassesAHundredPercent (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC20` theStateIsOkNearOrOverAtTheEdges (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC21` emptyMeansNoLimitAndAWholePositiveNumberIsAccepted (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC21` zeroNegativeFractionAndTextAreRefusedWithAReasonInWords (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC22` theSummaryNamesTokensAndNeverMoney (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC23` aRowSharesTheMonthsTokensAndATinyOneIsSaidToBeUnderOnePercent (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC23` theChartScalesToTheTallestDayAndSurvivesAnEmptyOne (`frontend/src/features/analytics/aiUsage.test.ts`)
+- `AC3` aFailedCallIsRecordedAsFailedWithNoTokensAndTheFailureStillReachesTheCaller (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC4` overBudgetTheCallIsRefusedWithTheReasonAndNothingIsSentToTheProvider (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC5` whenAiIsNotConfiguredNothingIsCheckedRecordedOrCounted (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC6` successfulCallsAreCountedByPurposeAndTheirTokensToo (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC7` theModelAndEmbeddingModelAreThoseOfTheGatewayItWraps (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC8` theTimeASlowCallTookIsRecordedInMilliseconds (`backend/vyoog-domain/src/test/java/com/vyoog/ai/MeteredModelGatewayTest.java`)
+- `AC9` aFailedOrRefusedCallHasNoTotalEvenIfSomeNumberCameBack (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiUsageLedgerTest.java`)
+- `AC9` theTotalIsThePromptPlusTheCompletionTokensReportedAndNullWhenNeitherWas (`backend/vyoog-domain/src/test/java/com/vyoog/ai/AiUsageLedgerTest.java`)

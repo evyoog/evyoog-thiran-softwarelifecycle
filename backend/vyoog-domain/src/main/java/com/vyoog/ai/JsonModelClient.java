@@ -39,13 +39,14 @@ public class JsonModelClient {
     }
 
     /**
+     * @param purpose what this call is for, recorded in the usage ledger (VYB-0939)
      * @param maxTokens hard cap on the reply; a truncated reply is half a JSON document, so it surfaces as an
      *                  {@link AiProviderUnavailableException} rather than as a half-read result.
      * @return the parsed JSON object the model was told to return
      */
-    public JsonNode completeJson(String systemPrompt, String userContent, int maxTokens, double temperature) {
+    public JsonNode completeJson(String purpose, String systemPrompt, String userContent, int maxTokens, double temperature) {
         ChatReply reply = gateway.chat(
-            ChatRequest.batchJson(systemPrompt, userContent, maxTokens, temperature, Duration.ofSeconds(timeoutSeconds)));
+            ChatRequest.batchJson(purpose, systemPrompt, userContent, maxTokens, temperature, Duration.ofSeconds(timeoutSeconds)));
         if ("length".equals(reply.finishReason())) {
             throw new AiProviderUnavailableException("AI provider's reply was cut off at the token limit before it finished.");
         }

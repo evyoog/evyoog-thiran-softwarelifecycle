@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai/usage/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["usageSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{applicationId}/capabilities": {
         parameters: {
             query?: never;
@@ -3092,6 +3108,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/ai-token-budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setAiTokenBudget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/audit-partitions": {
         parameters: {
             query?: never;
@@ -4329,6 +4361,10 @@ export interface components {
             /** Format: int32 */
             aiCallsPerRunLimit?: number;
             aiRedactionDisabled?: string[];
+            /** Format: int64 */
+            aiTokenBudgetDaily?: number;
+            /** Format: int64 */
+            aiTokenBudgetMonthly?: number;
             /** Format: int32 */
             auditRetentionDays?: number;
             embeddingModel?: string;
@@ -6033,6 +6069,12 @@ export interface components {
         SetThreshold: {
             threshold?: number;
         };
+        SetTokenBudget: {
+            /** Format: int64 */
+            daily?: number;
+            /** Format: int64 */
+            monthly?: number;
+        };
         SignalsView: {
             /** Format: int64 */
             acceptanceCriteriaCount?: number;
@@ -6574,6 +6616,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AiUsageView"];
+                };
+            };
+        };
+    };
+    usageSummary: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Summary"];
                 };
             };
         };
@@ -11648,6 +11712,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SetRedaction"];
+                };
+            };
+        };
+    };
+    setAiTokenBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTokenBudget"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SetTokenBudget"];
                 };
             };
         };

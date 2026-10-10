@@ -88,7 +88,7 @@ public class OpenAiDocumentDescriptionSynthesizer implements DocumentDescription
             user.append(revisionGuidance.stream().map(c -> "- " + c).collect(Collectors.joining("\n")));
         }
 
-        JsonNode result = chat.completeJson(SYSTEM_PROMPT, user.toString(), 4000, 0.2);
+        JsonNode result = chat.completeJson("document-synthesis", SYSTEM_PROMPT, user.toString(), 4000, 0.2);
 
         String description = result.path("description").asText("");
         if (description.isBlank()) {

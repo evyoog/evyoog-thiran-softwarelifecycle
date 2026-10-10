@@ -157,7 +157,7 @@ class AiCallersOnGatewayTest {
         replies("{\"findings\":[1,2]}");
         var client = new JsonModelClient(gateway, JSON, 90);
 
-        assertThat(client.completeJson("sys", "usr", 900, 0.2).path("findings")).hasSize(2);
+        assertThat(client.completeJson("test", "sys", "usr", 900, 0.2).path("findings")).hasSize(2);
         assertThat(client.model()).isEqualTo("test-chat-model");
         assertThat(client.configured()).isTrue();
         ChatRequest r = sent();
@@ -172,10 +172,10 @@ class AiCallersOnGatewayTest {
         var client = new JsonModelClient(gateway, JSON, 90);
 
         when(gateway.chat(any())).thenReturn(new ChatReply("{\"findings\":[", "m", "length", 1, 1));
-        assertThatThrownBy(() -> client.completeJson("s", "u", 10, 0.1)).isInstanceOf(AiProviderUnavailableException.class)
+        assertThatThrownBy(() -> client.completeJson("test", "s", "u", 10, 0.1)).isInstanceOf(AiProviderUnavailableException.class)
             .hasMessageContaining("cut off at the token limit");
 
         replies("<html>");
-        assertThatThrownBy(() -> client.completeJson("s", "u", 10, 0.1)).hasMessageContaining("could not be parsed");
+        assertThatThrownBy(() -> client.completeJson("test", "s", "u", 10, 0.1)).hasMessageContaining("could not be parsed");
     }
 }

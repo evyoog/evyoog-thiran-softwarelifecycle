@@ -58,7 +58,7 @@ public class OpenAiLlmAdjudicator implements LlmAdjudicator {
 
         String userPrompt = "Requirement A: " + statementA + "\nRequirement B: " + statementB;
         // A sweep nobody is watching: the gateway retries it harder than an interactive call.
-        ChatReply reply = gateway.chat(ChatRequest.batch(SYSTEM_PROMPT, userPrompt, 150, 0.1, Duration.ofSeconds(20)));
+        ChatReply reply = gateway.chat(ChatRequest.batch("conflict-adjudication", SYSTEM_PROMPT, userPrompt, 150, 0.1, Duration.ofSeconds(20)));
 
         JsonNode content;
         try {

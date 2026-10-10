@@ -57,7 +57,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC8_whatIsSentHasNoSecretsAndNoPersonalDataAndTheSystemPromptIsUntouched() {
         replies("{}");
 
-        gateway.chat(ChatRequest.interactive("You review text for Zelda Quasar's team.", "Zelda Quasar (zelda@corp.example, +44 20 7946 0958) uses key AKIAIOSFODNN7EXAMPLE from 10.0.0.7", 100, 0.1));
+        gateway.chat(ChatRequest.interactive("test", "You review text for Zelda Quasar's team.", "Zelda Quasar (zelda@corp.example, +44 20 7946 0958) uses key AKIAIOSFODNN7EXAMPLE from 10.0.0.7", 100, 0.1));
 
         ChatRequest r = sent();
         assertThat(r.user()).isEqualTo("[PERSON_1] ([EMAIL_1], [PHONE_1]) uses key " + Redactor.SECRET_MARKER + " from [IP_1]");
@@ -70,7 +70,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC9_theReplyComesBackWithTheOriginalValuesPutBackAndTheMetadataIntact() {
         replies("{\"owner\":\"[PERSON_1]\",\"contact\":\"[EMAIL_1]\"}");
 
-        ChatReply reply = gateway.chat(ChatRequest.batchJson("sys", "Zelda Quasar zelda@corp.example", 50, 0.1, java.time.Duration.ofSeconds(5)));
+        ChatReply reply = gateway.chat(ChatRequest.batchJson("test", "sys", "Zelda Quasar zelda@corp.example", 50, 0.1, java.time.Duration.ofSeconds(5)));
 
         assertThat(reply.content()).isEqualTo("{\"owner\":\"Zelda Quasar\",\"contact\":\"zelda@corp.example\"}");
         assertThat(reply.model()).isEqualTo("chat-model");
@@ -83,7 +83,7 @@ class RedactingModelGatewayTest {
         when(people.names()).thenReturn(redactor.nameMatcher(List.of("Zelda \"Z\" Quasar")));
         replies("{\"who\":\"[PERSON_1]\"}");
 
-        ChatReply reply = gateway.chat(ChatRequest.interactive("s", "Ask Zelda \"Z\" Quasar", 50, 0.1)); // jsonObject=false
+        ChatReply reply = gateway.chat(ChatRequest.interactive("test", "s", "Ask Zelda \"Z\" Quasar", 50, 0.1)); // jsonObject=false
 
         assertThat(new com.fasterxml.jackson.databind.ObjectMapper().readTree(reply.content()).path("who").asText())
             .as("the quote in the name was escaped, so the document the caller parses is valid").isEqualTo("Zelda \"Z\" Quasar");
@@ -93,7 +93,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC9_aSecretIsNeverPutBackEvenIfTheProviderEchoesTheMarker() {
         replies("I removed " + Redactor.SECRET_MARKER);
 
-        ChatReply reply = gateway.chat(ChatRequest.interactive("s", "key AKIAIOSFODNN7EXAMPLE", 50, 0.1));
+        ChatReply reply = gateway.chat(ChatRequest.interactive("test", "s", "key AKIAIOSFODNN7EXAMPLE", 50, 0.1));
 
         assertThat(reply.content()).isEqualTo("I removed " + Redactor.SECRET_MARKER).doesNotContain("AKIA");
     }
@@ -101,7 +101,7 @@ class RedactingModelGatewayTest {
     @Test
     void VYB0937_AC10_textWithNothingToRedactIsSentExactlyAsGiven() {
         replies("ok");
-        ChatRequest original = ChatRequest.interactive("s", "The system shall respond within 2 seconds.", 50, 0.1);
+        ChatRequest original = ChatRequest.interactive("test", "s", "The system shall respond within 2 seconds.", 50, 0.1);
 
         gateway.chat(original);
 
@@ -126,7 +126,7 @@ class RedactingModelGatewayTest {
         when(settings.disabled()).thenReturn(EnumSet.of(DataClass.EMAIL, DataClass.PERSON));
         replies("{}");
 
-        gateway.chat(ChatRequest.interactive("s", "Zelda Quasar zelda@corp.example call +44 20 7946 0958 key AKIAIOSFODNN7EXAMPLE", 50, 0.1));
+        gateway.chat(ChatRequest.interactive("test", "s", "Zelda Quasar zelda@corp.example call +44 20 7946 0958 key AKIAIOSFODNN7EXAMPLE", 50, 0.1));
 
         assertThat(sent().user()).isEqualTo("Zelda Quasar zelda@corp.example call [PHONE_1] key " + Redactor.SECRET_MARKER);
         verify(people, never()).names(); // switched off: the list of people is not even loaded
@@ -136,7 +136,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC13_ifTheTextCannotBeCheckedNothingIsSentAndTheCallIsRefused() {
         when(settings.disabled()).thenThrow(new IllegalStateException("database down"));
 
-        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("s", "anything", 50, 0.1))).isInstanceOf(AiProviderUnavailableException.class)
+        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("test", "s", "anything", 50, 0.1))).isInstanceOf(AiProviderUnavailableException.class)
             .hasMessageContaining("Nothing was sent");
         assertThatThrownBy(() -> gateway.embed("anything", CallKind.BATCH)).isInstanceOf(AiProviderUnavailableException.class);
 
@@ -148,7 +148,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC13_aFailureLoadingThePeopleAlsoSendsNothing() {
         when(people.names()).thenThrow(new IllegalStateException("user table unreadable"));
 
-        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("s", "anything", 50, 0.1))).isInstanceOf(AiProviderUnavailableException.class);
+        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("test", "s", "anything", 50, 0.1))).isInstanceOf(AiProviderUnavailableException.class);
 
         verify(provider, never()).chat(any());
     }
@@ -157,7 +157,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC14_aProviderFailureStillReachesTheCallerAsTheSameException() {
         when(provider.chat(any())).thenThrow(new AiProviderUnavailableException("temporarily not being called"));
 
-        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("s", "zelda@corp.example", 50, 0.1)))
+        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("test", "s", "zelda@corp.example", 50, 0.1)))
             .isInstanceOf(AiProviderUnavailableException.class).hasMessageContaining("temporarily");
     }
 
@@ -167,7 +167,7 @@ class RedactingModelGatewayTest {
         when(provider.chat(any())).thenThrow(new AiProviderUnavailableException("AI is not configured"));
 
         assertThat(gateway.configured()).isFalse();
-        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("s", "x", 5, 0.1))).hasMessageContaining("not configured");
+        assertThatThrownBy(() -> gateway.chat(ChatRequest.interactive("test", "s", "x", 5, 0.1))).hasMessageContaining("not configured");
         verify(settings, never()).disabled();
     }
 
@@ -175,7 +175,7 @@ class RedactingModelGatewayTest {
     void VYB0937_AC15_whatWasRedactedIsCountedByClassAndNeverTheValues() {
         replies("{}");
 
-        gateway.chat(ChatRequest.interactive("s", "a@b.example and c@d.example and key AKIAIOSFODNN7EXAMPLE", 50, 0.1));
+        gateway.chat(ChatRequest.interactive("test", "s", "a@b.example and c@d.example and key AKIAIOSFODNN7EXAMPLE", 50, 0.1));
 
         assertThat(meters.get("ai.redactions").tag("class", "EMAIL").tag("endpoint", "chat").counter().count()).isEqualTo(2.0);
         assertThat(meters.get("ai.redactions").tag("class", "SECRET").tag("endpoint", "chat").counter().count()).isEqualTo(1.0);

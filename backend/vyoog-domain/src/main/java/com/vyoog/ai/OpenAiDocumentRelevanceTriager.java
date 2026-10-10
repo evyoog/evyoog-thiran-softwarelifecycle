@@ -72,7 +72,7 @@ public class OpenAiDocumentRelevanceTriager implements DocumentRelevanceTriager 
 
     @Override
     public Triage triage(String chunkText, String sourceLocation) {
-        JsonNode result = chat.completeJson(
+        JsonNode result = chat.completeJson("document-triage",
             SYSTEM_PROMPT,
             "Excerpt location: " + sourceLocation + "\n\n" + chunkText,
             2000,

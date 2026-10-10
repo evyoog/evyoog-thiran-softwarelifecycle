@@ -4,7 +4,7 @@ Added by VYB-0937 (Phase 6, Sprint 8, F27). Migration `database/migrations/V048_
 
 ## The rule
 
-**Every model call is cleaned before it is sent.** `RedactingModelGateway` is the `ModelGateway` that every class is handed (it is `@Primary`; the OpenAI gateway behind it is not injected anywhere else). It cleans:
+**Every model call is cleaned before it is sent.** `RedactingModelGateway` sits between what every class is handed (`MeteredModelGateway`, which is `@Primary`, VYB-0939) and the OpenAI gateway; neither of those two is injected anywhere else. It cleans:
 
 - the **user text** of a chat call (the data a caller sends), and
 - the **text of an embedding** (so the vector is made from clean text too; nothing needs restoring, only a vector comes back).

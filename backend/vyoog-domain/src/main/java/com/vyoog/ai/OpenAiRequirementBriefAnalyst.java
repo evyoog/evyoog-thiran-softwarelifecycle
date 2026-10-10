@@ -142,7 +142,7 @@ public class OpenAiRequirementBriefAnalyst implements RequirementBriefAnalyst {
         // result. 900 leaves headroom for the longest well-formed brief in the prompt's
         // own shape — raised from 700 when title, type, priority and acceptance criteria
         // were added, since a truncated reply costs the whole batch, not one field.
-        JsonNode result = chat.completeJson(SYSTEM_PROMPT, user.toString(), 900 * Math.max(1, findings.size()), 0.2);
+        JsonNode result = chat.completeJson("brief-analysis", SYSTEM_PROMPT, user.toString(), 900 * Math.max(1, findings.size()), 0.2);
 
         List<Brief> briefs = new ArrayList<>();
         for (JsonNode node : result.path("briefs")) {

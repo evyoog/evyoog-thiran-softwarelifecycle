@@ -4,6 +4,7 @@ import com.vyoog.identity.AccessRule;
 
 import com.vyoog.api.config.RequiresAccess;
 
+import com.vyoog.ai.AiUsageReport;
 import com.vyoog.ai.AiUsageTracker;
 import com.vyoog.ai.EmbeddingProvider;
 import com.vyoog.ai.EmbeddingService;
@@ -27,13 +28,15 @@ public class AiController {
     private final EmbeddingService embeddingService;
     private final SimilaritySearchService similarity;
     private final AiUsageTracker aiUsage;
+    private final AiUsageReport usageReport;
 
     public AiController(EmbeddingProvider provider, EmbeddingService embeddingService,
-                         SimilaritySearchService similarity, AiUsageTracker aiUsage) {
+                         SimilaritySearchService similarity, AiUsageTracker aiUsage, AiUsageReport usageReport) {
         this.provider = provider;
         this.embeddingService = embeddingService;
         this.similarity = similarity;
         this.aiUsage = aiUsage;
+        this.usageReport = usageReport;
     }
 
     public record AiUsageView(int used, int limit) {}
@@ -42,6 +45,15 @@ public class AiController {
     @GetMapping("/usage")
     public AiUsageView usage() {
         return new AiUsageView(aiUsage.used(), aiUsage.limit());
+    }
+
+    /**
+     * VYB-0939 (F30): tokens and calls used, by day, purpose, prompt version and model, with the budget beside them. Any signed-in
+     * person may read it; it has no per-person figures and no money. {@code days} is how many UTC days the chart covers (1–366).
+     */
+    @GetMapping("/usage/summary")
+    public AiUsageReport.Summary usageSummary(@RequestParam(defaultValue = "30") int days) {
+        return usageReport.summary(days);
     }
 
     public record ModelInfo(String modelName, int dimensions) {}

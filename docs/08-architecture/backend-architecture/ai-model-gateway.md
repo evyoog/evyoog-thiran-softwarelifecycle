@@ -18,12 +18,12 @@ Before this row, five classes each built and sent their own request to OpenAI (`
 | Batch calls (`CallKind.BATCH`) | Nobody is watching (a sweep's adjudication, document analysis, brief elaboration, test-case suggestion). Up to four attempts, the caller's own per-attempt timeout (20 s for adjudication, `AI_ANALYSIS_TIMEOUT_SECONDS`, default 90, for analysis), inside 300 s (`AI_BATCH_DEADLINE_SECONDS`). |
 | Total limit | A retry is started only if its wait plus at least one second of attempt still fits inside the limit. |
 | Circuit breaker | One per endpoint kind (chat, embeddings), in memory, per application instance. It opens after 5 failed calls in a row (`AI_BREAKER_FAILURE_THRESHOLD`) and refuses calls without sending anything. After 60 s (`AI_BREAKER_OPEN_SECONDS`) one trial call is let through: success closes it, failure opens it again. A "failed call" is one whose attempts were all spent on retryable failures. A definite answer (a 400, a 401) or a reply that cannot be read shows the provider is up, and is not counted. |
-| Reply | `ChatReply` carries the text, the model and finish reason, and the token counts the provider **reported** (null when it did not say; never estimated). Recording them is VYB-0939. |
+| Reply | `ChatReply` carries the text, the model and finish reason, and the token counts the provider **reported** (null when it did not say; never estimated). They are recorded in the usage ledger (VYB-0939, [`ai-usage-and-budgets.md`](ai-usage-and-budgets.md)). |
 | Failure | Every failure is an `AiProviderUnavailableException` with a reason. "Unknown" is never faked as a zero vector or an empty answer; callers still refuse rather than guess (CLAUDE.md rule 6). |
 
 ## Redaction in front of it
 
-Classes are handed `RedactingModelGateway` (`@Primary`), which cleans the text and calls this gateway (VYB-0937, [`../security/ai-redaction.md`](../security/ai-redaction.md)). The provider gateway above is the bean `openAiGateway` and is injected nowhere else.
+Classes are handed `MeteredModelGateway` (`@Primary`, VYB-0939, [`ai-usage-and-budgets.md`](ai-usage-and-budgets.md)), which checks the token budget, calls `RedactingModelGateway`, which cleans the text and calls this gateway (VYB-0937, [`../security/ai-redaction.md`](../security/ai-redaction.md)), and then records the call. The provider gateway above is the bean `openAiGateway` and is injected nowhere else. Three `ModelGateway` beans exist: provider, redacting, metering.
 
 ## What stayed with each caller
 
@@ -35,7 +35,7 @@ The prompt, how the reply is read, and the refusal to invent an answer: the rewr
 
 ## Not here (later rows)
 
-The review endpoint for AI proposals is done (VYB-0938, [`../../04-workflows/ai-proposal-review.md`](../../04-workflows/ai-proposal-review.md)). Later rows: persisting model, prompt version and token counts, budgets and the usage screen (VYB-0939), moving model calls out of database transactions (VYB-0940). The gateway does not show its breaker state anywhere yet.
+The review endpoint for AI proposals is done (VYB-0938, [`../../04-workflows/ai-proposal-review.md`](../../04-workflows/ai-proposal-review.md)). Persisting model, prompt version and token counts, budgets and the usage screen are done (VYB-0939). A later row: moving model calls out of database transactions (VYB-0940). The gateway does not show its breaker state anywhere yet.
 
 ## Tests
 

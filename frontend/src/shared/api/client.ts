@@ -1672,6 +1672,34 @@ export interface AppConfigView {
   noisyDetectorDismissalCeiling: number
   /** VYB-0937: the kinds of personal data redaction is switched OFF for before text goes to a model provider; empty means all on. */
   aiRedactionDisabled: string[]
+  /** VYB-0939: the most tokens the AI may use per UTC day / month; absent means no limit. Tokens, never money. */
+  aiTokenBudgetDaily?: number | null
+  aiTokenBudgetMonthly?: number | null
+}
+
+// ── AI usage (VYB-0939) ───────────────────────────────────────────────────────────
+
+export interface AiUsageDay { day: string; calls: number; tokens: number }
+export interface AiUsageBreakdown {
+  purpose: string
+  promptVersion: string
+  model: string
+  calls: number
+  failed: number
+  refused: number
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+}
+/** Tokens and calls only: no person and no money (CLAUDE.md rule 7, D32). */
+export interface AiUsageSummary {
+  limits: { daily?: number | null; monthly?: number | null }
+  usedToday: number
+  usedThisMonth: number
+  monthStart: string
+  monthResets: string
+  byDay: AiUsageDay[]
+  thisMonth: AiUsageBreakdown[]
 }
 
 // ── AI proposals (VYB-0938) ───────────────────────────────────────────────────────
@@ -1944,6 +1972,7 @@ export const api = {
 
   // AI usage and tenant bootstrap
   aiUsage: () => request<{ used: number; limit: number }>('/ai/usage'),
+  aiUsageSummary: (days = 30) => request<AiUsageSummary>(`/ai/usage/summary?days=${days}`),
   bootstrapStatus: () => request<{ bootstrapped: boolean }>('/settings/bootstrap'),
   bootstrapTenant: (firstAdministratorUserId: string) =>
     request<void>('/settings/bootstrap', { method: 'POST', body: JSON.stringify({ firstAdministratorUserId }) }),
@@ -2477,6 +2506,8 @@ export const api = {
     request<void>('/settings/noisy-detector-dismissal-ceiling', { method: 'PUT', body: JSON.stringify({ ceiling }) }),
   setAiRedaction: (disabled: string[]) =>
     request<{ disabled: string[] }>('/settings/ai-redaction', { method: 'PUT', body: JSON.stringify({ disabled }) }),
+  setAiTokenBudget: (daily: number | null, monthly: number | null) =>
+    request<{ daily?: number | null; monthly?: number | null }>('/settings/ai-token-budget', { method: 'PUT', body: JSON.stringify({ daily, monthly }) }),
   setAiCallsPerRunLimit: (days: number) => request<void>('/settings/ai-calls-per-run-limit', { method: 'PUT', body: JSON.stringify({ days }) }),
   setEmbeddingModel: (model: string) => request<void>('/settings/embedding-model', { method: 'PUT', body: JSON.stringify({ model }) }),
   suspend: (reason: string) => request<void>('/settings/suspend', { method: 'POST', body: JSON.stringify({ reason }) }),

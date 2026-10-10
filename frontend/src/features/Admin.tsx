@@ -14,6 +14,7 @@ import { useRovingGrid } from '@/shared/ui/useRovingGrid'
 import { UserPicker } from '@/shared/ui/UserPicker'
 import { ConnectorHealthTab } from './admin/ConnectorHealthTab'
 import { AiRedactionCard } from './admin/AiRedactionCard'
+import { AiTokenBudgetCard } from './admin/AiTokenBudgetCard'
 
 type Tab = 'users' | 'teams' | 'grants' | 'roles' | 'service-accounts' | 'security' | 'audit' | 'integrations' | 'connector-health' | 'settings'
 const TABS: { key: Tab; label: string }[] = [
@@ -1345,6 +1346,7 @@ function SettingsTab() {
         </p>
 
         <AiUsageCard />
+        <AiTokenBudgetCard key={`${data.aiTokenBudgetDaily ?? ''}/${data.aiTokenBudgetMonthly ?? ''}`} daily={data.aiTokenBudgetDaily} monthly={data.aiTokenBudgetMonthly} />
         <AiRedactionCard disabled={data.aiRedactionDisabled ?? []} />
 
         {/* VYB-0733, reframed: docs/DECISIONS.md D3 already ruled multi-tenant

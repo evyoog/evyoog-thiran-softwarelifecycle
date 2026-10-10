@@ -65,7 +65,7 @@ public class OpenAiRequirementRewriteAdvisor implements RequirementRewriteAdviso
             throw new AiProviderUnavailableException("Could not encode the rewrite request: " + e.getMessage());
         }
 
-        ChatReply reply = gateway.chat(ChatRequest.interactive(SYSTEM_PROMPT, userContent, 400, 0.2));
+        ChatReply reply = gateway.chat(ChatRequest.interactive("rewrite-suggestion", SYSTEM_PROMPT, userContent, 400, 0.2));
 
         JsonNode content;
         try {

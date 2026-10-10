@@ -130,6 +130,14 @@
             },
             "type" : "array"
           },
+          "aiTokenBudgetDaily" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "aiTokenBudgetMonthly" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "auditRetentionDays" : {
             "format" : "int32",
             "type" : "integer"
@@ -4973,6 +4981,19 @@
         },
         "type" : "object"
       },
+      "SetTokenBudget" : {
+        "properties" : {
+          "daily" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "monthly" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "SignalsView" : {
         "properties" : {
           "acceptanceCriteriaCount" : {
@@ -6173,6 +6194,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/AiUsageView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "ai-controller" ]
+      }
+    },
+    "/api/v1/ai/usage/summary" : {
+      "get" : {
+        "operationId" : "usageSummary",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 30,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Summary"
                 }
               }
             },
@@ -12819,6 +12868,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SetRedaction"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "settings-controller" ]
+      }
+    },
+    "/api/v1/settings/ai-token-budget" : {
+      "put" : {
+        "operationId" : "setAiTokenBudget",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetTokenBudget"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SetTokenBudget"
                 }
               }
             },

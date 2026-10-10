@@ -1,5 +1,6 @@
 package com.vyoog.api.web;
 
+import com.vyoog.ai.AiBudgetService;
 import com.vyoog.ai.RedactionSettings;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.BootstrapRefusedException;
@@ -32,6 +33,7 @@ public class SettingsController {
     private final com.vyoog.platform.reset.TenantHardResetService hardReset;
     private final AuditRetentionService retention;
     private final RedactionSettings redaction;
+    private final AiBudgetService budget;
 
     /** VYB-0901: one-time token from the environment. Empty (the default) means bootstrap is switched off. */
     @org.springframework.beans.factory.annotation.Value("${vyoog.bootstrap.token:}")
@@ -40,7 +42,7 @@ public class SettingsController {
     public SettingsController(AppConfigService config, TaskService tasks, TenantExportService export,
                                UserProvisioningService provisioning, AuditService audit, PrincipalGuard guard,
                                TenantBootstrapService bootstrap, com.vyoog.platform.reset.TenantHardResetService hardReset,
-                               AuditRetentionService retention, RedactionSettings redaction) {
+                               AuditRetentionService retention, RedactionSettings redaction, AiBudgetService budget) {
         this.config = config;
         this.tasks = tasks;
         this.export = export;
@@ -51,6 +53,7 @@ public class SettingsController {
         this.hardReset = hardReset;
         this.retention = retention;
         this.redaction = redaction;
+        this.budget = budget;
     }
 
     public record BootstrapStatus(boolean bootstrapped) {}
@@ -216,6 +219,20 @@ public class SettingsController {
     public SetRedaction setAiRedaction(@RequestBody SetRedaction body, @AuthenticationPrincipal Jwt jwt) {
         guard.requireAdministrator(jwt);
         return new SetRedaction(redaction.setDisabled(body.disabled(), currentUserId(jwt)).stream().map(Enum::name).sorted().toList());
+    }
+
+    public record SetTokenBudget(Long daily, Long monthly) {}
+
+    /**
+     * VYB-0939: the most tokens the AI may use per UTC day and per UTC month; empty means no limit, the tighter one applies,
+     * and when it is reached further calls are refused with the reason. A limit is a count of tokens, never an amount of money.
+     * Both are replaced together; an audit event records before and after.
+     */
+    @PutMapping("/ai-token-budget")
+    public SetTokenBudget setAiTokenBudget(@RequestBody SetTokenBudget body, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireAdministrator(jwt);
+        AiBudgetService.Limits set = budget.setLimits(body.daily(), body.monthly(), currentUserId(jwt));
+        return new SetTokenBudget(set.daily(), set.monthly());
     }
 
     public record SetModel(String model) {}

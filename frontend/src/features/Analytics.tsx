@@ -7,9 +7,10 @@ import { Page, Empty } from '@/shared/ui/Page'
 import { SeverityBadge } from '@/shared/ui/Badges'
 import { Modal } from '@/shared/ui/Modal'
 import { useRovingGrid } from '@/shared/ui/useRovingGrid'
+import { AiUsageTab } from './analytics/AiUsageTab'
 
 const STATES: FindingState[] = ['OPEN', 'ACCEPTED', 'DISMISSED', 'RESOLVED']
-type Tab = 'findings' | 'suspect' | 'rules' | 'change-requests' | 'spine'
+type Tab = 'findings' | 'suspect' | 'rules' | 'change-requests' | 'spine' | 'ai-usage'
 
 /**
  * VYB-0220/0221/0223/0224 and VYB-0214 (suspect links, filed under "documents/matrix/
@@ -39,10 +40,10 @@ export function Analytics() {
       {sweep.data && <SweepResultCard result={sweep.data} />}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        {(['findings', 'suspect', 'rules', 'change-requests', 'spine'] as Tab[]).map((t) => (
+        {(['findings', 'suspect', 'rules', 'change-requests', 'spine', 'ai-usage'] as Tab[]).map((t) => (
           <button key={t} className={`btn${t === tab ? ' pri' : ''}`} onClick={() => setTab(t)}>
             {t === 'findings' ? 'Findings' : t === 'suspect' ? 'Suspect links' : t === 'rules' ? 'Rules'
-              : t === 'change-requests' ? 'Change requests' : 'Lifecycle spine'}
+              : t === 'change-requests' ? 'Change requests' : t === 'spine' ? 'Lifecycle spine' : 'AI usage'}
           </button>
         ))}
       </div>
@@ -52,6 +53,7 @@ export function Analytics() {
       {tab === 'rules' && <RulesTab />}
       {tab === 'change-requests' && <ChangeRequestsTab />}
       {tab === 'spine' && <SpineTab />}
+      {tab === 'ai-usage' && <AiUsageTab />}
     </Page>
   )
 }

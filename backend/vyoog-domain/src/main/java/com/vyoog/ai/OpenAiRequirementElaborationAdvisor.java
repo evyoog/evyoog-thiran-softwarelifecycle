@@ -85,7 +85,7 @@ public class OpenAiRequirementElaborationAdvisor implements RequirementElaborati
         // Budgeted per requirement, same reasoning as RequirementBriefAnalyst: a batch of
         // eight needs roughly eight times the room of one, and a reply cut off mid-array
         // is unparseable JSON either way.
-        JsonNode result = chat.completeJson(SYSTEM_PROMPT, user.toString(), 400 * Math.max(1, requirements.size()), 0.3);
+        JsonNode result = chat.completeJson("brief-elaboration", SYSTEM_PROMPT, user.toString(), 400 * Math.max(1, requirements.size()), 0.3);
 
         List<Elaboration> out = new ArrayList<>();
         for (JsonNode node : result.path("elaborations")) {

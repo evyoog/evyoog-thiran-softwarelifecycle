@@ -150,7 +150,7 @@ public class OpenAiTestCaseGenerator implements TestCaseGenerator {
         // Bumped from 1600: bullet-point descriptions covering functional/validation/
         // technical/business angles run longer per test case, and there are now
         // typically more of them per requirement.
-        JsonNode result = chat.completeJson(SYSTEM_PROMPT, user.toString(), 2600, 0.3);
+        JsonNode result = chat.completeJson("test-case-suggestion", SYSTEM_PROMPT, user.toString(), 2600, 0.3);
 
         List<Suggestion> out = new ArrayList<>();
         for (JsonNode node : result.path("testCases")) {

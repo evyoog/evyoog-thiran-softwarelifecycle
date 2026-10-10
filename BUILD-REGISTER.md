@@ -342,7 +342,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0936 | 6 | AI governance | Model gateway interface with OpenAI as the first provider; retries, timeouts, circuit breaker; remove the copied HTTP blocks [L; F28] | DONE on dev (34 domain unit, 3 integration tests and 1 architecture rule; backend only; commit only, no PR yet) | S8 |
 | VYB-0937 | 6 | AI governance | Redaction pass: secrets removed, PII tokenised and restored on return; per-data-class opt-out [L; F27] | DONE on dev (31 domain unit, 4 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | DONE on dev for brief elaboration, rewrite and test-case suggestions (import candidates and document analysis not moved; 6 domain, 21 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
-| VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | TODO | S8 |
+| VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | DONE on dev: one ledger row per model call (purpose, prompt version, model, reported tokens, outcome; no user, no text), token budgets per UTC day and month that refuse calls with a reason, Analytics "AI usage" tab, Administration budget card (17 domain, 7 integration and 8 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | TODO | S8 |
 | VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | TODO | S9 |
 | VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | TODO | S9 |
@@ -5389,6 +5389,31 @@ Phase 6 Sprint 8. Branch `dev`. **34 new tests** (and 4 rewritten): `AiProposalI
 - No screen lists all proposals; they are reviewed where they are made.
 - **The integration tests are slow in this environment and getting slower**: a requirement write or test-case draft takes 13 to 20 seconds, so `AiProposalIT` takes about 6 minutes and the full verify took about 100 minutes this time. I did not find the cause; the database also keeps every earlier test's rows, which may be it.
 - The old `*VerificationRunner` classes were not run. Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 91 — VYB-0939 (F29, F30): record every AI call, cap the tokens, show the usage
+
+Phase 6 Sprint 8. Branch `dev`. **32 new tests**: `MeteredModelGatewayTest` 9, `AiUsageLedgerTest` 4, `ChatRequestPromptVersionTest` 4 (domain), 7 in `ModelGatewayWiringIT` (real PostgreSQL, a stub provider, HTTP with real tokens; the bean-count test was rewritten), `aiUsage.test.ts` 8. The finding texts F29 and F30 are not in the repository; scope is the register row. Description: `docs/08-architecture/backend-architecture/ai-usage-and-budgets.md`, decision D32. Something to see: **Analytics, "AI usage"** (any signed-in person) and **Administration, Settings, "AI token budget"**.
+
+**Decisions with the product owner this session.** (1) **The budget is tokens only, never money.** (2) **At the limit, further AI calls are refused with a named reason.** (3) **Daily and monthly limits, both settable; the tighter applies.** (4) **Any signed-in person can see usage, never per person; setting the budget is administrator-only.**
+
+**Backend.** Migration `V050` (`ai_call`; `app_config.ai_token_budget_daily` and `_monthly`). `MeteredModelGateway` (`@Primary`) in front of the redacting gateway: checks the budget, makes the call, records it. `ChatRequest` now carries a `purpose` and works out a `promptVersion` (8 hex of the system prompt's SHA-256); all nine AI callers name a purpose. `AiBudgetService` (limits, used figure held 10 s, refusal wording, audited `setLimits`), `AiUsageLedger` (row in its own transaction, never throws, refusal rows once a minute per purpose), `AiUsageReport`. `PUT /api/v1/settings/ai-token-budget`, `GET /api/v1/ai/usage/summary`; `GET /api/v1/settings` gains the two limits. OpenAPI and `schema.d.ts` regenerated. Micrometer counters `ai.calls`, `ai.tokens`, `ai.budget.refusals`.
+
+**Frontend.** `analytics/AiUsageTab` (two budget cards with a word and a glyph, a 30-day chart, the month's table) and `admin/AiTokenBudgetCard` (two boxes, empty means no limit, checked before saving). No amber, no money.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Days and months are UTC. (2) A token count the provider did not report is null and counts as zero; nothing is estimated. (3) "Near limit" is 80 percent. (4) The used figure is held 10 seconds, so usage can pass a limit by calls in flight and another instance is seen within 10 seconds. (5) A refusal is recorded at most once a minute per purpose. (6) The prompt version is a hash of the system prompt, not a number someone maintains. (7) Embeddings are one purpose. (8) A limit of zero or less is refused (400); empty clears it.
+
+**Changes to a written rule.** CLAUDE.md rule 7 says "no cost, budget ..." and an AI budget now exists, so I added D32 to `docs/DECISIONS.md` and one sentence under rule 7 pointing at it (tokens, not money, never per person). That edit is to a file I normally leave alone; revert it if you would rather the decision stand alone.
+
+**Behaviour changes to know.** (1) With no limit set (the default) nothing is refused; behaviour is as before. (2) With a limit reached, rewrite suggestions, embeddings on writes, sweeps and document analysis all see "AI not available" with the reason, as for any outage. (3) `ModelGateway` now has three beans; anything that injects it by `@Qualifier` must be checked. (4) `JsonModelClient.completeJson` and `ChatRequest` factories take a `purpose` first.
+
+**Evidence.** Integration tests prove: a rewrite leaves one row with 9 prompt and 6 reply tokens, an embedding one with 5; the table has no prompt, reply or user column; at the daily limit a chat and an embedding are refused and the stub provider sees nothing, then the next call works once the limit is cleared; a monthly limit names the month; only an administrator sets the limits (403 and 401 otherwise, 400 for zero or negative) and one audit event holds before and after; the usage summary is open to any signed-in person and its JSON holds no user, person, cost, price or currency. Rendered in Chromium against mocked responses (dark): no limit, "Near limit" at 87,000 of 100,000, the table with shares, the budget card refusing 0 with its reason and saving "25,000".
+
+**Not done / to know**
+- **No purge of `ai_call`**; it grows by a row per call.
+- The ledger insert uses its own transaction; an AI call made inside a database transaction holds a second connection for that moment. VYB-0940 moves calls out of transactions.
+- Overshoot and the 10-second hold (above) are accepted, not removed.
+- The old per-sweep call limit and its card are unchanged and separate.
+- Removing the budget check failed `MeteredModelGatewayTest` AC4, then restored (the integration test for it was not run against the mutation, as the build stopped at the unit failure). Browser check was against mocked responses only; Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

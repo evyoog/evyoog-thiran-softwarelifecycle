@@ -31,7 +31,9 @@ public class AppConfigService {
         int auditRetentionDays, boolean suspended, String suspendedReason,
         String embeddingModel, int aiCallsPerRunLimit, BigDecimal noisyDetectorDismissalCeiling,
         /** VYB-0937: the kinds of personal data redaction is switched OFF for before text goes to a model provider; empty means all on. */
-        java.util.List<String> aiRedactionDisabled) {}
+        java.util.List<String> aiRedactionDisabled,
+        /** VYB-0939: token caps per UTC day and per UTC month; null means no cap. Tokens, never money (D32). */
+        Long aiTokenBudgetDaily, Long aiTokenBudgetMonthly) {}
 
     public AppConfigView current() {
         return jdbc.queryForObject("""
@@ -39,7 +41,7 @@ public class AppConfigService {
                    max_external_grant_days, stale_key_age_days, key_rotation_overlap_days,
                    audit_retention_days, suspended, suspended_reason,
                    embedding_model, ai_calls_per_run_limit, noisy_detector_dismissal_ceiling,
-                   ai_redaction_disabled
+                   ai_redaction_disabled, ai_token_budget_daily, ai_token_budget_monthly
             FROM app_config WHERE id = 1
             """,
             (rs, n) -> new AppConfigView(
@@ -49,7 +51,8 @@ public class AppConfigService {
                 rs.getBoolean("suspended"), rs.getString("suspended_reason"),
                 rs.getString("embedding_model"), rs.getInt("ai_calls_per_run_limit"),
                 rs.getBigDecimal("noisy_detector_dismissal_ceiling"),
-                redactionDisabled(rs.getArray("ai_redaction_disabled"))));
+                redactionDisabled(rs.getArray("ai_redaction_disabled")),
+                rs.getObject("ai_token_budget_daily", Long.class), rs.getObject("ai_token_budget_monthly", Long.class)));
     }
 
     private static java.util.List<String> redactionDisabled(java.sql.Array array) throws java.sql.SQLException {

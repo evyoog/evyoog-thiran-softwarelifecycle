@@ -62,7 +62,7 @@ public class OpenAiTraceRelationClassifier implements TraceRelationClassifier {
             user.append("- ").append(c.key()).append(": ").append(c.statement()).append('\n');
         }
 
-        ChatReply reply = gateway.chat(ChatRequest.interactive(SYSTEM_PROMPT, user.toString(), 500, 0.1));
+        ChatReply reply = gateway.chat(ChatRequest.interactive("trace-relation", SYSTEM_PROMPT, user.toString(), 500, 0.1));
 
         JsonNode content;
         try {
