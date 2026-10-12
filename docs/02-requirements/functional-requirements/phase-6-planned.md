@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 34, PARTIAL 1, TODO 20.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 35, PARTIAL 1, TODO 19.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -94,7 +94,6 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | DONE on dev: a History section on the requirement detail with revisions and status changes on one timeline and a word-level comparison of any two revisions (7 integration and 14 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | DONE on dev: a new version is a new requirement (new key, DRAFT) forked from an approved one for an approved change request; approving it supersedes the original, whose status stays APPROVED; a replaced requirement takes no new links or release; the in-place edit stays (11 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | DONE on dev: a Link dialog with a picker per kind (requirement, test, design node, release, untraced defect) and a Linked work list on the requirement detail; requirement-by-release and requirement-by-defect matrices; each impact count on a change request opens its items (11 integration and 18 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
-| VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | TODO | S9 |
 
 ## S9,96: Traceability, review and versioning depth
 
@@ -107,6 +106,12 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | DONE on dev: a step can be renamed, re-kinded and re-noted (the Testing and Deployment milestones keep their kind); a connection's label can be changed or the connection removed; steps can be dragged and the place is saved on the step (V054, shared, one audited save), with Reset layout; the diagram exports as SVG, PNG and a one-page PDF built in the browser (12 integration and 15 frontend new tests; checked in a browser against mocked data, the PDF read back with a PDF library; commit only, no PR yet) | S9,97 |
+
+## S9,98: Traceability, review and versioning depth
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | DONE on dev: the four "Not tracked yet" lanes after Approved are removed from My Work's Pipeline (it ends at Approved); the requirement's Verify button goes straight to the Design screen and the "AI verify / Coming soon" modal is gone (2 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9,98 |
 
 ## S10: Compliance evidence and risk
 

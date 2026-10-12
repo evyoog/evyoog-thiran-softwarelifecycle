@@ -40,25 +40,13 @@ const STAGE_LABEL: Record<Stage, string> = {
 // VYB-0813 (D17): NEEDS_REVISION gets its own lane, mapped to 'author' — the same
 // stage as DRAFT, since a requirement here is back with its author to act on, not a
 // blank slate but not anyone else's turn either.
-const STAGES = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'NEEDS_REVISION', 'APPROVED'] as const
+export const STAGES = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'NEEDS_REVISION', 'APPROVED'] as const
 const STAGE_OF_STATUS: Record<(typeof STAGES)[number], Stage> = {
   DRAFT: 'author', IN_REVIEW: 'review', REVIEWED: 'approve', NEEDS_REVISION: 'author', APPROVED: 'dev',
 }
 const STATUS_LANE_LABEL: Record<(typeof STAGES)[number], string> = {
   DRAFT: 'Draft', IN_REVIEW: 'In review', REVIEWED: 'Reviewed', NEEDS_REVISION: 'Needs revision', APPROVED: 'Approved',
 }
-
-/**
- * VYB-0820: requested as frontend-only for now — four more pipeline lanes after
- * Approved, tracking delivery beyond the requirement's own status. Not derived from
- * anything real yet; see the placeholder note where these render in {@link PipelineTab}.
- */
-const POST_APPROVAL_LANES: { key: string; label: string }[] = [
-  { key: 'planning', label: 'Planning' },
-  { key: 'development', label: 'Development' },
-  { key: 'testing', label: 'Testing' },
-  { key: 'deployed', label: 'Deployed' },
-]
 
 /**
  * VYB-0370–0374. Nobody creates a task in Vyoog — every row here is one of the seven
@@ -462,28 +450,6 @@ function PipelineTab() {
             </div>
           )
         })}
-        {/*
-          VYB-0820: four more lanes after Approved — Planning, Development, Testing,
-          Deployed — requested as a frontend-only placeholder, backend to follow. None
-          of these read from a real field yet (there is no per-requirement data saying
-          which of these an APPROVED requirement is actually in), so each says that
-          plainly rather than showing an empty lane that would read as "computed, and
-          genuinely zero" the way the real lanes above do (Principle 8: absence should
-          read as "not tracked," never as a lie dressed up as a real empty state).
-        */}
-        {POST_APPROVAL_LANES.map((lane) => (
-          <div className="lane" key={lane.key} style={{ opacity: 0.7 }}>
-            <div className="lane-h">
-              <span className="lane-t">{lane.label}</span>
-              <span className="lane-n">—</span>
-            </div>
-            <div className="lane-b">
-              <span className="hint muted" style={{ fontSize: 10.5 }}>
-                Not tracked yet — this lane isn't wired to real data.
-              </span>
-            </div>
-          </div>
-        ))}
       </div>
     </>
   )

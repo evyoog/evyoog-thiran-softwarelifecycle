@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1077 tests cover 66 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1079 tests cover 67 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1278,3 +1278,8 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` resettingForgetsEveryPlaceAndKeepsEverythingElse (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
 - `AC8` theDatabaseRefusesAHalfPlacedStepAndAPlaceOutsideTheRange (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
 - `AC9` generatingAgainKeepsADraggedLayoutAndLeavesNewStepsUnplaced (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+
+## VYB-0946: Remove placeholders on Verify and My Work lanes [S; F26]
+
+- `AC1` thePipelineHasExactlyTheLifecycleStatusesAndNothingAfterApproved (`frontend/src/features/pipelineVerify.test.ts`)
+- `AC2` verifyGoesStraightToTheDesignScreenFocusedOnTheRequirement (`frontend/src/features/pipelineVerify.test.ts`)

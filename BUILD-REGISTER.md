@@ -349,7 +349,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | DONE on dev: a Link dialog with a picker per kind (requirement, test, design node, release, untraced defect) and a Linked work list on the requirement detail; requirement-by-release and requirement-by-defect matrices; each impact count on a change request opens its items (11 integration and 18 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | DONE on dev: retired, per D26 (accepted this session): the `/api/v1/reviews` endpoints, `ReviewService` and the `com.vyoog.review` package are removed, with the reviewer and approver tasks on My Work and the round-based `sod` gap rule (V053 marks it retired, resolves its open findings, audits it); the four round tables stay as read-only history; a requirement's REVIEW and APPROVAL stages and the spine counts now come from its status changes or an old round's signature (10 integration tests, `ReviewRetirementIT`; frontend client and My Work cleaned; commit only, no PR yet) | S9,96 |
 | VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | DONE on dev: a step can be renamed, re-kinded and re-noted (the Testing and Deployment milestones keep their kind); a connection's label can be changed or the connection removed; steps can be dragged and the place is saved on the step (V054, shared, one audited save), with Reset layout; the diagram exports as SVG, PNG and a one-page PDF built in the browser (12 integration and 15 frontend new tests; checked in a browser against mocked data, the PDF read back with a PDF library; commit only, no PR yet) | S9,97 |
-| VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | TODO | S9 |
+| VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | DONE on dev: the four "Not tracked yet" lanes after Approved are removed from My Work's Pipeline (it ends at Approved); the requirement's Verify button goes straight to the Design screen and the "AI verify / Coming soon" modal is gone (2 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9,98 |
 | VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | TODO | S10 |
 | VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
 | VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
@@ -5566,6 +5566,25 @@ Phase 6 Sprint 9. Branch `dev`. **27 new tests**: `DesignEditingIT` 12 (real Pos
 - The PDF is a picture: its text cannot be selected or searched.
 - Re-pointing a connection, undo of a move, and multi-select drag were not asked for.
 - The VYB-0944 full verify failed one test, `FoundationSmokeIT` migration count, only because V054 was added to the repository while it ran; the other 358 integration tests passed. A full `clean verify` of the combined tip (VYB-0944 and VYB-0945) then passed: 542 domain, 118 API unit, 371 integration.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 98 — VYB-0946 (F26): placeholders removed from the Pipeline lanes and Verify
+
+Phase 6 Sprint 9. Branch `dev`. **2 new tests** (`pipelineVerify.test.ts`). Frontend only: no backend, API or schema change. The finding text F26 is not in the repository; scope is the register row, and I found the two placeholders by searching the frontend for text that promises something that is not there.
+
+**Decisions with the product owner this session.** (1) **Remove all four lanes** (the alternative was to wire three of them to real evidence and drop Planning; it was not chosen). (2) **Verify goes straight to the manual path** (the alternative was a one-option dialog).
+
+**Removed.** (a) My Work, Pipeline: the Planning, Development, Testing and Deployed lanes added in VYB-0820, which said "Not tracked yet — this lane isn't wired to real data". The Pipeline now ends at Approved, the terminal status (D17). (b) Requirement detail: the Verify choice modal whose "AI verify" option only said "Coming soon". The Verify button on an In-review requirement now opens the Design screen focused on it, which is what "Manual verify" did.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) These two were the only placeholders I found by searching the frontend for "not tracked", "coming soon", "not wired", "not built" and "to follow"; I did not take other "later" comments (a picker, an unbuilt follow-up in the bulk editor) as placeholders because they are not shown to a user as a promise. (2) The Verify button's destination is a small exported function, so it is tested.
+
+**Behaviour changes to know.** (1) My Work's Pipeline has five lanes, not nine. (2) Verify is one click to the Design screen. (3) `docs/02-requirements/FRD/my-work/ui-requirements.md` described six lanes that never matched the build; it now describes the five real ones.
+
+**Evidence.** In Chromium against a mocked API: the Pipeline lanes are exactly Draft, In review, Reviewed, Needs revision and Approved with no "Not tracked yet" text; clicking Verify on an In-review requirement went to `/design?requirementId=r1` with no modal. `tsc` clean, lint 10 warnings (the baseline), frontend tests pass. The backend is unchanged from the last green full verify (542, 118 and 371 tests at the pushed VYB-0945 commit), so I did not re-run it.
+
+**Not done / to know**
+- No test mutation check: the change is a deletion, and the tests assert the lane list and the destination, which a re-added lane or a changed path would fail.
+- Whether the two post-approval ideas (lanes from real evidence, an AI reviewer) come back is a product decision for later; neither is promised on screen now.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

@@ -6,9 +6,10 @@
 
 - **Today** — overdue / today / this week / blocked, grouped. Each row states *why* it
   is a task ("Approved 6 days ago, no code linked yet"). Check-off is optimistic.
-- **Pipeline** — the requirement's own lifecycle as lanes (Draft, In review, Approval,
-  Development, Verification, Deployed), not a sprint board. Cards mark themselves stalled
-  past a per-stage threshold.
+- **Pipeline** — the requirement's own lifecycle as lanes, one per status (Draft, In review,
+  Reviewed, Needs revision, Approved), not a sprint board. It ends at Approved, the terminal
+  status (D17); there are no lanes after it (VYB-0946 removed four that were not wired to
+  anything). Cards mark themselves stalled past a per-stage threshold.
 - **Calendar** — month view; personal task due dates merged with release milestones.
 
 Derivation rules (implement as one SQL view per rule):

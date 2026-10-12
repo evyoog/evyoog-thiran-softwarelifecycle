@@ -94,6 +94,11 @@ function IconBtn({ danger, className, ...props }: ButtonHTMLAttributes<HTMLButto
   )
 }
 
+/** VYB-0946: "Verify" on an IN_REVIEW requirement goes to the Design screen, focused on it, where a person reads it and records the move. */
+export function verifyDestination(requirementId: string): string {
+  return `/design?requirementId=${encodeURIComponent(requirementId)}`
+}
+
 export function RequirementDetail() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -192,7 +197,6 @@ export function RequirementDetail() {
     onSuccess: invalidateReq,
   })
   const [confirmingTransition, setConfirmingTransition] = useState<RequirementStatus | null>(null)
-  const [showVerifyChoice, setShowVerifyChoice] = useState(false)
 
   const addCriterion = useMutation({
     mutationFn: (text: string) => api.addAcceptanceCriterion(id, text),
@@ -602,12 +606,17 @@ export function RequirementDetail() {
           <section className="bg-panel p-4 rounded-[10px] border border-line shadow-[0_1px_2px_rgb(0_0_0/.04)]">
             <h3 className="text-[11.5px] font-semibold uppercase tracking-[.05em] text-tx-3 pb-2.5 mb-3 border-b border-line">Lifecycle</h3>
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {/* VYB-0811: IN_REVIEW's move to REVIEWED is "Verify", not a plain transition
-                  button — it opens a choice between the human path (read the requirement
-                  on the Design screen, then verify it there) and the AI path (not built
-                  yet). Every other legal move still applies directly. */}
+              {/* VYB-0811/VYB-0946: IN_REVIEW's move to REVIEWED is "Verify", not a plain transition
+                  button — a person reads the requirement on the Design screen and records the move
+                  there. (There was an "AI verify" choice that only said "Coming soon"; it is gone.
+                  AI proposes and the human decides, so no AI path is promised here.) Every other
+                  legal move still applies directly. */}
               {req.status === 'IN_REVIEW' && (
-                <Btn className="text-xs px-3 py-1" onClick={() => setShowVerifyChoice(true)}>
+                <Btn
+                  className="text-xs px-3 py-1"
+                  title="Read the requirement on the Design screen, then verify it there"
+                  onClick={() => navigate(verifyDestination(req.id))}
+                >
                   Verify
                 </Btn>
               )}
@@ -618,12 +627,6 @@ export function RequirementDetail() {
               ))}
               {transition.isError && <span className="text-xs text-crit w-full">Transition refused.</span>}
             </div>
-            {showVerifyChoice && (
-              <VerifyChoiceModal
-                onManual={() => { setShowVerifyChoice(false); navigate(`/design?requirementId=${req.id}`) }}
-                onClose={() => setShowVerifyChoice(false)}
-              />
-            )}
             {confirmingTransition && (
               <TransitionConfirmModal
                 from={req.status}
@@ -758,43 +761,6 @@ function TransitionConfirmModal({ from, target, reasonRequired, reasonContext, p
           <Btn primary disabled={pending || (reasonRequired && !reason.trim())} onClick={() => onConfirm(reason.trim() || undefined)}>
             Confirm
           </Btn>
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
-/**
- * VYB-0811: "Verify" on an IN_REVIEW requirement is a choice, not a direct transition —
- * who reads the requirement and vouches for it. Manual is real today: it sends the
- * reviewer to the Design screen, where they read the full requirement and record the
- * actual IN_REVIEW → REVIEWED move from there. AI is not — per Rule 6 (AI proposes, the
- * human decides), there is no AI reviewer yet, so this names that plainly instead of
- * hiding the option or pretending it works.
- */
-function VerifyChoiceModal({ onManual, onClose }: { onManual: () => void; onClose: () => void }) {
-  const [aiChosen, setAiChosen] = useState(false)
-
-  return (
-    <Modal onClose={onClose} title="Verify this requirement">
-      <div className="space-y-4">
-        <p className="text-sm text-tx-2">Who is verifying this — a person, or AI?</p>
-        {aiChosen ? (
-          <p className="text-sm text-high bg-high-dim p-2 rounded">
-            AI-assisted verification is not implemented yet — a human performs this review today. Coming soon.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Btn primary onClick={onManual}>
-              Manual verify — read it on the Design screen
-            </Btn>
-            <Btn onClick={() => setAiChosen(true)}>
-              AI verify
-            </Btn>
-          </div>
-        )}
-        <div className="flex gap-2 pt-2 border-t border-line">
-          <Btn onClick={onClose}>Close</Btn>
         </div>
       </div>
     </Modal>
