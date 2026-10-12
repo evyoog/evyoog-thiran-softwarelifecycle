@@ -5677,6 +5677,7 @@ Phase 6 Sprint 10. Branch `dev`. **14 new tests**: `ClauseTemplateIT` 6 (real Po
 
 **Not done / to know**
 - **The clause numbers and the paraphrases need checking by someone with the licensed standard**: I could not verify them, and a compliance register should not be trusted on my word.
+- **A finding from the full verify:** it failed `ResumableExtractionIT` (a requirement's embedding did not arrive within 10 seconds) while my clause tests had left 114 unmapped clauses in the shared test database. The unmapped-clause rule (`UnmappedControlClauseDetector`) compares every unmapped clause with every requirement's embedding each time any requirement is written, so its background cost grows with clauses times requirements; I confirmed it by running the class alone (it failed), then clearing the clauses (it passed). My clause tests now remove what they make. **The cost itself is still there**: with the 24-clause template applied and thousands of requirements, every requirement save does that comparison in the background, and its result for a changed requirement cannot even resolve a clause's finding (the finding belongs to the clause, not the requirement). Worth a look before the register is used at scale.
 - Only clause-level entries; no sub-clauses, work products or ASIL-specific requirements.
 - No import of a template from a file in the screen; a new framework is a new file in the repository.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.

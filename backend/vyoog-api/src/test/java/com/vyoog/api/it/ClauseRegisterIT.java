@@ -20,6 +20,7 @@ import com.vyoog.trace.TraceLinkType;
 import com.vyoog.trace.TraceObjectType;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,18 @@ class ClauseRegisterIT extends IntegrationTestBase {
         p = newPortfolio();
         author = newUser("author");
         admin = newAdministrator();
+    }
+
+    /**
+     * The shared test database is one long-lived register, and the unmapped-clause rule compares every unmapped clause with every
+     * requirement each time a requirement is written. A test that leaves its clauses behind makes every later test's writes slower,
+     * so each test removes what it made (its standards all start with STD-).
+     */
+    @AfterEach
+    void removeTheClausesThisTestMade() {
+        jdbc.update("DELETE FROM trace_link WHERE to_type = 'CLAUSE' AND to_id IN (SELECT id FROM clause WHERE standard LIKE 'STD-%')");
+        jdbc.update("DELETE FROM finding WHERE object_type = 'CLAUSE' AND object_id IN (SELECT id FROM clause WHERE standard LIKE 'STD-%')");
+        jdbc.update("DELETE FROM clause WHERE standard LIKE 'STD-%'");
     }
 
     private String std() { return unique("STD"); }

@@ -14,6 +14,7 @@ import com.vyoog.identity.AccessRole;
 import com.vyoog.identity.ScopeType;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,14 @@ class ClauseTemplateIT extends IntegrationTestBase {
         size = templates.all().stream().filter(t -> t.id().equals(TEMPLATE)).findFirst().orElseThrow().clauses().size();
         // each test starts from a register without this standard: the template's sections are removed from earlier runs
         jdbc.update("DELETE FROM trace_link WHERE to_type = 'CLAUSE' AND to_id IN (SELECT id FROM clause WHERE lower(standard) = 'iso 26262')");
+        jdbc.update("DELETE FROM clause WHERE lower(standard) = 'iso 26262'");
+    }
+
+    /** The unmapped-clause rule compares every unmapped clause with every requirement on each requirement write: leave none behind. */
+    @AfterEach
+    void removeTheTemplateClauses() {
+        jdbc.update("DELETE FROM trace_link WHERE to_type = 'CLAUSE' AND to_id IN (SELECT id FROM clause WHERE lower(standard) = 'iso 26262')");
+        jdbc.update("DELETE FROM finding WHERE object_type = 'CLAUSE' AND object_id IN (SELECT id FROM clause WHERE lower(standard) = 'iso 26262')");
         jdbc.update("DELETE FROM clause WHERE lower(standard) = 'iso 26262'");
     }
 
