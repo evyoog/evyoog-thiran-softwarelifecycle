@@ -43,7 +43,12 @@ public class DefectLifecycleService {
     /** One row of the list, with names so a screen shows people and requirements rather than ids. */
     public record Row(Defect defect, String requirementKey, String developerName, String testerName, UUID releaseId, String releaseName) {}
 
-    public record Filter(String state, DefectSeverity severity, UUID releaseId, UUID assignedTo, String q) {}
+    public record Filter(String state, DefectSeverity severity, UUID releaseId, UUID assignedTo, String q, boolean untracedOnly) {
+        /** The filters before VYB-0943 added {@code untracedOnly}. */
+        public Filter(String state, DefectSeverity severity, UUID releaseId, UUID assignedTo, String q) {
+            this(state, severity, releaseId, assignedTo, q, false);
+        }
+    }
 
     private final DefectRepository defects;
     private final JdbcTemplate jdbc;
@@ -184,6 +189,37 @@ public class DefectLifecycleService {
         audit.record(actor, "defect.linked", "DEFECT", d.getId(), before, after);
     }
 
+    /**
+     * VYB-0943 (D36): links a defect that has <b>no requirement yet</b> to one. A defect has at most one requirement and one that
+     * already has one is never moved by this (that stays a deliberate edit of the defect), so a link is never silently changed. The
+     * requirement must exist, not be deleted, and not have been replaced by a newer version (it takes no new links, D35).
+     *
+     * @throws IllegalStateException the defect already has a requirement, or the requirement has been replaced
+     */
+    @Transactional
+    public Defect linkRequirement(UUID id, UUID requirementId, UUID actor) {
+        Defect d = require(id);
+        if (requirementId == null) throw new IllegalArgumentException("Name the requirement to link this defect to");
+        if (!d.isUntraced()) {
+            String key = jdbc.queryForObject("SELECT key FROM requirement WHERE id = ?", String.class, d.getRequirementId());
+            throw new IllegalStateException("%s is already linked to %s. Linking never moves a defect from one requirement to another."
+                .formatted(d.getKey(), key));
+        }
+        var req = jdbc.queryForList("SELECT key, (SELECT n.key FROM requirement n WHERE n.id = r.superseded_by_id) AS newer FROM requirement r "
+            + "WHERE r.id = ? AND r.deleted_at IS NULL", requirementId);
+        if (req.isEmpty()) throw new NoSuchElementException("No such requirement: " + requirementId);
+        if (req.get(0).get("newer") != null) {
+            throw new IllegalStateException("%s has been replaced by %s, so it takes no new links. Link %s instead."
+                .formatted(req.get(0).get("key"), req.get(0).get("newer"), req.get(0).get("newer")));
+        }
+        int changed = jdbc.update("UPDATE defect SET requirement_id = ? WHERE id = ? AND requirement_id IS NULL", requirementId, d.getId());
+        if (changed == 0) throw new IllegalStateException("%s was linked to a requirement a moment ago.".formatted(d.getKey()));
+        d.adoptRequirement(requirementId);
+        audit.record(actor, "defect.requirement-linked", "DEFECT", d.getId(), java.util.Collections.singletonMap("requirementId", null),
+            Map.of("requirementId", requirementId.toString(), "requirementKey", String.valueOf(req.get(0).get("key"))));
+        return d;
+    }
+
     private void requireExists(String table, UUID id, String message) {
         if (id == null) return;
         Long n = jdbc.queryForObject("SELECT count(*) FROM " + table + " WHERE id = ?", Long.class, id);
@@ -277,6 +313,7 @@ public class DefectLifecycleService {
         }
         if (f.severity() != null) { where.append(" AND d.severity = ?"); args.add(f.severity().name()); }
         if (f.releaseId() != null) { where.append(" AND d.release_id = ?"); args.add(f.releaseId()); }
+        if (f.untracedOnly()) where.append(" AND d.requirement_id IS NULL"); // VYB-0943: the ones that can still be linked to a requirement
         if (f.assignedTo() != null) { where.append(" AND (d.developer_id = ? OR d.tester_id = ?)"); args.add(f.assignedTo()); args.add(f.assignedTo()); }
         if (f.q() != null && !f.q().isBlank()) {
             where.append(" AND (d.key ILIKE ? OR d.title ILIKE ?)");

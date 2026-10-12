@@ -85,6 +85,7 @@ public class DefectController {
                                   @RequestParam(required = false) UUID releaseId,
                                   @RequestParam(required = false) UUID assignedTo,
                                   @RequestParam(required = false) String q,
+                                  @RequestParam(defaultValue = "false") boolean untraced,
                                   @RequestParam(defaultValue = "0") int page,
                                   @RequestParam(defaultValue = "50") int size) {
         if (!state.equalsIgnoreCase("ALL")) {
@@ -94,7 +95,7 @@ public class DefectController {
                 throw new IllegalArgumentException("Unknown state '" + state + "': use OPEN, FIXED, CLOSED or ALL");
             }
         }
-        return lifecycle.list(new DefectLifecycleService.Filter(state, severity, releaseId, assignedTo, q), PageRequest.of(page, size))
+        return lifecycle.list(new DefectLifecycleService.Filter(state, severity, releaseId, assignedTo, q, untraced), PageRequest.of(page, size))
             .map(r -> toView(r.defect(), r.requirementKey(), r.developerName(), r.testerName(), r.releaseId(), r.releaseName()));
     }
 
@@ -203,6 +204,20 @@ public class DefectController {
     @PutMapping("/defects/{id}/assignment")
     public DefectView assign(@PathVariable UUID id, @RequestBody Assignment body, @AuthenticationPrincipal Jwt jwt) {
         return toView(lifecycle.assign(id, body.developerId(), body.testerId(), currentUserId(jwt)));
+    }
+
+    public record LinkRequirement(String requirementId) {}
+
+    /**
+     * VYB-0943 (D36): links a defect that has no requirement yet to one. A defect that already has a requirement is refused (409):
+     * a link is never moved from here. Audited as {@code defect.requirement-linked}.
+     */
+    @RequiresAccess(value = AccessRule.VERIFY, scope = RequiresAccess.Scope.ANYWHERE)
+    @PutMapping("/defects/{id}/requirement")
+    public DefectDetailView linkRequirement(@PathVariable UUID id, @RequestBody LinkRequirement body, @AuthenticationPrincipal Jwt jwt) {
+        if (body == null || body.requirementId() == null) throw new IllegalArgumentException("Name the requirement to link this defect to");
+        lifecycle.linkRequirement(id, UUID.fromString(body.requirementId()), currentUserId(jwt));
+        return detail(id);
     }
 
     /** Replaces the defect's links to a test case, a test run and a release (null clears one). */

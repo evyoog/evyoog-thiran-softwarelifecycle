@@ -11,6 +11,8 @@ import { RequirementDetail } from '@/features/RequirementDetail'
 import { ImportQueue } from '@/features/ImportQueue'
 import { Documents } from '@/features/Documents'
 import { CoverageMatrixPage } from '@/features/CoverageMatrixPage'
+import { DefectMatrixPage } from '@/features/trace/DefectMatrixPage'
+import { ReleaseMatrixPage } from '@/features/trace/ReleaseMatrixPage'
 import { TraceGraphPage } from '@/features/TraceGraphPage'
 import { Design } from '@/features/Design'
 import { Analytics } from '@/features/Analytics'
@@ -59,6 +61,8 @@ export function App() {
           <Route path="/requirements/import" element={<ImportQueue />} />
           <Route path="/requirements/documents" element={<Documents />} />
           <Route path="/requirements/coverage" element={<CoverageMatrixPage />} />
+          <Route path="/requirements/release-matrix" element={<ReleaseMatrixPage />} />
+          <Route path="/requirements/defect-matrix" element={<DefectMatrixPage />} />
           <Route path="/requirements/trace-graph" element={<TraceGraphPage />} />
           <Route path="/requirements/:id" element={<RequirementDetail />} />
           <Route path="/design" element={<Design />} />

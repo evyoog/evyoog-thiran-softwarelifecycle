@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2, ArrowUp, ArrowDown, RefreshCw, Paperclip, Download, AlertTriangle, Bug, Edit2, History } from 'lucide-react'
 import {
   api, ApiError, type DefectSeverity, type FoundIn, type RequirementPriority, type RequirementStatus,
-  type RequirementType, type TraceLinkType,
+  type RequirementType,
 } from '@/shared/api/client'
 import { CapabilityPicker } from '@/shared/ui/CapabilityPicker'
 import { StatusBadge, PriorityBadge, CoveragePips } from '@/shared/ui/Badges'
@@ -12,12 +12,12 @@ import { Modal } from '@/shared/ui/Modal'
 import { UserPicker } from '@/shared/ui/UserPicker'
 import { HistorySection } from './requirements/HistorySection'
 import { VersionsPanel } from './requirements/VersionsPanel'
+import { LinkedWorkPanel } from './trace/LinkedWorkPanel'
 
 const TYPES: RequirementType[] = [
   'FUNCTIONAL', 'NON_FUNCTIONAL', 'BUSINESS_RULE', 'INTERFACE', 'DATA', 'REPORT', 'SECURITY', 'COMPLIANCE',
 ]
 const PRIORITIES: RequirementPriority[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-const LINK_TYPES: TraceLinkType[] = ['SATISFIES', 'DERIVES', 'VERIFIES', 'IMPLEMENTS', 'REFINES', 'CONFLICTS']
 const SEVERITIES: DefectSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 const FOUND_IN: FoundIn[] = ['DEV', 'QA', 'UAT', 'PRODUCTION']
 
@@ -214,18 +214,6 @@ export function RequirementDetail() {
   const [editCriterionDraft, setEditCriterionDraft] = useState('')
 
   const [newCriterion, setNewCriterion] = useState('')
-  const [linkTargetId, setLinkTargetId] = useState('')
-  const [linkDirection, setLinkDirection] = useState<'upstream' | 'downstream'>('upstream')
-  const [linkType, setLinkType] = useState<TraceLinkType>('SATISFIES')
-
-  const createLink = useMutation({
-    mutationFn: () => api.createLink(
-      linkDirection === 'upstream'
-        ? { fromType: 'REQUIREMENT', fromId: linkTargetId, toType: 'REQUIREMENT', toId: id, linkType }
-        : { fromType: 'REQUIREMENT', fromId: id, toType: 'REQUIREMENT', toId: linkTargetId, linkType },
-    ),
-    onSuccess: () => { setLinkTargetId(''); void qc.invalidateQueries({ queryKey: ['trace-links', id] }) },
-  })
   const deleteLink = useMutation({
     mutationFn: (linkId: string) => api.deleteLink(linkId),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['trace-links', id] }),
@@ -485,6 +473,8 @@ export function RequirementDetail() {
               <h2 className="text-[11.5px] font-semibold uppercase tracking-[.05em] text-tx-3">Trace Links</h2>
               <Btn onClick={() => navigate(`/requirements/trace-graph?type=REQUIREMENT&id=${id}`)}>View Graph →</Btn>
             </div>
+            {/* VYB-0943: tests, design, the release and defects by name, and the Link dialog with a picker per kind */}
+            <LinkedWorkPanel requirementId={id} />
             {links?.outgoing.length === 0 && links?.incoming.length === 0 && (
               <div className="text-center py-8 bg-panel-2 rounded-lg border border-dashed border-line-2">
                 <p className="font-medium text-tx-2 text-sm">No trace links</p>
@@ -507,29 +497,6 @@ export function RequirementDetail() {
                 <IconBtn danger onClick={() => deleteLink.mutate(l.id)}><Trash2 size={14} /></IconBtn>
               </div>
             ))}
-            <div className="grid sm:grid-cols-3 gap-2 mt-3">
-              <div>
-                <label className="text-[10.5px] font-semibold uppercase tracking-[.05em] text-tx-3">Direction</label>
-                <select className="w-full mt-1 p-2 bg-panel border border-line-2 rounded text-sm text-tx outline-none focus:border-brand focus:ring-3 focus:ring-brand-dim transition" value={linkDirection} onChange={(e) => setLinkDirection(e.target.value as 'upstream' | 'downstream')}>
-                  <option value="upstream">Upstream</option>
-                  <option value="downstream">Downstream</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10.5px] font-semibold uppercase tracking-[.05em] text-tx-3">Link Type</label>
-                <select className="w-full mt-1 p-2 bg-panel border border-line-2 rounded text-sm text-tx outline-none focus:border-brand focus:ring-3 focus:ring-brand-dim transition" value={linkType} onChange={(e) => setLinkType(e.target.value as TraceLinkType)}>
-                  {LINK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10.5px] font-semibold uppercase tracking-[.05em] text-tx-3">Other ID</label>
-                <input className="w-full mt-1 p-2 bg-panel border border-line-2 rounded text-sm text-tx outline-none focus:border-brand focus:ring-3 focus:ring-brand-dim transition font-mono" placeholder="Paste ID" value={linkTargetId} onChange={(e) => setLinkTargetId(e.target.value)} />
-              </div>
-            </div>
-            <Btn primary className="mt-3" disabled={!linkTargetId.trim() || createLink.isPending} onClick={() => createLink.mutate()}>
-              <Plus size={16} /> Add Link
-            </Btn>
-            {createLink.isError && <p className="text-sm text-crit mt-1">Could not create link.</p>}
           </section>
 
           {/* VYB-0941: revisions and status changes, and a comparison of any two revisions */}

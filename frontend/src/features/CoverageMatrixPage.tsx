@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { api, type CoverageCellState } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
 import { useRovingGrid } from '@/shared/ui/useRovingGrid'
+import { MatrixTabs } from './trace/MatrixScope'
 
 const STATE_LABEL: Record<CoverageCellState, string> = {
   VERIFIED: 'Verified', LINKED_NOT_RUN: 'Linked, not run', SUSPECT: 'Suspect',
@@ -41,6 +42,7 @@ export function CoverageMatrixPage() {
 
   return (
     <Page title="Coverage matrix" desc="Requirement × test, four states — a requirement with no test linked at all doesn't appear here; that gap is what Analytics' 'noverify' rule already reports.">
+      <MatrixTabs />
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <select className="select" value={productId} onChange={(e) => { setProductId(e.target.value); setApplicationId('') }}>
           <option value="">Product…</option>

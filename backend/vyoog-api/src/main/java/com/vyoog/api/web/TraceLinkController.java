@@ -4,6 +4,7 @@ import com.vyoog.api.config.RequiresAccess;
 import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.trace.CoverageMatrixService;
+import com.vyoog.trace.TraceMatrixService;
 import com.vyoog.trace.TraceHop;
 import com.vyoog.trace.TraceLink;
 import com.vyoog.trace.TraceLinkType;
@@ -30,8 +31,12 @@ public class TraceLinkController {
     private final CoverageMatrixService coverageMatrix;
     private final TraceGraphAssemblyService graphAssembly;
 
+    private final TraceMatrixService matrices;
+
     public TraceLinkController(TraceGraphService trace, UserProvisioningService provisioning,
-                                CoverageMatrixService coverageMatrix, TraceGraphAssemblyService graphAssembly) {
+                                CoverageMatrixService coverageMatrix, TraceGraphAssemblyService graphAssembly,
+                                TraceMatrixService matrices) {
+        this.matrices = matrices;
         this.trace = trace;
         this.provisioning = provisioning;
         this.coverageMatrix = coverageMatrix;
@@ -149,5 +154,24 @@ public class TraceLinkController {
                 c.requirementId().toString(), c.requirementKey(), c.testCaseId().toString(), c.testCaseKey(), c.state().name())).toList(),
             matrix.testTotals().stream().map(t -> new TestTotalView(
                 t.testCaseId().toString(), t.testCaseKey(), t.verified(), t.linkedNotRun(), t.suspect())).toList());
+    }
+
+    /**
+     * VYB-0943 (D36): requirement by release for one application: every requirement (a row), the releases (columns), and which
+     * release each requirement is committed to, if any. Read by any signed-in person.
+     */
+    @GetMapping("/release-matrix/{applicationId}")
+    public TraceMatrixService.ReleaseMatrix releaseMatrix(@PathVariable UUID applicationId) {
+        return matrices.releaseMatrix(applicationId);
+    }
+
+    /**
+     * VYB-0943 (D36): requirement by defect for one application: every requirement (a row), its defects (open ones unless
+     * {@code includeClosed}), and the open defects that have no requirement, listed apart. A defect has at most one requirement.
+     */
+    @GetMapping("/defect-matrix/{applicationId}")
+    public TraceMatrixService.DefectMatrix defectMatrix(@PathVariable UUID applicationId,
+                                                        @RequestParam(defaultValue = "false") boolean includeClosed) {
+        return matrices.defectMatrix(applicationId, includeClosed);
     }
 }

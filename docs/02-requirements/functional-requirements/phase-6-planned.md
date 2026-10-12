@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 31, PARTIAL 1, TODO 23.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 32, PARTIAL 1, TODO 22.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -93,7 +93,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 |---|---|---|---|---|---|
 | VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | DONE on dev: a History section on the requirement detail with revisions and status changes on one timeline and a word-level comparison of any two revisions (7 integration and 14 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | DONE on dev: a new version is a new requirement (new key, DRAFT) forked from an approved one for an approved change request; approving it supersedes the original, whose status stays APPROVED; a replaced requirement takes no new links or release; the in-place edit stays (11 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
-| VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | TODO | S9 |
+| VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | DONE on dev: a Link dialog with a picker per kind (requirement, test, design node, release, untraced defect) and a Linked work list on the requirement detail; requirement-by-release and requirement-by-defect matrices; each impact count on a change request opens its items (11 integration and 18 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | TODO | S9 |
 | VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | TODO | S9 |
 | VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | TODO | S9 |

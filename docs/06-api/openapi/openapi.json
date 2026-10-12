@@ -1593,6 +1593,31 @@
         },
         "type" : "object"
       },
+      "DefectColumn" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "DefectDetailView" : {
         "properties" : {
           "defect" : {
@@ -1703,6 +1728,51 @@
           },
           "testRunId" : {
             "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DefectMatrix" : {
+        "properties" : {
+          "defects" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DefectColumn"
+            },
+            "type" : "array"
+          },
+          "rows" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DefectRow"
+            },
+            "type" : "array"
+          },
+          "untraced" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DefectColumn"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "DefectRow" : {
+        "properties" : {
+          "key" : {
+            "type" : "string"
+          },
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "supersededById" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
             "type" : "string"
           }
         },
@@ -2585,6 +2655,107 @@
         },
         "type" : "object"
       },
+      "ImpactApplication" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "productName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImpactBrief" : {
+        "properties" : {
+          "applicationName" : {
+            "type" : "string"
+          },
+          "generatedAt" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "stale" : {
+            "type" : "boolean"
+          },
+          "target" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImpactItems" : {
+        "properties" : {
+          "applications" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImpactApplication"
+            },
+            "type" : "array"
+          },
+          "briefs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImpactBrief"
+            },
+            "type" : "array"
+          },
+          "requirements" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImpactRequirement"
+            },
+            "type" : "array"
+          },
+          "tests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImpactTest"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ImpactRequirement" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "inScope" : {
+            "type" : "boolean"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImpactTest" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ImpactView" : {
         "properties" : {
           "applications" : {
@@ -2594,6 +2765,9 @@
           "briefs" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "items" : {
+            "$ref" : "#/components/schemas/ImpactItems"
           },
           "requirements" : {
             "format" : "int32",
@@ -2703,6 +2877,14 @@
         },
         "type" : "object"
       },
+      "LinkRequirement" : {
+        "properties" : {
+          "requirementId" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "LinkView" : {
         "properties" : {
           "fromId" : {
@@ -2726,6 +2908,113 @@
           },
           "toType" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LinkedDefect" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LinkedDesignNode" : {
+        "properties" : {
+          "flowId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LinkedRelease" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LinkedTest" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LinkedWork" : {
+        "properties" : {
+          "applicationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "defects" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LinkedDefect"
+            },
+            "type" : "array"
+          },
+          "designNodes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LinkedDesignNode"
+            },
+            "type" : "array"
+          },
+          "releases" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LinkedRelease"
+            },
+            "type" : "array"
+          },
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "tests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LinkedTest"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -4149,6 +4438,42 @@
         },
         "type" : "object"
       },
+      "ReleaseColumn" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "requirements" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReleaseMatrix" : {
+        "properties" : {
+          "releases" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReleaseColumn"
+            },
+            "type" : "array"
+          },
+          "rows" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReleaseRow"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "ReleaseNotesView" : {
         "properties" : {
           "approvedByCapability" : {
@@ -4165,6 +4490,32 @@
               "$ref" : "#/components/schemas/NoteItemView"
             },
             "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ReleaseRow" : {
+        "properties" : {
+          "key" : {
+            "type" : "string"
+          },
+          "releaseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "supersededById" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -7497,6 +7848,14 @@
           }
         }, {
           "in" : "query",
+          "name" : "untraced",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : false,
           "schema" : {
@@ -7914,6 +8273,43 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/DefectView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "defect-controller" ]
+      }
+    },
+    "/api/v1/defects/{id}/requirement" : {
+      "put" : {
+        "operationId" : "linkRequirement",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LinkRequirement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectDetailView"
                 }
               }
             },
@@ -12068,6 +12464,33 @@
         "tags" : [ "requirement-controller" ]
       }
     },
+    "/api/v1/requirements/{id}/linked" : {
+      "get" : {
+        "operationId" : "linked",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkedWork"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "requirement-controller" ]
+      }
+    },
     "/api/v1/requirements/{id}/test-case-suggestions" : {
       "post" : {
         "operationId" : "testCaseSuggestions",
@@ -15175,6 +15598,41 @@
         "tags" : [ "trace-link-controller" ]
       }
     },
+    "/api/v1/trace/defect-matrix/{applicationId}" : {
+      "get" : {
+        "operationId" : "defectMatrix",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "includeClosed",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DefectMatrix"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "trace-link-controller" ]
+      }
+    },
     "/api/v1/trace/links" : {
       "post" : {
         "operationId" : "createLink",
@@ -15241,6 +15699,33 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/LinkView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "trace-link-controller" ]
+      }
+    },
+    "/api/v1/trace/release-matrix/{applicationId}" : {
+      "get" : {
+        "operationId" : "releaseMatrix",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReleaseMatrix"
                 }
               }
             },

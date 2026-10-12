@@ -49,7 +49,8 @@ public class ChangeRequestController {
     public record ChangeRequestView(
         String id, String key, String title, String rationale, String raisedBy, String state,
         int impactRequirements, int impactApps, List<String> scope) {}
-    public record ImpactView(int requirements, int tests, int applications, int briefs) {}
+    /** The four counts, and (VYB-0943) the items behind each. */
+    public record ImpactView(int requirements, int tests, int applications, int briefs, ChangeRequestService.ImpactItems items) {}
 
     private ChangeRequestView toView(ChangeRequest cr) {
         return new ChangeRequestView(
@@ -90,8 +91,9 @@ public class ChangeRequestController {
     @RequiresAccess(AccessRule.PERSON)
     @PostMapping("/{id}/impact")
     public ImpactView impact(@PathVariable UUID id) {
-        var summary = service.computeImpact(id);
-        return new ImpactView(summary.requirements(), summary.tests(), summary.applications(), summary.briefs());
+        var detail = service.computeImpactDetail(id);
+        var summary = detail.summary();
+        return new ImpactView(summary.requirements(), summary.tests(), summary.applications(), summary.briefs(), detail.items());
     }
 
     /**

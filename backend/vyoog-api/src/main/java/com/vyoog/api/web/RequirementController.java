@@ -23,6 +23,7 @@ import com.vyoog.requirements.QualityScoreService;
 import com.vyoog.requirements.Placement;
 import com.vyoog.requirements.Requirement;
 import com.vyoog.requirements.RequirementForkService;
+import com.vyoog.requirements.RequirementLinkedWorkService;
 import com.vyoog.requirements.RequirementHistoryService;
 import com.vyoog.requirements.RequirementRepository;
 import com.vyoog.requirements.RequirementService;
@@ -66,6 +67,7 @@ public class RequirementController {
     private final LifecycleHistoryService lifecycleHistory;
     private final RequirementHistoryService historyService;
     private final RequirementForkService forkService;
+    private final RequirementLinkedWorkService linkedWork;
     private final QualityScoreService qualityScore;
     private final GapPreviewService gapPreview;
     private final RequirementRewriteAdvisor rewriteAdvisor;
@@ -85,7 +87,9 @@ public class RequirementController {
                                   QualityScoreService qualityScore, GapPreviewService gapPreview,
                                   RequirementRewriteAdvisor rewriteAdvisor, TestCaseSuggestionService testCaseSuggestions,
                                   PrincipalGuard guard, AiProposalService proposals, ObjectMapper json,
-                                  RequirementHistoryService historyService, RequirementForkService forkService) {
+                                  RequirementHistoryService historyService, RequirementForkService forkService,
+                                  RequirementLinkedWorkService linkedWork) {
+        this.linkedWork = linkedWork;
         this.historyService = historyService;
         this.forkService = forkService;
         this.requirements = requirements;
@@ -309,6 +313,15 @@ public class RequirementController {
                 capabilityId, currentUserId(jwt));
         }
         return toView(r, traceGraph.coverageFor(List.of(r.getId())).get(r.getId()));
+    }
+
+    /**
+     * VYB-0943 (D36): what this requirement is linked to besides other requirements, by name: its tests, the design nodes that cover
+     * it, the release it is committed to, and its defects. Read by any signed-in person.
+     */
+    @GetMapping("/{id}/linked")
+    public RequirementLinkedWorkService.LinkedWork linked(@PathVariable UUID id) {
+        return linkedWork.of(id);
     }
 
     public record ForkRequest(UUID changeRequestId) {}

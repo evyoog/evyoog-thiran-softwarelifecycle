@@ -8,6 +8,7 @@ import { SeverityBadge } from '@/shared/ui/Badges'
 import { Modal } from '@/shared/ui/Modal'
 import { useRovingGrid } from '@/shared/ui/useRovingGrid'
 import { AiUsageTab } from './analytics/AiUsageTab'
+import { ImpactLists } from './analytics/ImpactLists'
 
 const STATES: FindingState[] = ['OPEN', 'ACCEPTED', 'DISMISSED', 'RESOLVED']
 type Tab = 'findings' | 'suspect' | 'rules' | 'change-requests' | 'spine' | 'ai-usage'
@@ -538,10 +539,7 @@ function ChangeRequestsTab() {
           </div>
 
           {impacts[cr.id] && (
-            <div className="hint" style={{ marginBottom: 8 }}>
-              Impact: {impacts[cr.id].requirements} requirement(s) · {impacts[cr.id].tests} test(s) ·{' '}
-              {impacts[cr.id].applications} application(s) · {impacts[cr.id].briefs} brief(s)
-            </div>
+            <ImpactLists impact={impacts[cr.id]} />
           )}
 
           <div style={{ display: 'flex', gap: 8 }}>

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1020 tests cover 63 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1049 tests cover 64 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1212,3 +1212,35 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` theNewVersionCannotBeApprovedIfSomethingElseAlreadyReplacedTheOriginal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
 - `AC8` aReplacedRequirementTakesNoNewLinksAndIsNotCommittedToAReleaseButItsReplacementIs (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
 - `AC9` onlySomeoneWhoMayEditTheRequirementCanForkItAndAnAnonymousCallerIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+
+## VYB-0943: Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19]
+
+- `AC1` theLinkedWorkOfARequirementIsNamedTestsDesignReleaseAndDefects (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC10` theImpactListsNameTheItemsBehindEachCountAndMarkWhatTheChangeRequestNames (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC11` everyListIsAsLongAsItsCountAndAnEmptyImpactHasEmptyLists (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC12` everyKindSaysWhatItDoesInWords (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC13` aReleaseAlsoNeedsAReasonBecauseTheScopeMovementIsRecorded (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC13` nothingCanBeSavedUntilSomethingIsChosenAndTheMessageNamesWhat (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC14` onlyAReleaseWhoseScopeCanStillChangeIsOffered (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC15` anEmptyGroupSaysSoInWordsAndNothingIsShownBeforeItLoads (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC15` theFourGroupsNameWhatIsLinked (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC16` aGapIsAnApprovedRequirementInNoReleaseThatHasNotBeenReplaced (`frontend/src/features/trace/matrices.test.ts`)
+- `AC16` gapsOnlyKeepsJustThoseAndTheDefaultKeepsEveryRow (`frontend/src/features/trace/matrices.test.ts`)
+- `AC17` theTotalsAddUpAndTheSummaryIsInWords (`frontend/src/features/trace/matrices.test.ts`)
+- `AC18` aRequirementsDefectsAreTheColumnsMarkedForIt (`frontend/src/features/trace/matrices.test.ts`)
+- `AC18` byDefaultOnlyRequirementsWithADefectShowAndTheRestOnRequest (`frontend/src/features/trace/matrices.test.ts`)
+- `AC19` columnsAreGroupedUnderTheirRequirementInRowOrder (`frontend/src/features/trace/matrices.test.ts`)
+- `AC19` severityIsAWordAndAGlyphAndTheSummaryExplainsTheOneMarkPerColumn (`frontend/src/features/trace/matrices.test.ts`)
+- `AC2` aRequirementWithNothingLinkedSaysSoAndAnUnplacedOneHasNoApplication (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC20` aRequirementSaysWhetherTheChangeRequestNamesItOrItWasReachedDownstream (`frontend/src/features/analytics/impactItems.test.ts`)
+- `AC20` eachCountHasItsItemsAndAListAsLongAsItsCount (`frontend/src/features/analytics/impactItems.test.ts`)
+- `AC21` aListThatDisagreesWithItsCountIsSaidToAndAMissingItemsFieldGivesEmptyLists (`frontend/src/features/analytics/impactItems.test.ts`)
+- `AC21` applicationsAndBriefsAreNamedByWhatARepresentsNotByAnId (`frontend/src/features/analytics/impactItems.test.ts`)
+- `AC21` theToggleReadsTheCountInWordsWithTheRightPlural (`frontend/src/features/analytics/impactItems.test.ts`)
+- `AC3` aDefectWithNoRequirementCanBeLinkedToOneAndTheLinkIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC4` aDefectThatAlreadyHasARequirementIsNeverMovedByALink (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC5` aDefectIsNotLinkedToAMissingOrReplacedRequirementAndTheRequestMustNameOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC6` onlySomeoneWithTheQaRoleCanLinkADefectAndAnAnonymousCallerIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC7` theDefectListCanBeNarrowedToTheOnesWithNoRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC8` theReleaseMatrixHasEveryRequirementOfTheApplicationAndTheReleaseEachIsIn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)
+- `AC9` theDefectMatrixShowsOpenDefectsPerRequirementAndTheUntracedOnesApart (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TraceUiIT.java`)

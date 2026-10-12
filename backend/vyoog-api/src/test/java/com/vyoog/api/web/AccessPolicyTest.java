@@ -141,6 +141,7 @@ class AccessPolicyTest {
         Map.entry("DefectController#reopen", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DefectController#edit", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DefectController#assign", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DefectController#linkRequirement", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DefectController#link", new Expected(AccessRule.VERIFY, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DefectController#addComment", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
         Map.entry("ReleaseLifecycleController#transition", new Expected(AccessRule.BASELINE, RequiresAccess.Scope.ANYWHERE)),

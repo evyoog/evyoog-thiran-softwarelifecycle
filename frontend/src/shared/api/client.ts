@@ -1184,12 +1184,52 @@ export interface RequirementVersions {
 
 export interface ForkedFor { fork: VersionRef; original: VersionRef }
 
+export interface ChangeImpactRequirement { id: string; key: string; title: string; status: RequirementStatus; inScope: boolean }
+export interface ChangeImpactTest { id: string; key: string; title: string }
+export interface ChangeImpactApplication { id: string; name: string; productName: string }
+export interface ChangeImpactBrief { id: string; applicationName: string; target: string; generatedAt: string; stale: boolean }
+
+/** VYB-0943: the items behind the four counts, from the same walk of the trace graph. `inScope` marks what the change request names. */
+export interface ChangeImpactItems {
+  requirements: ChangeImpactRequirement[]
+  tests: ChangeImpactTest[]
+  applications: ChangeImpactApplication[]
+  briefs: ChangeImpactBrief[]
+}
+
 export interface ChangeImpact {
   requirements: number
   tests: number
   applications: number
   briefs: number
+  items?: ChangeImpactItems
 }
+
+// ── Linked work and matrices (VYB-0943) ───────────────────────────────────────────
+
+export interface LinkedTest { id: string; key: string; title: string }
+export interface LinkedDesignNode { id: string; flowId: string; kind: string; label: string }
+export interface LinkedRelease { id: string; name: string; state: ReleaseState }
+export interface LinkedDefect { id: string; key: string; title: string; severity: DefectSeverity; state: DefectState }
+
+/** What a requirement is linked to besides other requirements, by name. `applicationId` is absent for an unplaced requirement. */
+export interface LinkedWork {
+  requirementId: string
+  applicationId?: string | null
+  tests: LinkedTest[]
+  designNodes: LinkedDesignNode[]
+  releases: LinkedRelease[]
+  defects: LinkedDefect[]
+}
+
+export interface ReleaseMatrixColumn { id: string; name: string; state: ReleaseState; requirements: number }
+export interface ReleaseMatrixRow { requirementId: string; key: string; title: string; status: RequirementStatus; supersededById?: string | null; releaseId?: string | null }
+export interface ReleaseMatrix { releases: ReleaseMatrixColumn[]; rows: ReleaseMatrixRow[] }
+
+export interface DefectMatrixColumn { id: string; key: string; title: string; severity: DefectSeverity; state: DefectState; requirementId?: string | null }
+export interface DefectMatrixRow { requirementId: string; key: string; title: string; status: RequirementStatus; supersededById?: string | null }
+/** `untraced` are the open defects with no requirement, which belong to no application and so to no row. */
+export interface DefectMatrix { rows: DefectMatrixRow[]; defects: DefectMatrixColumn[]; untraced: DefectMatrixColumn[] }
 
 // ── Briefs (VYB-0450–0457) ────────────────────────────────────────────────────────
 
@@ -1971,6 +2011,13 @@ export const api = {
   requirementVersions: (requirementId: string) => request<RequirementVersions>(`/requirements/${requirementId}/versions`),
   forkRequirement: (requirementId: string, changeRequestId: string) =>
     request<Requirement>(`/requirements/${requirementId}/fork`, { method: 'POST', body: JSON.stringify({ changeRequestId }) }),
+  requirementLinked: (requirementId: string) => request<LinkedWork>(`/requirements/${requirementId}/linked`),
+  /** VYB-0943: links a defect that has no requirement yet; one that already has one is refused (409). */
+  linkDefectToRequirement: (defectId: string, requirementId: string) =>
+    request<DefectDetail>(`/defects/${defectId}/requirement`, { method: 'PUT', body: JSON.stringify({ requirementId }) }),
+  releaseMatrix: (applicationId: string) => request<ReleaseMatrix>(`/trace/release-matrix/${applicationId}`),
+  defectMatrix: (applicationId: string, includeClosed = false) =>
+    request<DefectMatrix>(`/trace/defect-matrix/${applicationId}${query({ includeClosed: includeClosed || undefined })}`),
   requirementHistory: (requirementId: string) => request<RequirementHistory>(`/requirements/${requirementId}/history`),
   lifecycleSpine: () => request<{ stage: string; count: number }[]>('/requirements/lifecycle-spine'),
   authoringSignals: (body: { statement: string; criteriaCount: number; hasCapability: boolean; hasUpstream: boolean }) =>
@@ -2256,7 +2303,7 @@ export const api = {
     request<VerificationRecord[]>(`/evidence/requirements/${requirementId}/verifications`),
 
   // Defects
-  defects: (params: { state?: DefectState | 'ALL'; severity?: DefectSeverity; releaseId?: string; assignedTo?: string; q?: string; page?: number; size?: number }) =>
+  defects: (params: { state?: DefectState | 'ALL'; severity?: DefectSeverity; releaseId?: string; assignedTo?: string; q?: string; untraced?: boolean; page?: number; size?: number }) =>
     request<Page<Defect>>(`/defects${query(params)}`),
   /** VYB-0931: one defect with its links and the history of its moves. */
   defect: (id: string) => request<DefectDetail>(`/defects/${id}`),

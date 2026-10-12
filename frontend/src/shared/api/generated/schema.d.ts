@@ -772,6 +772,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/defects/{id}/requirement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["linkRequirement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deployments/blocked": {
         parameters: {
             query?: never;
@@ -2692,6 +2708,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/requirements/{id}/linked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["linked"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/requirements/{id}/test-case-suggestions": {
         parameters: {
             query?: never;
@@ -4116,6 +4148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trace/defect-matrix/{applicationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["defectMatrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trace/links": {
         parameters: {
             query?: never;
@@ -4158,6 +4206,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["reviewLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trace/release-matrix/{applicationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["releaseMatrix"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4941,6 +5005,16 @@ export interface components {
         DecideRequest: {
             approve?: boolean;
         };
+        DefectColumn: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            /** Format: uuid */
+            requirementId?: string;
+            severity?: string;
+            state?: string;
+            title?: string;
+        };
         DefectDetailView: {
             defect?: components["schemas"]["DefectView"];
             raisedFromRunCaseId?: string;
@@ -4980,6 +5054,20 @@ export interface components {
             testCaseId?: string;
             /** Format: uuid */
             testRunId?: string;
+        };
+        DefectMatrix: {
+            defects?: components["schemas"]["DefectColumn"][];
+            rows?: components["schemas"]["DefectRow"][];
+            untraced?: components["schemas"]["DefectColumn"][];
+        };
+        DefectRow: {
+            key?: string;
+            /** Format: uuid */
+            requirementId?: string;
+            status?: string;
+            /** Format: uuid */
+            supersededById?: string;
+            title?: string;
         };
         DefectView: {
             developerId?: string;
@@ -5283,11 +5371,46 @@ export interface components {
             id?: string;
             type?: string;
         };
+        ImpactApplication: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            productName?: string;
+        };
+        ImpactBrief: {
+            applicationName?: string;
+            generatedAt?: string;
+            /** Format: uuid */
+            id?: string;
+            stale?: boolean;
+            target?: string;
+        };
+        ImpactItems: {
+            applications?: components["schemas"]["ImpactApplication"][];
+            briefs?: components["schemas"]["ImpactBrief"][];
+            requirements?: components["schemas"]["ImpactRequirement"][];
+            tests?: components["schemas"]["ImpactTest"][];
+        };
+        ImpactRequirement: {
+            /** Format: uuid */
+            id?: string;
+            inScope?: boolean;
+            key?: string;
+            status?: string;
+            title?: string;
+        };
+        ImpactTest: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            title?: string;
+        };
         ImpactView: {
             /** Format: int32 */
             applications?: number;
             /** Format: int32 */
             briefs?: number;
+            items?: components["schemas"]["ImpactItems"];
             /** Format: int32 */
             requirements?: number;
             /** Format: int32 */
@@ -5328,6 +5451,9 @@ export interface components {
             occurredAt?: string;
             stage?: string;
         };
+        LinkRequirement: {
+            requirementId?: string;
+        };
         LinkView: {
             fromId?: string;
             fromType?: string;
@@ -5337,6 +5463,44 @@ export interface components {
             reviewedAtRevision?: number;
             toId?: string;
             toType?: string;
+        };
+        LinkedDefect: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            severity?: string;
+            state?: string;
+            title?: string;
+        };
+        LinkedDesignNode: {
+            /** Format: uuid */
+            flowId?: string;
+            /** Format: uuid */
+            id?: string;
+            kind?: string;
+            label?: string;
+        };
+        LinkedRelease: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            state?: string;
+        };
+        LinkedTest: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            title?: string;
+        };
+        LinkedWork: {
+            /** Format: uuid */
+            applicationId?: string;
+            defects?: components["schemas"]["LinkedDefect"][];
+            designNodes?: components["schemas"]["LinkedDesignNode"][];
+            releases?: components["schemas"]["LinkedRelease"][];
+            /** Format: uuid */
+            requirementId?: string;
+            tests?: components["schemas"]["LinkedTest"][];
         };
         LintFinding: {
             suggestion?: string;
@@ -5851,11 +6015,34 @@ export interface components {
             status?: string;
             title?: string;
         };
+        ReleaseColumn: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            /** Format: int64 */
+            requirements?: number;
+            state?: string;
+        };
+        ReleaseMatrix: {
+            releases?: components["schemas"]["ReleaseColumn"][];
+            rows?: components["schemas"]["ReleaseRow"][];
+        };
         ReleaseNotesView: {
             approvedByCapability?: {
                 [key: string]: components["schemas"]["NoteItemView"][];
             };
             held?: components["schemas"]["NoteItemView"][];
+        };
+        ReleaseRow: {
+            key?: string;
+            /** Format: uuid */
+            releaseId?: string;
+            /** Format: uuid */
+            requirementId?: string;
+            status?: string;
+            /** Format: uuid */
+            supersededById?: string;
+            title?: string;
         };
         ReleaseView: {
             id?: string;
@@ -7577,6 +7764,7 @@ export interface operations {
                 releaseId?: string;
                 assignedTo?: string;
                 q?: string;
+                untraced?: boolean;
                 page?: number;
                 size?: number;
             };
@@ -7887,6 +8075,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DefectView"];
+                };
+            };
+        };
+    };
+    linkRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRequirement"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectDetailView"];
                 };
             };
         };
@@ -11079,6 +11293,28 @@ export interface operations {
             };
         };
     };
+    linked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LinkedWork"];
+                };
+            };
+        };
+    };
     testCaseSuggestions: {
         parameters: {
             query?: never;
@@ -13550,6 +13786,30 @@ export interface operations {
             };
         };
     };
+    defectMatrix: {
+        parameters: {
+            query?: {
+                includeClosed?: boolean;
+            };
+            header?: never;
+            path: {
+                applicationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DefectMatrix"];
+                };
+            };
+        };
+    };
     createLink: {
         parameters: {
             query?: never;
@@ -13612,6 +13872,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LinkView"];
+                };
+            };
+        };
+    };
+    releaseMatrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                applicationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReleaseMatrix"];
                 };
             };
         };

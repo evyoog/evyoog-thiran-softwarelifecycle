@@ -68,6 +68,9 @@ public class Defect {
 
     public boolean isUntraced() { return requirementId == null; }
 
+    /** VYB-0943: records in the loaded entity the requirement the database row has just been linked to (the row is written conditionally in SQL). */
+    void adoptRequirement(UUID requirementId) { this.requirementId = requirementId; }
+
     /** VYB-0321 AC1: closure is refused without a classification. */
     public void close() {
         if (rootCause == null) {

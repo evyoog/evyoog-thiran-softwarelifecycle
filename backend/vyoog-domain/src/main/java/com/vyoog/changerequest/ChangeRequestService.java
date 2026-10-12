@@ -67,6 +67,15 @@ public class ChangeRequestService {
 
     public record ImpactSummary(int requirements, int tests, int applications, int briefs) {}
 
+    /** VYB-0943: the items behind the four counts. {@code inScope} marks the requirements the change request names, as against those it reaches downstream. */
+    public record ImpactRequirement(UUID id, String key, String title, String status, boolean inScope) {}
+    public record ImpactTest(UUID id, String key, String title) {}
+    public record ImpactApplication(UUID id, String name, String productName) {}
+    public record ImpactBrief(UUID id, String applicationName, String target, String generatedAt, boolean stale) {}
+    public record ImpactItems(List<ImpactRequirement> requirements, List<ImpactTest> tests,
+                              List<ImpactApplication> applications, List<ImpactBrief> briefs) {}
+    public record ImpactDetail(ImpactSummary summary, ImpactItems items) {}
+
     /**
      * VYB-0391: exact graph queries over the real trace closure, computed fresh every
      * call — never an estimate, and never cached past the moment something in the
@@ -74,6 +83,15 @@ public class ChangeRequestService {
      */
     @Transactional
     public ImpactSummary computeImpact(UUID changeRequestId) {
+        return computeImpactDetail(changeRequestId).summary();
+    }
+
+    /**
+     * VYB-0943 (D36): {@link #computeImpact} with the items behind each count, from the same walk, so a list and its count cannot
+     * disagree. The counts are what is stored on the change request.
+     */
+    @Transactional
+    public ImpactDetail computeImpactDetail(UUID changeRequestId) {
         List<UUID> scopeIds = scope(changeRequestId);
         Set<UUID> affectedRequirements = new HashSet<>(scopeIds);
         Set<UUID> affectedTests = new HashSet<>();
@@ -99,7 +117,38 @@ public class ChangeRequestService {
         cr.recordImpact(affectedRequirements.size(), applications);
         changeRequests.save(cr);
 
-        return new ImpactSummary(affectedRequirements.size(), affectedTests.size(), applications, briefs);
+        ImpactSummary summary = new ImpactSummary(affectedRequirements.size(), affectedTests.size(), applications, briefs);
+        return new ImpactDetail(summary, itemsFor(affectedRequirements, new HashSet<>(scopeIds), affectedTests));
+    }
+
+    private ImpactItems itemsFor(Set<UUID> requirementIds, Set<UUID> inScope, Set<UUID> testIds) {
+        List<ImpactRequirement> requirements = rows(requirementIds, """
+            SELECT id, key, title, status FROM requirement WHERE id IN (%s) ORDER BY key""",
+            (rs) -> new ImpactRequirement(UUID.fromString(rs.getString("id")), rs.getString("key"), rs.getString("title"),
+                rs.getString("status"), inScope.contains(UUID.fromString(rs.getString("id")))));
+        List<ImpactTest> tests = rows(testIds, "SELECT id, key, title FROM test_case WHERE id IN (%s) ORDER BY key",
+            (rs) -> new ImpactTest(UUID.fromString(rs.getString("id")), rs.getString("key"), rs.getString("title")));
+        List<ImpactApplication> applications = rows(requirementIds, """
+            SELECT DISTINCT a.id, a.name, p.name AS product_name FROM requirement r
+            JOIN capability c ON c.id = r.capability_id JOIN application a ON a.id = c.application_id
+            JOIN product p ON p.id = a.product_id WHERE r.id IN (%s) ORDER BY p.name, a.name""",
+            (rs) -> new ImpactApplication(UUID.fromString(rs.getString("id")), rs.getString("name"), rs.getString("product_name")));
+        List<ImpactBrief> briefs = rows(requirementIds, """
+            SELECT DISTINCT b.id, a.name AS application_name, b.target, b.generated_at, b.stale FROM brief_requirement br
+            JOIN brief b ON b.id = br.brief_id JOIN application a ON a.id = b.application_id
+            WHERE br.requirement_id IN (%s) ORDER BY b.generated_at DESC, b.id""",
+            (rs) -> new ImpactBrief(UUID.fromString(rs.getString("id")), rs.getString("application_name"), rs.getString("target"),
+                rs.getTimestamp("generated_at").toInstant().toString(), rs.getBoolean("stale")));
+        return new ImpactItems(requirements, tests, applications, briefs);
+    }
+
+    @FunctionalInterface
+    private interface RowMapperX<T> { T map(java.sql.ResultSet rs) throws java.sql.SQLException; }
+
+    private <T> List<T> rows(Set<UUID> ids, String template, RowMapperX<T> mapper) {
+        if (ids.isEmpty()) return List.of();
+        String placeholders = String.join(",", ids.stream().map(i -> "?").toList());
+        return jdbc.query(template.formatted(placeholders), (rs, n) -> mapper.map(rs), ids.toArray());
     }
 
     private int countDistinct(String template, Set<UUID> ids) {
