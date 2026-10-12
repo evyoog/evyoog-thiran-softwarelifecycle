@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 36, PARTIAL 1, TODO 18.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 37, PARTIAL 1, TODO 17.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -119,11 +119,16 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 |---|---|---|---|---|---|
 | VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | DONE on dev: a Compliance screen lists every clause with its coverage (unmapped, mapped, evidenced) derived from the requirements mapped to it and their tests; a clause panel maps and unmaps requirements and shows each one's status, evidence and tests; administrators add, edit and delete clauses (audited) (15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,99 |
 
+## S10,100: Compliance evidence and risk
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | DONE on dev: an Evidence pack button on each baseline downloads a zip for that baseline: a Word report, CSV files (requirements as frozen, design, tests, results, approvals), a README, and SHA256SUMS and a manifest hashing every file; Approver, Compliance Lead, Architect or Administrator only (new access rule), every export audited (6 integration and 8 unit new tests; checked in a browser against mocked data and the real pack verified with sha256sum and a Word library; commit only, no PR yet) | S10,100 |
+
 ## S10: Compliance evidence and risk
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
 | VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
 | VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
 

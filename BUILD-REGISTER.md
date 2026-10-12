@@ -351,7 +351,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | DONE on dev: a step can be renamed, re-kinded and re-noted (the Testing and Deployment milestones keep their kind); a connection's label can be changed or the connection removed; steps can be dragged and the place is saved on the step (V054, shared, one audited save), with Reset layout; the diagram exports as SVG, PNG and a one-page PDF built in the browser (12 integration and 15 frontend new tests; checked in a browser against mocked data, the PDF read back with a PDF library; commit only, no PR yet) | S9,97 |
 | VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | DONE on dev: the four "Not tracked yet" lanes after Approved are removed from My Work's Pipeline (it ends at Approved); the requirement's Verify button goes straight to the Design screen and the "AI verify / Coming soon" modal is gone (2 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9,98 |
 | VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | DONE on dev: a Compliance screen lists every clause with its coverage (unmapped, mapped, evidenced) derived from the requirements mapped to it and their tests; a clause panel maps and unmaps requirements and shows each one's status, evidence and tests; administrators add, edit and delete clauses (audited) (15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,99 |
-| VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
+| VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | DONE on dev: an Evidence pack button on each baseline downloads a zip for that baseline: a Word report, CSV files (requirements as frozen, design, tests, results, approvals), a README, and SHA256SUMS and a manifest hashing every file; Approver, Compliance Lead, Architect or Administrator only (new access rule), every export audited (6 integration and 8 unit new tests; checked in a browser against mocked data and the real pack verified with sha256sum and a Word library; commit only, no PR yet) | S10,100 |
 | VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
 | VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
 | VYB-0951 | 6 | Configurability and boards | Artifact type registry replacing type lists in checks, enums, detectors and UI [L; F39] | TODO | S11 |
@@ -5608,6 +5608,31 @@ Phase 6 Sprint 10. Branch `dev`. **22 new tests**: `ClauseRegisterIT` 15 (real P
 - Nothing ingests a standard: clauses are typed in, one at a time (the next rows in this sprint add the evidence pack and templates).
 - No export of the register; no paging (a register is expected to hold hundreds, not thousands).
 - The register shows requirement status and test results as they are; it does not say which release carries a clause.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 100 — VYB-0948 (F41): the evidence pack
+
+Phase 6 Sprint 10. Branch `dev`. **14 new tests**: `EvidencePackIT` 6 (real PostgreSQL, service calls and HTTP with real tokens) and `EvidencePackWriterTest` 8 (the bundle, with no database). The finding text F41 is not in the repository; scope is the register row. Description: `docs/04-workflows/evidence-pack.md`, decision D39. No migration. Something to see: Releases, Baselines tab, **Evidence pack** on each baseline.
+
+**Decisions with the product owner this session.** (1) **A pack is made for a baseline** (a release or an application were the alternatives). (2) **A zip with a report, data files and a hash manifest** (CSV and JSON only, or one Word document, were the alternatives). (3) **Approver, Compliance Lead, Architect or Administrator may take one** (anyone signed in was the alternative).
+
+**What I found first.** Nothing exported evidence. A baseline already froze each requirement at a revision, with who and when and the gaps then, and `requirement_revision` keeps each revision's wording, so "as frozen" is real for wording. Status at the freeze is not stored, but the audit log has every status move with its time, so it can be read from there. Design has no history at all, so I could not make that part "as frozen" and the pack says so in three places. The Word writer was private to the release notes, so I moved it to a shared `DocxFile`, and the release notes use it unchanged (their 12 tests pass).
+
+**Backend.** `EvidencePackService#assemble` and `#export`; `EvidencePackWriter#build`; `GET /baselines/{id}/evidence-pack`; the access rule `EVIDENCE` (Approver, Compliance Lead, Architect) with its matrix row, capability rows and test; audit event `baseline.evidence_pack_exported`. OpenAPI and `schema.d.ts` regenerated.
+
+**Frontend.** An Evidence pack button on each baseline in the Baselines tab (it says who may on hover); the file is fetched with the token and saved under the server's name; a refusal is shown in the server's words.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Status at the freeze is the last recorded move at or before the freeze, and a requirement with none was a draft. (2) Results are kept only for the frozen revision, and each carries a before-or-after-the-freeze flag, as do approvals. (3) A requirement deleted after the freeze stays in the pack, marked. (4) A baseline of more than 5000 requirements is refused (the pack is built in memory). (5) Hashes are SHA-256 over every file; the manifest is the one file not hashed. The pack is not signed. (6) CSV text beginning `= + - @` gets an apostrophe in front, and CSVs carry a byte-order mark. (7) The pack records who exported it and when in its README and manifest.
+
+**Behaviour changes to know.** (1) A new access rule, `EVIDENCE`, and three capability rows. (2) The release notes' Word writer moved to a shared class; its output is unchanged. (3) The file is not byte-for-byte the same on every export: it carries the export time and who took it, and design is as at the export. I had said "the same bytes each time" when offering the baseline option; that is true only of the same content, and the manifest hashes the pack as given.
+
+**Evidence.** Dropping the "frozen revision only" condition from the results query failed `EvidencePackIT` AC12, then restored. A real pack made from real data was unzipped and checked with `sha256sum -c` (every file OK), its CSVs read with the byte-order mark and a formula-looking design label neutralised, and its report opened with a Word library (styles, headings and bullets as intended; I could not convert it to PDF in this sandbox, so I did not look at it as pages). In Chromium against a mocked API: the button on each baseline, a download saved under the server's name and the same size, and a 403 shown in words.
+
+**Not done / to know**
+- The pack is not signed, so the hashes show a file is unchanged from the pack as given, not who made it. Signing needs a key to hold; not asked for.
+- It is built in memory, so very large baselines are refused rather than streamed.
+- No evidence about clauses is in the pack (the register is VYB-0947): a pack lists requirements, design, tests, results and approvals, as the row says.
+- The 5000-requirement limit has no test of its own (it needs 5000 rows); the message is built in one place.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

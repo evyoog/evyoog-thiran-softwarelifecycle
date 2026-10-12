@@ -268,6 +268,7 @@ class AccessRulesTest {
         assertThat(AccessRule.APPROVE.roles()).containsExactly(AccessRole.APPROVER);
         assertThat(AccessRule.VERIFY.roles()).containsExactly(AccessRole.TESTER);
         assertThat(AccessRule.BASELINE.roles()).containsExactly(AccessRole.APPROVER);
+        assertThat(AccessRule.EVIDENCE.roles()).containsExactlyInAnyOrder(AccessRole.APPROVER, AccessRole.COMPLIANCE_LEAD, AccessRole.ARCHITECT);
         assertThat(AccessRule.ADMIN.roles()).isEmpty();
         assertThat(AccessRule.PERSON.roles()).isEmpty();
     }

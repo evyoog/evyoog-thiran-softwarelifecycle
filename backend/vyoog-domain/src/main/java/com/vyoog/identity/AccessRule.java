@@ -33,6 +33,12 @@ public enum AccessRule {
     /** Matrix "Baseline": Approver / Product Owner. */
     BASELINE("baseline or release", List.of(AccessRole.APPROVER)),
 
+    /**
+     * VYB-0948 (D39): taking a baseline's evidence pack out of the system (approvals, results and wording in one bundle). Approver,
+     * Compliance Lead, Architect. Not in the original matrix; the product owner chose it. Reviewer is deliberately not in it.
+     */
+    EVIDENCE("export an evidence pack", List.of(AccessRole.APPROVER, AccessRole.COMPLIANCE_LEAD, AccessRole.ARCHITECT)),
+
     /** Matrix "Admin": platform Administrator only. */
     ADMIN("administer", List.of());
 

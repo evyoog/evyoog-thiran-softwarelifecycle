@@ -274,6 +274,27 @@ function BaselinesTab({ releaseId }: { releaseId: string }) {
 
   const current = baselines?.[0]; // most recently frozen — VYB-0517 AC1
 
+  // VYB-0948 (D39): the evidence pack for one baseline, as a zip. The token cannot ride on a plain link, so it is fetched, then saved.
+  const [packing, setPacking] = useState('')
+  const [packError, setPackError] = useState<{ id: string; message: string } | undefined>()
+  const downloadPack = async (id: string) => {
+    setPacking(id)
+    setPackError(undefined)
+    try {
+      const { blob, filename } = await api.downloadEvidencePack(id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setPackError({ id, message: e instanceof ApiError ? (e.detail ?? e.title) : 'Could not make the evidence pack.' })
+    } finally {
+      setPacking('')
+    }
+  }
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
@@ -329,7 +350,12 @@ function BaselinesTab({ releaseId }: { releaseId: string }) {
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <strong style={{ flex: 1 }}>{b.name}</strong>
               {b.id === current?.id && <span className="badge" style={{ color: 'var(--brand)' }}>Current</span>}
+              <button className="btn" disabled={packing !== ''} onClick={() => void downloadPack(b.id)}
+                title="A zip: a report, one CSV per section (requirements, design, tests, results, approvals) and file hashes. Approver, Compliance Lead, Architect or Administrator.">
+                {packing === b.id ? 'Making the pack…' : 'Evidence pack'}
+              </button>
             </div>
+            {packError?.id === b.id && <p className="err-text" role="alert" style={{ margin: '4px 0 0' }}>{packError.message}</p>}
             <div className="muted" style={{ fontSize: 11 }}>
               {new Date(b.frozenAt).toLocaleString()} · {b.gapsAtFreeze} gap(s) at freeze (as recorded, not recomputed)
             </div>

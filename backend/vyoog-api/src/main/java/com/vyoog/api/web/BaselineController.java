@@ -1,8 +1,11 @@
 package com.vyoog.api.web;
 
 import com.vyoog.api.config.PrincipalGuard;
+import com.vyoog.api.config.RequiresAccess;
 import com.vyoog.baseline.Baseline;
 import com.vyoog.baseline.BaselineService;
+import com.vyoog.baseline.EvidencePackService;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -19,11 +22,14 @@ import org.springframework.web.bind.annotation.*;
 public class BaselineController {
 
     private final BaselineService service;
+    private final EvidencePackService evidencePacks;
     private final UserProvisioningService provisioning;
     private final PrincipalGuard guard;
 
-    public BaselineController(BaselineService service, UserProvisioningService provisioning, PrincipalGuard guard) {
+    public BaselineController(BaselineService service, EvidencePackService evidencePacks, UserProvisioningService provisioning,
+                              PrincipalGuard guard) {
         this.service = service;
+        this.evidencePacks = evidencePacks;
         this.provisioning = provisioning;
         this.guard = guard;
     }
@@ -52,6 +58,23 @@ public class BaselineController {
         Baseline b = service.freeze(body.name(), body.releaseId() == null ? null : UUID.fromString(body.releaseId()),
             body.requirementIds().stream().map(UUID::fromString).toList(), currentUserId(jwt));
         return toView(b);
+    }
+
+    /**
+     * VYB-0948 (D39): the evidence pack for one baseline as a zip: a report, CSV files, and hashes. Approver, Compliance Lead,
+     * Architect or Administrator; each export is audited because the pack leaves the system.
+     */
+    @RequiresAccess(value = AccessRule.EVIDENCE, scope = RequiresAccess.Scope.ANYWHERE)
+    @GetMapping("/{id}/evidence-pack")
+    public org.springframework.http.ResponseEntity<byte[]> evidencePack(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        var user = provisioning.upsert(jwt.getSubject(), jwt.getClaimAsString("email"), jwt.getClaimAsString("preferred_username"));
+        var pack = evidencePacks.export(id, user.getId(), user.getDisplayName());
+        return org.springframework.http.ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "application/zip")
+            .header("X-Content-Type-Options", "nosniff")
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                org.springframework.http.ContentDisposition.attachment().filename(pack.filename()).build().toString())
+            .body(pack.bytes());
     }
 
     @GetMapping

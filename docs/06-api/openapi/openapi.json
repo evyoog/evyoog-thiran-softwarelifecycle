@@ -7273,6 +7273,34 @@
         "tags" : [ "baseline-controller" ]
       }
     },
+    "/api/v1/baselines/{id}/evidence-pack" : {
+      "get" : {
+        "operationId" : "evidencePack",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "baseline-controller" ]
+      }
+    },
     "/api/v1/baselines/{id}/items" : {
       "get" : {
         "operationId" : "items",

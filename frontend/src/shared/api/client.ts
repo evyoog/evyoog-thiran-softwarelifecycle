@@ -2499,6 +2499,15 @@ export const api = {
     return { blob: await res.blob(), filename: named ?? `release-notes.${format === 'docx' ? 'docx' : 'md'}` }
   },
 
+  /** VYB-0948: a baseline's evidence pack (a zip), fetched with the token and saved under the name the server gave it. */
+  downloadEvidencePack: async (baselineId: string): Promise<{ blob: Blob; filename: string }> => {
+    const token = tokenProvider()
+    const res = await fetch(`${BASE}/baselines/${baselineId}/evidence-pack`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) throw await problemFrom(res)
+    const named = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
+    return { blob: await res.blob(), filename: named ?? 'evidence-pack.zip' }
+  },
+
   // Environments and deployment (ingestion itself is CI-only, not called from here)
   environments: () => request<VyoogEnvironment[]>('/environments'),
   environmentSummaries: () => request<EnvironmentSummary[]>('/environments/summary'),

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1101 tests cover 68 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1115 tests cover 69 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1308,3 +1308,20 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` evidenceFromAnEarlierRevisionIsStaleAndDoesNotCount (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
 - `AC8` aRequirementThatIsRejectedDeletedOrReplacedStopsCountingButStaysListed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
 - `AC9` theMappingShowsTheRequirementsTestsAndTheirLatestResultAtTheCurrentRevision (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+
+## VYB-0948: Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41]
+
+- `AC1` theBundleHoldsTheReportTheDataFilesAndTheHashesInOrder (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC10` thePackHoldsEachFrozenRequirementWithItsStatusDesignTestsResultsAndApprovals (`backend/vyoog-api/src/test/java/com/vyoog/api/it/EvidencePackIT.java`)
+- `AC11` aChangeAfterTheFreezeLeavesTheFrozenWordingAndStatusAndIsMarkedAsAfter (`backend/vyoog-api/src/test/java/com/vyoog/api/it/EvidencePackIT.java`)
+- `AC12` onlyResultsForTheFrozenRevisionAreInAndTheyAreFlaggedBeforeOrAfterTheFreeze (`backend/vyoog-api/src/test/java/com/vyoog/api/it/EvidencePackIT.java`)
+- `AC13` theBundleIsAZipWithEveryFileAndAnExportIsAuditedWithWhoTookIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/EvidencePackIT.java`)
+- `AC14` aRequirementDeletedAfterTheFreezeIsStillInThePackAndSaysSo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/EvidencePackIT.java`)
+- `AC15` whoMayTakeAPackOverHttpApproverComplianceLeadArchitectAndAdministratorNotAReviewerAnalystViewerOrNoOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/EvidencePackIT.java`)
+- `AC2` sha256sumsAndTheManifestMatchTheFilesAndAChangedFileIsDetectable (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC3` theSameContentGivesTheSameBytes (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC4` csvFilesCarryAByteOrderMarkQuoteCorrectlyAndRecordWhatWasNotRecorded (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC5` aCellThatASpreadsheetWouldRunAsAFormulaIsNeutralised (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC6` theReportIsAWellFormedWordFileThatSaysWhatWasFrozenWhatChangedAndWhatPassed (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC7` aBaselineWithNothingInItStillMakesAValidPack (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+- `AC8` theFileNameIsSafeAndDated (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
