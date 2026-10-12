@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 35, PARTIAL 1, TODO 19.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 36, PARTIAL 1, TODO 18.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -113,11 +113,16 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 |---|---|---|---|---|---|
 | VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | DONE on dev: the four "Not tracked yet" lanes after Approved are removed from My Work's Pipeline (it ends at Approved); the requirement's Verify button goes straight to the Design screen and the "AI verify / Coming soon" modal is gone (2 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9,98 |
 
+## S10,99: Compliance evidence and risk
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | DONE on dev: a Compliance screen lists every clause with its coverage (unmapped, mapped, evidenced) derived from the requirements mapped to it and their tests; a clause panel maps and unmaps requirements and shows each one's status, evidence and tests; administrators add, edit and delete clauses (audited) (15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,99 |
+
 ## S10: Compliance evidence and risk
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | TODO | S10 |
 | VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
 | VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
 | VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |

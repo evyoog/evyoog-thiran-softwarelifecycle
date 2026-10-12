@@ -177,7 +177,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_4"];
+        patch: operations["update_5"];
         trace?: never;
     };
     "/api/v1/applications/{applicationId}/capabilities/{id}/archive": {
@@ -596,6 +596,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clauses/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["register_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clauses/{id}": {
         parameters: {
             query?: never;
@@ -604,9 +620,41 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_2"];
+        put: operations["update"];
+        post?: never;
+        delete: operations["delete_2"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clauses/{id}/mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mapping"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clauses/{id}/requirements/{requirementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["map"];
+        post?: never;
+        delete: operations["unmap"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2097,7 +2145,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/api/v1/products/{id}/archive": {
@@ -2145,7 +2193,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_2"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/v1/products/{productId}/applications/{id}/archive": {
@@ -2657,7 +2705,7 @@ export interface paths {
         delete: operations["delete_1"];
         options?: never;
         head?: never;
-        patch: operations["update_1"];
+        patch: operations["update_2"];
         trace?: never;
     };
     "/api/v1/requirements/{id}/acceptance-criteria": {
@@ -3761,7 +3809,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update"];
+        patch: operations["update_1"];
         trace?: never;
     };
     "/api/v1/test-cases/{id}/steps": {
@@ -4670,6 +4718,42 @@ export interface components {
         };
         ClassifyDefect: {
             rootCause: string;
+        };
+        ClauseMappedRequirement: {
+            counts?: boolean;
+            evidenced?: boolean;
+            id?: string;
+            key?: string;
+            replacedByKey?: string;
+            staleEvidence?: boolean;
+            status?: string;
+            tests?: components["schemas"]["ClauseMappedTest"][];
+            title?: string;
+        };
+        ClauseMappedTest: {
+            id?: string;
+            key?: string;
+            result?: string;
+            title?: string;
+        };
+        ClauseMappingView: {
+            coverage?: string;
+            id?: string;
+            requirements?: components["schemas"]["ClauseMappedRequirement"][];
+            section?: string;
+            standard?: string;
+            text?: string;
+        };
+        ClauseRegisterRow: {
+            coverage?: string;
+            /** Format: int32 */
+            evidencedRequirements?: number;
+            id?: string;
+            /** Format: int32 */
+            mappedRequirements?: number;
+            section?: string;
+            standard?: string;
+            text?: string;
         };
         ClauseView: {
             id?: string;
@@ -6600,6 +6684,11 @@ export interface components {
             description?: string;
             name: string;
         };
+        UpdateClause: {
+            section?: string;
+            standard: string;
+            text: string;
+        };
         UpdateEdge: {
             label?: string;
         };
@@ -6940,7 +7029,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -7679,6 +7768,26 @@ export interface operations {
             };
         };
     };
+    register_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClauseRegisterRow"][];
+                };
+            };
+        };
+    };
     get_2: {
         parameters: {
             query?: never;
@@ -7698,6 +7807,116 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ClauseView"];
                 };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateClause"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClauseView"];
+                };
+            };
+        };
+    };
+    delete_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClauseMappingView"];
+                };
+            };
+        };
+    };
+    map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requirementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requirementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10221,7 +10440,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -10317,7 +10536,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -11186,7 +11405,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: {
                 changeRequestId?: string;
@@ -12958,7 +13177,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;

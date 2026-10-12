@@ -17,6 +17,7 @@ import { TraceGraphPage } from '@/features/TraceGraphPage'
 import { Design } from '@/features/Design'
 import { Analytics } from '@/features/Analytics'
 import { Quality } from '@/features/Quality'
+import { Compliance } from '@/features/Compliance'
 import { Delivery } from '@/features/Delivery'
 import { Releases } from '@/features/Releases'
 import { Admin } from '@/features/Admin'
@@ -68,6 +69,7 @@ export function App() {
           <Route path="/design" element={<Design />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/quality" element={<Quality />} />
+          <Route path="/compliance" element={<Compliance />} />
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/releases" element={<Releases />} />
           <Route path="/admin" element={<Admin />} />

@@ -350,7 +350,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | DONE on dev: retired, per D26 (accepted this session): the `/api/v1/reviews` endpoints, `ReviewService` and the `com.vyoog.review` package are removed, with the reviewer and approver tasks on My Work and the round-based `sod` gap rule (V053 marks it retired, resolves its open findings, audits it); the four round tables stay as read-only history; a requirement's REVIEW and APPROVAL stages and the spine counts now come from its status changes or an old round's signature (10 integration tests, `ReviewRetirementIT`; frontend client and My Work cleaned; commit only, no PR yet) | S9,96 |
 | VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | DONE on dev: a step can be renamed, re-kinded and re-noted (the Testing and Deployment milestones keep their kind); a connection's label can be changed or the connection removed; steps can be dragged and the place is saved on the step (V054, shared, one audited save), with Reset layout; the diagram exports as SVG, PNG and a one-page PDF built in the browser (12 integration and 15 frontend new tests; checked in a browser against mocked data, the PDF read back with a PDF library; commit only, no PR yet) | S9,97 |
 | VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | DONE on dev: the four "Not tracked yet" lanes after Approved are removed from My Work's Pipeline (it ends at Approved); the requirement's Verify button goes straight to the Design screen and the "AI verify / Coming soon" modal is gone (2 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9,98 |
-| VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | TODO | S10 |
+| VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | DONE on dev: a Compliance screen lists every clause with its coverage (unmapped, mapped, evidenced) derived from the requirements mapped to it and their tests; a clause panel maps and unmaps requirements and shows each one's status, evidence and tests; administrators add, edit and delete clauses (audited) (15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,99 |
 | VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | TODO | S10 |
 | VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
 | VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
@@ -5584,6 +5584,30 @@ Phase 6 Sprint 9. Branch `dev`. **2 new tests** (`pipelineVerify.test.ts`). Fron
 
 **Not done / to know**
 - Whether the two post-approval ideas (lanes from real evidence, an AI reviewer) come back is a product decision for later; neither is promised on screen now.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 99 — VYB-0947 (F41): the clause register and control mapping
+
+Phase 6 Sprint 10. Branch `dev`. **22 new tests**: `ClauseRegisterIT` 15 (real PostgreSQL, service calls and HTTP with real tokens) and `complianceModel.test.ts` 7. The finding text F41 is not in the repository; scope is the register row. Description: `docs/04-workflows/clause-register.md`, decision D38. No migration. Something to see: **Compliance** in the left menu.
+
+**Decisions with the product owner this session.** (1) **Tests reach a clause through its requirements** (a direct test-to-clause link was the alternative). (2) **Administrators only keep the register**, with edit and delete added (Compliance Lead was the alternative). (3) **A new Compliance screen** (a tab on Quality was the alternative).
+
+**What I found first.** A clause table, a create endpoint and a detector existed, and nothing in the frontend read them: no screen, no way to map a requirement to a clause except the generic trace-link call, no edit or delete. The mapping already had a meaning: the unmapped-clause rule treats a `SATISFIES` link from a requirement as "mapped", so I used exactly that link.
+
+**Backend.** `ClauseService`: `register()`, `mappingOf()`, `create`, `update`, `delete`, `map`, `unmap`. `GET /clauses/register`, `GET /clauses/{id}/mapping`, `PUT` and `DELETE /clauses/{id}` (Administrator), `PUT` and `DELETE /clauses/{id}/requirements/{requirementId}` (whoever may create trace links); all in `AccessPolicyTest`; every change audited. Create now goes through the service, so it is audited and the clause is rescanned (before, neither happened). OpenAPI and `schema.d.ts` regenerated.
+
+**Frontend.** The Compliance screen: a summary line, filters (standard, coverage, words), a table with the coverage as a glyph and a word, a clause panel (text, mapped requirements with status, evidence in words and each test's result, unmap, a search to map another, and for administrators Edit and Delete), and an Add-a-clause form. A nav item and a route.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A requirement counts toward a clause unless it is deleted, rejected or replaced; evidenced means Approved with a passing test at its current revision. (2) The register counts only a mapping a person made, not the similarity the `compl` rule also accepts. (3) A rejected or replaced requirement cannot be mapped. (4) The same section of the same standard is refused (case-insensitive); sectionless clauses may repeat; this is checked in the service, not by a database constraint, so two simultaneous saves could both pass. (5) A clause with any link is not deleted; deleting one resolves its open findings. (6) Limits: standard and section 100, text 4000 characters. (7) Edit and Delete and Add are shown only to administrators; mapping is shown to everyone and the server decides.
+
+**Behaviour changes to know.** (1) Creating a clause is now audited and rescanned. (2) The clause table now has edit and delete. (3) The Compliance menu item is visible to every signed-in person.
+
+**Evidence.** Counting a passing test as evidence without requiring Approved failed `ClauseRegisterIT` AC6, then restored. In Chromium against a mocked API: the register, the filters, a clause panel with a passing, a failing and a stale requirement and a replaced one, mapping and unmapping a requirement, the server's delete refusal shown in words, an edit, an add; a viewer sees no Add, Edit or Delete. The integration tests prove each rule above, 403 for a viewer and for an author on the register, 401 with no token, 400, 404 and 409.
+
+**Not done / to know**
+- Nothing ingests a standard: clauses are typed in, one at a time (the next rows in this sprint add the evidence pack and templates).
+- No export of the register; no paging (a register is expected to hold hundreds, not thousands).
+- The register shows requirement status and test results as they are; it does not say which release carries a clause.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

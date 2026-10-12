@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1079 tests cover 67 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1101 tests cover 68 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1283,3 +1283,28 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 
 - `AC1` thePipelineHasExactlyTheLifecycleStatusesAndNothingAfterApproved (`frontend/src/features/pipelineVerify.test.ts`)
 - `AC2` verifyGoesStraightToTheDesignScreenFocusedOnTheRequirement (`frontend/src/features/pipelineVerify.test.ts`)
+
+## VYB-0947: Clause register UI with control mapping to requirements and tests [M; F41]
+
+- `AC1` aClauseIsTrimmedStoredAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC1` aClauseNeedsAStandardAndTextAndHasLimits (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC10` mappingIsIdempotentAuditedAndUnmappingRemovesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC11` aRejectedMissingOrReplacedRequirementCannotBeMappedAndNothingIsLinked (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC12` aClauseThatIsStillLinkedIsNotDeletedAndAnUnlinkedOneIsAndItsOpenFindingsAreResolved (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC13` whoMayDoWhatOverHttpAdministratorsEditTheRegisterAuthorsMapAnyoneReadsNoTokenIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC14` badRequestsAreRefusedWithTheirReason (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC15` aClauseIsNamedByStandardAndSectionAndLongTextIsShortened (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC15` everyCoverageHasAGlyphAndAWordSoColourIsNeverTheOnlySignal (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC16` standardsAreListedOnceAndSorted (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC16` theRegisterFiltersByStandardCoverageAndWords (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC17` theSummaryCountsEachCoverageOverTheWholeRegisterNotTheFilter (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC18` aMappedRequirementSaysInWordsWhatItContributes (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC18` aTestResultIsAGlyphAndAWordAndNotRunIsNotPassOrFail (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC2` theSameSectionOfTheSameStandardIsNotRegisteredTwice (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC3` aClauseCanBeEditedAndTheOldValuesAreOnTheAuditLog (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC4` aClauseIsUnmappedUntilARequirementIsMappedToIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC5` mappedButNotEvidencedThenEvidencedWhenEveryCountingRequirementIsApprovedWithAPassingTest (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC6` aPassingTestOnARequirementThatIsNotApprovedIsNotEvidence (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC7` evidenceFromAnEarlierRevisionIsStaleAndDoesNotCount (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC8` aRequirementThatIsRejectedDeletedOrReplacedStopsCountingButStaysListed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)
+- `AC9` theMappingShowsTheRequirementsTestsAndTheirLatestResultAtTheCurrentRevision (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseRegisterIT.java`)

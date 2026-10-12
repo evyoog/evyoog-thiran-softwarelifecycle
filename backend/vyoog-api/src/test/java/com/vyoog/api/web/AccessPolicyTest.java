@@ -87,6 +87,10 @@ class AccessPolicyTest {
         Map.entry("CapabilityController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("CapabilityController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("ClauseController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ClauseController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ClauseController#delete", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("ClauseController#map", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ClauseController#unmap", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         // 6b: authored content = Business Analyst, Architect
         Map.entry("GlossaryController#create", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("GlossaryController#recordUsage", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),

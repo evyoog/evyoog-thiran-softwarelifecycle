@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ListChecks, Boxes, Table2, Workflow,
-  BarChart3, ClipboardCheck, Code2, Rocket, Settings,
+  BarChart3, ClipboardCheck, Code2, Rocket, Settings, ShieldCheck,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -36,6 +36,7 @@ export const NAV: NavItem[] = [
   { key: 'design',     label: 'Design',         icon: Workflow,        path: '/design' },
   { key: 'analytics',  label: 'Analytics',      icon: BarChart3,       path: '/analytics' },
   { key: 'quality',    label: 'Quality',        icon: ClipboardCheck,  path: '/quality' },
+  { key: 'compliance', label: 'Compliance',     icon: ShieldCheck,     path: '/compliance' },
   { key: 'delivery',   label: 'Delivery',       icon: Code2,           path: '/delivery' },
   { key: 'releases',   label: 'Releases',       icon: Rocket,          path: '/releases' },
   { key: 'admin',      label: 'Administration', icon: Settings,        path: '/admin', divideBefore: true, requiresAdmin: true },

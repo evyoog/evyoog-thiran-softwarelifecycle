@@ -603,6 +603,45 @@ export interface Clause {
   text: string
 }
 
+// ── Clause register and control mapping (VYB-0947, D38) ──────────────────────────
+
+export type ClauseCoverage = 'UNMAPPED' | 'MAPPED' | 'EVIDENCED'
+
+export interface ClauseRegisterRow {
+  id: string
+  standard: string
+  section?: string | null
+  text: string
+  /** Requirements that count toward the clause (not deleted, rejected or replaced). */
+  mappedRequirements: number
+  /** Of those, how many are Approved with a passing test at their current revision. */
+  evidencedRequirements: number
+  coverage: ClauseCoverage
+}
+
+export interface ClauseMappedTest { id: string; key: string; title: string; result?: 'PASS' | 'FAIL' | null }
+
+export interface ClauseMappedRequirement {
+  id: string
+  key: string
+  title: string
+  status: RequirementStatus
+  counts: boolean
+  evidenced: boolean
+  staleEvidence: boolean
+  replacedByKey?: string | null
+  tests: ClauseMappedTest[]
+}
+
+export interface ClauseMapping {
+  id: string
+  standard: string
+  section?: string | null
+  text: string
+  coverage: ClauseCoverage
+  requirements: ClauseMappedRequirement[]
+}
+
 // ── Import queue (VYB-0630–0638) ─────────────────────────────────────────────────
 
 export type UploadKind = 'FREEFORM' | 'STANDARD_SPEC' | 'REQIF' | 'EXCEL' | 'WORD' | 'PRD_TEMPLATE'
@@ -2133,6 +2172,15 @@ export const api = {
   clauses: () => request<Clause[]>('/clauses'),
   createClause: (body: { standard: string; section?: string; text: string }) =>
     request<Clause>('/clauses', { method: 'POST', body: JSON.stringify(body) }),
+  clauseRegister: () => request<ClauseRegisterRow[]>('/clauses/register'),
+  clauseMapping: (id: string) => request<ClauseMapping>(`/clauses/${id}/mapping`),
+  updateClause: (id: string, body: { standard: string; section?: string; text: string }) =>
+    request<Clause>(`/clauses/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteClause: (id: string) => request<void>(`/clauses/${id}`, { method: 'DELETE' }),
+  mapClauseRequirement: (id: string, requirementId: string) =>
+    request<void>(`/clauses/${id}/requirements/${requirementId}`, { method: 'PUT' }),
+  unmapClauseRequirement: (id: string, requirementId: string) =>
+    request<void>(`/clauses/${id}/requirements/${requirementId}`, { method: 'DELETE' }),
 
   // AI / embeddings
   embeddingModel: () => request<{ modelName: string; dimensions: number }>('/ai/embedding-model'),

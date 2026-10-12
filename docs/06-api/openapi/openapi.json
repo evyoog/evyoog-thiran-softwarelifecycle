@@ -778,6 +778,112 @@
         "required" : [ "rootCause" ],
         "type" : "object"
       },
+      "ClauseMappedRequirement" : {
+        "properties" : {
+          "counts" : {
+            "type" : "boolean"
+          },
+          "evidenced" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "replacedByKey" : {
+            "type" : "string"
+          },
+          "staleEvidence" : {
+            "type" : "boolean"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "tests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ClauseMappedTest"
+            },
+            "type" : "array"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ClauseMappedTest" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "result" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ClauseMappingView" : {
+        "properties" : {
+          "coverage" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "requirements" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ClauseMappedRequirement"
+            },
+            "type" : "array"
+          },
+          "section" : {
+            "type" : "string"
+          },
+          "standard" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ClauseRegisterRow" : {
+        "properties" : {
+          "coverage" : {
+            "type" : "string"
+          },
+          "evidencedRequirements" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "mappedRequirements" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "section" : {
+            "type" : "string"
+          },
+          "standard" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ClauseView" : {
         "properties" : {
           "id" : {
@@ -6186,6 +6292,21 @@
         "required" : [ "name" ],
         "type" : "object"
       },
+      "UpdateClause" : {
+        "properties" : {
+          "section" : {
+            "type" : "string"
+          },
+          "standard" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "standard", "text" ],
+        "type" : "object"
+      },
       "UpdateEdge" : {
         "properties" : {
           "label" : {
@@ -6756,7 +6877,7 @@
     },
     "/api/v1/applications/{applicationId}/capabilities/{id}" : {
       "patch" : {
-        "operationId" : "update_4",
+        "operationId" : "update_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "applicationId",
@@ -7740,7 +7861,46 @@
         "tags" : [ "clause-controller" ]
       }
     },
+    "/api/v1/clauses/register" : {
+      "get" : {
+        "operationId" : "register_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ClauseRegisterRow"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "clause-controller" ]
+      }
+    },
     "/api/v1/clauses/{id}" : {
+      "delete" : {
+        "operationId" : "delete_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "clause-controller" ]
+      },
       "get" : {
         "operationId" : "get_2",
         "parameters" : [ {
@@ -7761,6 +7921,122 @@
                 }
               }
             },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "clause-controller" ]
+      },
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateClause"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClauseView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "clause-controller" ]
+      }
+    },
+    "/api/v1/clauses/{id}/mapping" : {
+      "get" : {
+        "operationId" : "mapping",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClauseMappingView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "clause-controller" ]
+      }
+    },
+    "/api/v1/clauses/{id}/requirements/{requirementId}" : {
+      "delete" : {
+        "operationId" : "unmap",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "requirementId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "clause-controller" ]
+      },
+      "put" : {
+        "operationId" : "map",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "requirementId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
             "description" : "OK"
           }
         },
@@ -11016,7 +11292,7 @@
     },
     "/api/v1/products/{id}" : {
       "patch" : {
-        "operationId" : "update_3",
+        "operationId" : "update_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -11145,7 +11421,7 @@
     },
     "/api/v1/products/{productId}/applications/{id}" : {
       "patch" : {
-        "operationId" : "update_2",
+        "operationId" : "update_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "productId",
@@ -12337,7 +12613,7 @@
         "tags" : [ "requirement-controller" ]
       },
       "patch" : {
-        "operationId" : "update_1",
+        "operationId" : "update_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -14469,7 +14745,7 @@
     },
     "/api/v1/test-cases/{id}" : {
       "patch" : {
-        "operationId" : "update",
+        "operationId" : "update_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",

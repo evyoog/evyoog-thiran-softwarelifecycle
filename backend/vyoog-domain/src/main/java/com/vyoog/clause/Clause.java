@@ -37,4 +37,11 @@ public class Clause {
     public String getStandard() { return standard; }
     public String getSection() { return section; }
     public String getText() { return text; }
+
+    /** VYB-0947: the register's edit. */
+    public void edit(String standard, String section, String text) {
+        this.standard = standard;
+        this.section = section;
+        this.text = text;
+    }
 }

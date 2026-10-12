@@ -10,4 +10,5 @@
 - [`trace-ui.md`](trace-ui.md) — linking a requirement to tests, design, a release and defects by picking; the requirement-by-release and requirement-by-defect matrices; the items behind a change request's impact counts (VYB-0943).
 - [`review-rounds-retired.md`](review-rounds-retired.md) — review rounds are retired: what went, what stays as history, and where a requirement's review and approval stages now come from (VYB-0944).
 - [`design-editing.md`](design-editing.md) — editing a step or connection, dragging a shared layout, and exporting the diagram as SVG, PNG or PDF (VYB-0945).
+- [`clause-register.md`](clause-register.md) — the compliance clause register: mapping requirements to clauses, and the unmapped, mapped and evidenced reading of each (VYB-0947).
 - [`../08-architecture/development-process.md`](../08-architecture/development-process.md) — how Vyoog itself is built.
