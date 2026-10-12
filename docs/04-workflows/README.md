@@ -6,4 +6,5 @@
 - [`defect-lifecycle.md`](defect-lifecycle.md) — a defect's states, who may move it, assignment, links and comments (VYB-0931).
 - [`ai-proposal-review.md`](ai-proposal-review.md) — how an AI suggestion becomes a requirement, a test case or brief text: only by a person's decision (VYB-0938).
 - [`requirement-history.md`](requirement-history.md) — a requirement's revisions and status changes on one timeline, and the word-level comparison of any two revisions (VYB-0941).
+- [`requirement-versions.md`](requirement-versions.md) — a new version of an approved requirement is a new requirement forked for an approved change request; approving it supersedes the original (VYB-0942).
 - [`../08-architecture/development-process.md`](../08-architecture/development-process.md) — how Vyoog itself is built.

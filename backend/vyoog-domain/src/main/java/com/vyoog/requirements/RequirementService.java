@@ -281,6 +281,27 @@ public class RequirementService {
             }
         }
 
+        // VYB-0942: a new version (a fork) may only be approved or reopened while the requirement it replaces is still the approved,
+        // un-replaced one and no other new version of it is live. Checked before anything changes.
+        Requirement original = null;
+        if (r.getForkedFromId() != null && (target == RequirementStatus.APPROVED
+                || (from == RequirementStatus.REJECTED && target == RequirementStatus.NEEDS_REVISION))) {
+            original = requirements.findById(r.getForkedFromId()).orElseThrow(NoSuchElementException::new);
+            if (original.getSupersededById() != null && !original.getSupersededById().equals(r.getId())) {
+                throw new IllegalStateException("%s has already been replaced by another version, so %s cannot replace it."
+                    .formatted(original.getKey(), r.getKey()));
+            }
+            if (from == RequirementStatus.REJECTED) {
+                Long other = jdbc.queryForObject("""
+                    SELECT count(*) FROM requirement WHERE forked_from_id = ? AND id <> ? AND deleted_at IS NULL AND status <> 'REJECTED'
+                    """, Long.class, original.getId(), r.getId());
+                if (other != null && other > 0) {
+                    throw new IllegalStateException("%s already has another new version in progress, so this one cannot be reopened."
+                        .formatted(original.getKey()));
+                }
+            }
+        }
+
         Map<String, Object> before = Map.of("status", from.name());
         r.transitionTo(target, actorId, reason);
         requirements.save(r);
@@ -295,6 +316,13 @@ public class RequirementService {
             "changedBy", actorId.toString(),
             "changedAt", r.getChangedAt().toString(),
             "revisionCount", r.getRevisionCount()));
+        if (original != null && target == RequirementStatus.APPROVED) {
+            // VYB-0942: approving the new version is what replaces the original. Its status stays APPROVED; it now says by what.
+            original.supersedeBy(r.getId());
+            requirements.save(original);
+            audit.record(actorId, "requirement.superseded", "REQUIREMENT", original.getId(), Map.of("supersededById", ""),
+                Map.of("supersededById", r.getId().toString(), "supersededByKey", r.getKey()));
+        }
         rescan(r.getId());
         return r;
     }

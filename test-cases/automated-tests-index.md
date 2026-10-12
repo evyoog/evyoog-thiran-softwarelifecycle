@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1002 tests cover 62 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1020 tests cover 63 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1191,3 +1191,24 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` identicalTextHasNoChange (`frontend/src/features/requirements/revisionDiff.test.ts`)
 - `AC9` addedAndRemovedWordsAreCounted (`frontend/src/features/requirements/revisionDiff.test.ts`)
 - `AC9` joiningTheSegmentsOfTheSameAndAddedGivesTheNewTextAndOfSameAndRemovedTheOld (`frontend/src/features/requirements/revisionDiff.test.ts`)
+
+## VYB-0942: Fork a new version of an approved requirement, linked to its change request [M; F18]
+
+- `AC1` aForkIsANewDraftRequirementCopiedFromTheApprovedOneAndTheOriginalIsUntouched (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC10` theChangeRequestListsItsForksAndEditingInPlaceUnderItStillWorks (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC11` theDatabaseRefusesASecondLiveForkAndAForkWithoutAChangeRequest (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC12` aRejectedNewVersionDoesNotBlockAnotherFork (`frontend/src/features/requirements/versions.test.ts`)
+- `AC12` forkIsOfferedOnlyForAnApprovedRequirementThatIsNotReplacedAndHasNoNewVersionInProgress (`frontend/src/features/requirements/versions.test.ts`)
+- `AC13` onlyAnApprovedChangeRequestThatNamesTheRequirementCanBeChosen (`frontend/src/features/requirements/versions.test.ts`)
+- `AC14` aNewVersionSaysWhatItWasForkedFromAndForWhichChangeRequest (`frontend/src/features/requirements/versions.test.ts`)
+- `AC14` aReplacedRequirementSaysSoInWordsAndDoesNotAlsoSayAVersionIsInProgress (`frontend/src/features/requirements/versions.test.ts`)
+- `AC14` anOriginalWithANewVersionInProgressNamesIt (`frontend/src/features/requirements/versions.test.ts`)
+- `AC14` everyNoteHasAGlyphSoColourIsNeverTheOnlySignal (`frontend/src/features/requirements/versions.test.ts`)
+- `AC2` upstreamLinksAreCopiedAndTestsDesignAndCodeStayOnTheOriginal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC3` aForkIsRefusedUnlessTheOriginalIsApprovedAndTheChangeRequestIsApprovedAndNamesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC4` onlyOneNewVersionIsOpenAtATimeAndARejectedOrDeletedOneFreesTheOriginal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC5` aRejectedNewVersionCannotBeReopenedWhileAnotherIsOpen (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC6` approvingTheNewVersionSupersedesTheOriginalWhoseStatusStaysApproved (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC7` theNewVersionCannotBeApprovedIfSomethingElseAlreadyReplacedTheOriginal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC8` aReplacedRequirementTakesNoNewLinksAndIsNotCommittedToAReleaseButItsReplacementIs (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)
+- `AC9` onlySomeoneWhoMayEditTheRequirementCanForkItAndAnAnonymousCallerIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementForkIT.java`)

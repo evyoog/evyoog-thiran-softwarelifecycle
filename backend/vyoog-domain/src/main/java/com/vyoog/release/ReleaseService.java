@@ -62,6 +62,8 @@ public class ReleaseService {
         }
         requireScopeEditable(releases.findById(releaseId).orElseThrow(NoSuchElementException::new));
 
+        requireNotSuperseded(List.of(requirementId));
+
         List<UUID> existingReleases = jdbc.queryForList(
             "SELECT release_id FROM release_scope_item WHERE requirement_id = ?", UUID.class, requirementId);
         if (!existingReleases.isEmpty() && !existingReleases.contains(releaseId)) {
@@ -88,6 +90,18 @@ public class ReleaseService {
         movements.save(new ScopeMovement(releaseId, requirementId, MovementDirection.OUT, reason, actor));
         audit.record(actor, "release.scope_removed", "RELEASE", releaseId, null,
             Map.of("requirementId", requirementId.toString(), "reason", reason));
+    }
+
+    /** VYB-0942: a requirement that a newer approved version has replaced is not committed to a release; its replacement is. */
+    private void requireNotSuperseded(List<UUID> requirementIds) {
+        String placeholders = String.join(",", requirementIds.stream().map(i -> "?").toList());
+        List<String> replaced = jdbc.queryForList(
+            ("SELECT r.key || ' (replaced by ' || n.key || ')' FROM requirement r JOIN requirement n ON n.id = r.superseded_by_id "
+                + "WHERE r.id IN (%s) ORDER BY r.key").formatted(placeholders), String.class, requirementIds.toArray());
+        if (!replaced.isEmpty()) {
+            throw new IllegalStateException("Replaced by a newer version, so not committed to a release: " + String.join(", ", replaced)
+                + ". Commit the new version instead. Nothing was committed.");
+        }
     }
 
     /** VYB-0928: a frozen or released release's scope is locked; a frozen one can be reopened to change it. */
@@ -176,6 +190,8 @@ public class ReleaseService {
             rs -> { keys.put(UUID.fromString(rs.getString("id")), rs.getString("key")); }, ids.toArray());
         List<UUID> missing = ids.stream().filter(i -> !keys.containsKey(i)).toList();
         if (!missing.isEmpty()) throw new NoSuchElementException(missing.size() + " of the requirements do not exist");
+
+        requireNotSuperseded(ids);
 
         java.util.Map<UUID, UUID> elsewhere = new java.util.HashMap<>();
         java.util.Set<UUID> here = new java.util.HashSet<>();

@@ -26,9 +26,12 @@ public class ChangeRequestController {
     private final ChangeRequestService service;
     private final UserProvisioningService provisioning;
     private final PrincipalGuard guard;
+    private final com.vyoog.requirements.RequirementForkService forkService;
 
     public ChangeRequestController(ChangeRequestRepository changeRequests, ChangeRequestService service,
-                                    UserProvisioningService provisioning, PrincipalGuard guard) {
+                                    UserProvisioningService provisioning, PrincipalGuard guard,
+                                    com.vyoog.requirements.RequirementForkService forkService) {
+        this.forkService = forkService;
         this.changeRequests = changeRequests;
         this.service = service;
         this.provisioning = provisioning;
@@ -64,6 +67,13 @@ public class ChangeRequestController {
     @GetMapping("/{id}")
     public ChangeRequestView get(@PathVariable UUID id) {
         return toView(changeRequests.findById(id).orElseThrow(NoSuchElementException::new));
+    }
+
+    /** VYB-0942: the new versions (forks) made for this change request, each with the requirement it was made from. */
+    @GetMapping("/{id}/forks")
+    public List<com.vyoog.requirements.RequirementForkService.ForkedFor> forks(@PathVariable UUID id) {
+        changeRequests.findById(id).orElseThrow(NoSuchElementException::new);
+        return forkService.forksFor(id);
     }
 
     // VYB-0906: requirements are in the body; deciding and applying are guarded separately.

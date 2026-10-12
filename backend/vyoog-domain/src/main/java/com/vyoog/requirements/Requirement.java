@@ -108,13 +108,23 @@ public class Requirement {
     private Instant changedAt;
 
     /**
-     * VYB-0813: reserved for the deferred fork-a-new-version-on-editing-APPROVED
-     * mechanism (see docs/DECISIONS.md D17) — always 1 until that is built. Editing an
-     * APPROVED requirement is refused today exactly as it was before this column
-     * existed; nothing increments it yet.
+     * VYB-0813: reserved for the fork-a-new-version mechanism (docs/DECISIONS.md D17). VYB-0942 (D35) built that as a new
+     * requirement linked by {@code forked_from_id}, not as a counter on one row, so nothing increments this: it stays 1.
      */
     @Column(nullable = false)
     private int version = 1;
+
+    /** VYB-0942: the approved requirement this is a new version of; null for an ordinary requirement. */
+    @Column(name = "forked_from_id")
+    private UUID forkedFromId;
+
+    /** VYB-0942: the change request the fork was made for; set exactly when {@link #forkedFromId} is. */
+    @Column(name = "forked_for_change_request_id")
+    private UUID forkedForChangeRequestId;
+
+    /** VYB-0942: the newer version that replaced this one, set when that version was approved. This one's status stays APPROVED. */
+    @Column(name = "superseded_by_id")
+    private UUID supersededById;
 
     protected Requirement() {}
 
@@ -268,6 +278,21 @@ public class Requirement {
     public UUID getChangedBy() { return changedBy; }
     public Instant getChangedAt() { return changedAt; }
     public int getVersion() { return version; }
+    public UUID getForkedFromId() { return forkedFromId; }
+    public UUID getForkedForChangeRequestId() { return forkedForChangeRequestId; }
+    public UUID getSupersededById() { return supersededById; }
+
+    /** VYB-0942: records that this new requirement is a new version of {@code original}, made for {@code changeRequestId}. */
+    void markForkOf(UUID original, UUID changeRequestId) {
+        this.forkedFromId = original;
+        this.forkedForChangeRequestId = changeRequestId;
+    }
+
+    /** VYB-0942: this requirement has been replaced by {@code newer}, which has just been approved. */
+    void supersedeBy(UUID newer) {
+        this.supersededById = newer;
+        this.updatedAt = Instant.now();
+    }
 
     /**
      * Soft delete. The row stays: revisions, trace links, audit entries and any brief that

@@ -1167,6 +1167,23 @@ export interface ChangeRequest {
   scope: string[]
 }
 
+/** VYB-0942: a requirement named in a chain of versions. */
+export interface VersionRef { id: string; key: string; title: string; status: RequirementStatus }
+
+/**
+ * VYB-0942 (D35): where a requirement stands among its versions. A new version is a new requirement (new key) forked from an
+ * approved one for an approved change request; approving it replaces the original (`supersededBy`), whose status stays APPROVED.
+ */
+export interface RequirementVersions {
+  forkedFrom?: VersionRef | null
+  changeRequestId?: string | null
+  changeRequestKey?: string | null
+  forks: VersionRef[]
+  supersededBy?: VersionRef | null
+}
+
+export interface ForkedFor { fork: VersionRef; original: VersionRef }
+
 export interface ChangeImpact {
   requirements: number
   tests: number
@@ -1951,6 +1968,9 @@ export const api = {
 
   // Lifecycle history and live authoring signals
   lifecycle: (requirementId: string) => request<LifecycleStage[]>(`/requirements/${requirementId}/lifecycle`),
+  requirementVersions: (requirementId: string) => request<RequirementVersions>(`/requirements/${requirementId}/versions`),
+  forkRequirement: (requirementId: string, changeRequestId: string) =>
+    request<Requirement>(`/requirements/${requirementId}/fork`, { method: 'POST', body: JSON.stringify({ changeRequestId }) }),
   requirementHistory: (requirementId: string) => request<RequirementHistory>(`/requirements/${requirementId}/history`),
   lifecycleSpine: () => request<{ stage: string; count: number }[]>('/requirements/lifecycle-spine'),
   authoringSignals: (body: { statement: string; criteriaCount: number; hasCapability: boolean; hasUpstream: boolean }) =>
@@ -2341,6 +2361,7 @@ export const api = {
 
   // Change requests
   changeRequests: () => request<ChangeRequest[]>('/change-requests'),
+  changeRequestForks: (id: string) => request<ForkedFor[]>(`/change-requests/${id}/forks`),
   changeRequest: (id: string) => request<ChangeRequest>(`/change-requests/${id}`),
   raiseChangeRequest: (body: { title: string; rationale: string; requirementIds: string[] }) =>
     request<ChangeRequest>('/change-requests', { method: 'POST', body: JSON.stringify(body) }),

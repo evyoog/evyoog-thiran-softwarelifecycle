@@ -11,6 +11,7 @@ import { StatusBadge, PriorityBadge, CoveragePips } from '@/shared/ui/Badges'
 import { Modal } from '@/shared/ui/Modal'
 import { UserPicker } from '@/shared/ui/UserPicker'
 import { HistorySection } from './requirements/HistorySection'
+import { VersionsPanel } from './requirements/VersionsPanel'
 
 const TYPES: RequirementType[] = [
   'FUNCTIONAL', 'NON_FUNCTIONAL', 'BUSINESS_RULE', 'INTERFACE', 'DATA', 'REPORT', 'SECURITY', 'COMPLIANCE',
@@ -395,6 +396,9 @@ export function RequirementDetail() {
           <input className="w-full mt-2 p-2 bg-panel border border-line-2 rounded text-sm text-tx outline-none focus:border-brand focus:ring-3 focus:ring-brand-dim transition" placeholder="Approved change request ID" value={changeRequestId} onChange={(e) => setChangeRequestId(e.target.value)} />
         </div>
       )}
+
+      {/* VYB-0942: the versions of this requirement, and forking a new one from an approved requirement */}
+      <VersionsPanel requirementId={id} status={req.status} />
 
       {/* Main Grid */}
       <div className="grid lg:grid-cols-3 gap-8 mt-6">

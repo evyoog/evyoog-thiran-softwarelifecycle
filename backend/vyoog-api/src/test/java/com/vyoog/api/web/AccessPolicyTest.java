@@ -68,6 +68,7 @@ class AccessPolicyTest {
     static final Map<String, Expected> EXPECTED = Map.ofEntries(
         // requirements: "Create req" / "Edit req" = Business Analyst, Architect
         Map.entry("RequirementController#create", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("RequirementController#fork", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.REQUIREMENT)),
         Map.entry("RequirementController#addCriterion", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.REQUIREMENT)),
         Map.entry("RequirementController#reorderCriteria", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.REQUIREMENT)),
         Map.entry("RequirementController#editCriterion", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.CRITERION)),

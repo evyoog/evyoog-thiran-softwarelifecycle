@@ -468,6 +468,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/change-requests/{id}/forks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["forks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/change-requests/{id}/impact": {
         parameters: {
             query?: never;
@@ -2628,6 +2644,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/requirements/{id}/fork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["fork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/requirements/{id}/history": {
         parameters: {
             query?: never;
@@ -2686,6 +2718,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["transition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/requirements/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["versions_1"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5146,6 +5194,14 @@ export interface components {
             applicationId?: string;
             id?: string;
         };
+        ForkRequest: {
+            /** Format: uuid */
+            changeRequestId?: string;
+        };
+        ForkedFor: {
+            fork?: components["schemas"]["VersionRef"];
+            original?: components["schemas"]["VersionRef"];
+        };
         FreezeRequest: {
             name: string;
             releaseId?: string;
@@ -5842,6 +5898,14 @@ export interface components {
             /** Format: int64 */
             totalCount?: number;
         };
+        RequirementVersions: {
+            /** Format: uuid */
+            changeRequestId?: string;
+            changeRequestKey?: string;
+            forkedFrom?: components["schemas"]["VersionRef"];
+            forks?: components["schemas"]["VersionRef"][];
+            supersededBy?: components["schemas"]["VersionRef"];
+        };
         RequirementView: {
             capabilityId?: string;
             changedAt?: string;
@@ -6471,6 +6535,13 @@ export interface components {
             result?: string;
             testCaseId?: string;
             verifiedAt?: string;
+        };
+        VersionRef: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            status?: string;
+            title?: string;
         };
         VersionView: {
             contentType?: string;
@@ -7266,6 +7337,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ChangeRequestView"];
+                };
+            };
+        };
+    };
+    forks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ForkedFor"][];
                 };
             };
         };
@@ -10916,6 +11009,32 @@ export interface operations {
             };
         };
     };
+    fork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForkRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RequirementView"];
+                };
+            };
+        };
+    };
     history: {
         parameters: {
             query?: never;
@@ -11006,6 +11125,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RequirementView"];
+                };
+            };
+        };
+    };
+    versions_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RequirementVersions"];
                 };
             };
         };

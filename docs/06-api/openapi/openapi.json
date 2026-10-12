@@ -2328,6 +2328,26 @@
         },
         "type" : "object"
       },
+      "ForkRequest" : {
+        "properties" : {
+          "changeRequestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ForkedFor" : {
+        "properties" : {
+          "fork" : {
+            "$ref" : "#/components/schemas/VersionRef"
+          },
+          "original" : {
+            "$ref" : "#/components/schemas/VersionRef"
+          }
+        },
+        "type" : "object"
+      },
       "FreezeRequest" : {
         "properties" : {
           "name" : {
@@ -4271,6 +4291,30 @@
         },
         "type" : "object"
       },
+      "RequirementVersions" : {
+        "properties" : {
+          "changeRequestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "changeRequestKey" : {
+            "type" : "string"
+          },
+          "forkedFrom" : {
+            "$ref" : "#/components/schemas/VersionRef"
+          },
+          "forks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VersionRef"
+            },
+            "type" : "array"
+          },
+          "supersededBy" : {
+            "$ref" : "#/components/schemas/VersionRef"
+          }
+        },
+        "type" : "object"
+      },
       "RequirementView" : {
         "properties" : {
           "capabilityId" : {
@@ -6017,6 +6061,24 @@
         },
         "type" : "object"
       },
+      "VersionRef" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "VersionView" : {
         "properties" : {
           "contentType" : {
@@ -7109,6 +7171,36 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ChangeRequestView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "change-request-controller" ]
+      }
+    },
+    "/api/v1/change-requests/{id}/forks" : {
+      "get" : {
+        "operationId" : "forks",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ForkedFor"
+                  },
+                  "type" : "array"
                 }
               }
             },
@@ -11882,6 +11974,43 @@
         "tags" : [ "requirement-controller" ]
       }
     },
+    "/api/v1/requirements/{id}/fork" : {
+      "post" : {
+        "operationId" : "fork",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ForkRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RequirementView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "requirement-controller" ]
+      }
+    },
     "/api/v1/requirements/{id}/history" : {
       "get" : {
         "operationId" : "history",
@@ -12002,6 +12131,33 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/RequirementView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "requirement-controller" ]
+      }
+    },
+    "/api/v1/requirements/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RequirementVersions"
                 }
               }
             },

@@ -19,10 +19,10 @@ once a review is actually complete. `APPROVED` is fully terminal — no transiti
 it (D15's `APPROVED → REJECTED` and `APPROVED → IN_REVIEW` are both gone with it);
 editing an approved requirement is refused exactly as before, through the existing
 change-request path, which edits content directly and was never gated by this machine.
-Forking a new version record when someone edits an `APPROVED` requirement is
-deliberately deferred — `requirement.version` exists (always 1 today) reserved for it,
-but the mechanism itself needs its own decision about how a fork relates to trace links,
-design-diagram nodes and key uniqueness, and was not decided as a side effect of this one.
+Forking a new version of an `APPROVED` requirement was deferred here and is now decided
+(D35, VYB-0942): a new version is a new requirement forked for an approved change request,
+and approving it marks the original superseded without changing the original's status, so
+this machine is untouched. See [`requirement-versions.md`](requirement-versions.md).
 
 **Permission per edge, in one place.** "Author" is an identity check (`owner_id` or
 `created_by`), not a grant — submitting, withdrawing and resubmitting are author-only.

@@ -80,6 +80,9 @@ public class TraceGraphService {
         // to check against — see TraceObjectType's per-constant notes for the gap.
         requireExists(fromType, fromId);
         requireExists(toType, toId);
+        // VYB-0942: a requirement that a newer approved version has replaced takes no new links; the new version does.
+        requireNotSuperseded(fromType, fromId);
+        requireNotSuperseded(toType, toId);
 
         TraceLink link = new TraceLink(fromType, fromId, toType, toId, linkType, actorId);
         // VYB-0141 AC1: creating a link records the current upstream revision — treating
@@ -93,6 +96,16 @@ public class TraceGraphService {
         if (toType == TraceObjectType.REQUIREMENT) rescan(toId);
         if (fromType == TraceObjectType.REQUIREMENT) rescan(fromId);
         return link;
+    }
+
+    private void requireNotSuperseded(TraceObjectType type, UUID id) {
+        if (type != TraceObjectType.REQUIREMENT) return;
+        jdbc.query("""
+            SELECT r.key, n.key AS newer FROM requirement r JOIN requirement n ON n.id = r.superseded_by_id WHERE r.id = ?
+            """, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
+                throw new IllegalStateException("%s has been replaced by %s, so it takes no new links. Link %s instead."
+                    .formatted(rs.getString("key"), rs.getString("newer"), rs.getString("newer")));
+            }, id);
     }
 
     @Transactional

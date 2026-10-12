@@ -22,6 +22,7 @@ import com.vyoog.requirements.LifecycleHistoryService;
 import com.vyoog.requirements.QualityScoreService;
 import com.vyoog.requirements.Placement;
 import com.vyoog.requirements.Requirement;
+import com.vyoog.requirements.RequirementForkService;
 import com.vyoog.requirements.RequirementHistoryService;
 import com.vyoog.requirements.RequirementRepository;
 import com.vyoog.requirements.RequirementService;
@@ -64,6 +65,7 @@ public class RequirementController {
     private final ChangeRequestService changeRequests;
     private final LifecycleHistoryService lifecycleHistory;
     private final RequirementHistoryService historyService;
+    private final RequirementForkService forkService;
     private final QualityScoreService qualityScore;
     private final GapPreviewService gapPreview;
     private final RequirementRewriteAdvisor rewriteAdvisor;
@@ -83,8 +85,9 @@ public class RequirementController {
                                   QualityScoreService qualityScore, GapPreviewService gapPreview,
                                   RequirementRewriteAdvisor rewriteAdvisor, TestCaseSuggestionService testCaseSuggestions,
                                   PrincipalGuard guard, AiProposalService proposals, ObjectMapper json,
-                                  RequirementHistoryService historyService) {
+                                  RequirementHistoryService historyService, RequirementForkService forkService) {
         this.historyService = historyService;
+        this.forkService = forkService;
         this.requirements = requirements;
         this.service = service;
         this.acceptanceCriteria = acceptanceCriteria;
@@ -306,6 +309,35 @@ public class RequirementController {
                 capabilityId, currentUserId(jwt));
         }
         return toView(r, traceGraph.coverageFor(List.of(r.getId())).get(r.getId()));
+    }
+
+    public record ForkRequest(UUID changeRequestId) {}
+
+    /**
+     * VYB-0942 (D35): a new version of an approved requirement. It is a <b>new requirement</b> (new key, DRAFT), copied from this
+     * one and linked to it and to the change request, which must be APPROVED and name this requirement in its scope. The original
+     * is untouched until the new version is approved, when it is marked superseded. This is the other way to act on an approved
+     * change request; editing in place with {@code PATCH ...?changeRequestId=} is unchanged.
+     */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.REQUIREMENT)
+    @PostMapping("/{id}/fork")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RequirementView fork(@PathVariable UUID id, @RequestBody ForkRequest body, @AuthenticationPrincipal Jwt jwt) {
+        if (body == null || body.changeRequestId() == null) {
+            throw new IllegalArgumentException("Name the approved change request this new version is for");
+        }
+        changeRequests.assertCanEdit(body.changeRequestId(), id);
+        Requirement fork = forkService.fork(id, body.changeRequestId(), currentUserId(jwt));
+        return toView(fork, null, acceptanceCriteria.countsFor(List.of(fork.getId())).getOrDefault(fork.getId(), 0));
+    }
+
+    /**
+     * VYB-0942: where a requirement stands among its versions: what it was forked from (and for which change request), the new
+     * versions made from it, and what replaced it. Read by any signed-in person.
+     */
+    @GetMapping("/{id}/versions")
+    public RequirementForkService.RequirementVersions versions(@PathVariable UUID id) {
+        return forkService.versionsOf(id);
     }
 
     /**
