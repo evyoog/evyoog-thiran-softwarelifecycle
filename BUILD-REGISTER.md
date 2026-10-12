@@ -352,12 +352,12 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | DONE on dev: the four "Not tracked yet" lanes after Approved are removed from My Work's Pipeline (it ends at Approved); the requirement's Verify button goes straight to the Design screen and the "AI verify / Coming soon" modal is gone (2 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9,98 |
 | VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | DONE on dev: a Compliance screen lists every clause with its coverage (unmapped, mapped, evidenced) derived from the requirements mapped to it and their tests; a clause panel maps and unmaps requirements and shows each one's status, evidence and tests; administrators add, edit and delete clauses (audited) (15 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,99 |
 | VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | DONE on dev: an Evidence pack button on each baseline downloads a zip for that baseline: a Word report, CSV files (requirements as frozen, design, tests, results, approvals), a README, and SHA256SUMS and a manifest hashing every file; Approver, Compliance Lead, Architect or Administrator only (new access rule), every export audited (6 integration and 8 unit new tests; checked in a browser against mocked data and the real pack verified with sha256sum and a Word library; commit only, no PR yet) | S10,100 |
-| VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
-| VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
+| VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | DONE on dev: a Risks tab on the Compliance screen: a 5x5 likelihood-by-impact grid of open risks, a list highest rating first, and a panel to edit a risk, move it between Open, Mitigating, Accepted and Closed (a reason is needed to accept or close), and link it to requirements and releases; a requirement's Linked work shows its open risks; Approver, Compliance Lead, Architect or Administrator manage risks (new access rule), every change audited (V055; 15 integration, 3 domain unit and 6 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,101 |
+| VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | DONE on dev: D27 settled as ISO 26262; From a template on the clause register adds a starter set of 24 clauses (parts 2, 3, 4, 6, 8) in our own words, numbering flagged as unchecked against the licensed standard; applying again adds nothing and leaves edits alone; Administrators only, audited (6 integration, 5 domain unit and 3 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,102 |
 | VYB-0951 | 6 | Configurability and boards | Artifact type registry replacing type lists in checks, enums, detectors and UI [L; F39] | TODO | S11 |
 | VYB-0952 | 6 | Configurability and boards | Custom fields on requirements with revision capture and import mapping [L; F39] | TODO | S11 |
 | VYB-0953 | 6 | Configurability and boards | Kanban board driven from status, with templates per team [M; F42] | TODO | S11 |
-| VYB-0954 | 6 | Configurability and boards | Tenant model spike: what a second customer would need, cost and migration path [S; F39] | TODO | S11 |
+| VYB-0954 | 6 | Configurability and boards | Tenant model spike: what a second customer would need, cost and migration path [S; F39] | DONE on dev: a written spike, no code: `docs/08-architecture/system-architecture/second-customer-spike.md`. What the code assumes (90 tables, one settings row, global key sequences, one realm), three ways to serve a second customer (a deployment each, a schema each in one app, a tenant column with row-level security), what each needs, its size in register terms, the move to each, and a recommendation (a deployment per customer when one exists; build nothing before). D25 stays Open for the product owner (commit only, no PR yet) | S11,103 |
 | VYB-0955 | 6 | Reporting, notifications and release to pilot | Notifications: review, approval, release, test failure and mention events; email and chat channels; user preferences [M; F21] | TODO | S12 |
 | VYB-0956 | 6 | Reporting, notifications and release to pilot | Trend dashboards for defects, test pass rate, release readiness; xlsx and PDF export [M; F24] | TODO | S12 |
 | VYB-0957 | 6 | Reporting, notifications and release to pilot | Import: downloadable template, re-enable Word and ReqIF with validation [M; F25] | TODO | S12 |
@@ -5634,6 +5634,71 @@ Phase 6 Sprint 10. Branch `dev`. **14 new tests**: `EvidencePackIT` 6 (real Post
 - No evidence about clauses is in the pack (the register is VYB-0947): a pack lists requirements, design, tests, results and approvals, as the row says.
 - The 5000-requirement limit has no test of its own (it needs 5000 rows); the message is built in one place.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 101 — VYB-0949 (F41): the risk register
+
+Phase 6 Sprint 10. Branch `dev`. **24 new tests**: `RiskRegisterIT` 15 (real PostgreSQL, service calls and HTTP with real tokens), `RiskScaleTest` 3 (domain), `riskModel.test.ts` 6 (frontend), and the linked-work test now covers risks. The finding text F41 is not in the repository; scope is the register row. Description: `docs/04-workflows/risk-register.md`, decision D40. Migration `V055__risk_register.sql`. Something to see: Compliance, **Risks** tab.
+
+**Decisions with the product owner this session.** (1) **Scored by likelihood and impact, 1 to 5 each** (a single level was the alternative). (2) **Approver, Compliance Lead, Architect or Administrator manage risks** (Administrator only, or requirement authors, were the alternatives). (3) **A Risks tab on the Compliance screen** (a menu item of its own was the alternative).
+
+**What I found first.** There was nothing: no risk table, screen or concept. Rule 7 shaped the model: the scale is qualitative, with no cost, effort or per-person field.
+
+**Backend.** `risk`, `risk_requirement`, `risk_release` and a key sequence (`RSK-n`); the rating and band are derived (Low 1-4, Medium 5-9, High 10-14, Critical 15-25), never stored. `RiskService`, `RiskController`: list, detail, create, edit, change status, link and unlink requirements and releases; the access rule `RISK` (seven write endpoints, in `AccessPolicyTest`, with capability rows); every change audited. `RequirementLinkedWorkService` gains the requirement's open risks. OpenAPI and `schema.d.ts` regenerated.
+
+**Frontend.** The Compliance screen gets two tabs. Risks: a summary line, the 5 by 5 grid (a click on a cell filters; each cell is a glyph, a word in its label and a colour, none amber), filters (status, band, words), the list, a panel (edit, move to a status with a reason when accepting or closing, link a requirement by search, link a release), and an Add-a-risk form with the rating shown as you choose. A requirement's Linked work lists its open risks. Controls show only to those who may; the server decides.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) A risk is **never deleted**; it is closed and stays. (2) A **closed risk is not edited or relinked until reopened**. (3) Accepting or closing **needs a reason**, kept on the risk and on the audit log; moving to the status it already has is refused. (4) A deleted requirement is not counted or listed on a risk; a replaced one (D35) cannot be linked. (5) The band edges (5, 10, 15) are mine; they are in one place on the server and mirrored on the screen. (6) A risk does **not** gate a release or change its readiness figures. (7) The default list hides closed risks. (8) Limits: title 200, text 4000, reason 1000 characters.
+
+**Behaviour changes to know.** (1) A new access rule, `RISK`, and three capability rows. (2) The requirement linked-work response has a new `risks` field. (3) The Compliance menu item now opens a screen with two tabs.
+
+**Evidence.** Removing the reason requirement for accepting or closing failed `RiskRegisterIT` AC4 and AC12, then restored. In Chromium against a mocked API as an approver, an administrator and a viewer: the summary, the grid and its cell filter, the panel, a close refused until a reason is given, linking a requirement and a release, adding a risk with the live rating; a viewer sees none of the controls; after closing, the link controls are gone. The integration tests prove each rule above, 403 for a reviewer, an analyst, a viewer and a person with no role, 401 with no token, and 400, 404 and 409.
+
+**Not done / to know**
+- A risk does not appear on the release screen and does not feed readiness; it is visible from the risk and from the requirement.
+- No history screen for a risk beyond the audit log; no review date or reminder.
+- No export of the register, and no paging (a register is expected to hold hundreds).
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 102 — VYB-0950 (F41): standard templates for the clause register
+
+Phase 6 Sprint 10. Branch `dev`. **14 new tests**: `ClauseTemplateIT` 6 (real PostgreSQL, service calls and HTTP with real tokens), `ClauseTemplateServiceTest` 5 (the shipped file and the checks), 3 frontend. The finding text F41 is not in the repository. Description: `docs/04-workflows/clause-register.md` (a new section), decisions D27 (now Accepted) and D41. No migration. Something to see: Compliance, Clauses, **From a template** (Administrators).
+
+**Decisions with the product owner this session.** (1) **D27: ISO 26262** is the first framework (DO-178C, an FDA-style set and "another" were the alternatives). (2) **A template is a starter set of clauses for the register** (a set that also reshapes the evidence pack, and a CSV file only, were the alternatives).
+
+**What I found first.** Standards are copyrighted, and no licensed text was available here. I tried to confirm the part and clause numbering from public sources and could confirm only the software part's order (clauses 6 to 11) and the system part's (6 to 9), from course descriptions, not the standard. So the template carries **my own paraphrase of what each clause is for**, and says in its note, on the screen and in the docs that the numbering is **not verified against the licensed text**.
+
+**What was built.** A JSON template file read when the application starts (a malformed one stops it); `ClauseTemplateService`; `GET /clauses/templates` and `POST /clauses/templates/{id}/apply` (Administrators, in `AccessPolicyTest`); one audit event per application. The ISO 26262 template has 24 clauses across parts 2, 3, 4, 6 and 8 (hardware, part 5, left out). The screen: a From-a-template dialog listing each template with how many clauses the register already has, and the result in words.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Applying adds clauses whose standard and section are not already in the register (case-insensitive) and changes none that is there, so it can be repeated. (2) The template's clauses are not rescanned one by one; the unmapped-clause rule picks them up at its next sweep. (3) The stored text is the title, then what it is for. (4) A template is checked at startup against the register's own limits, so applying one can never be refused for length or duplicates. (5) The evidence pack is not tied to the framework.
+
+**Behaviour changes to know.** (1) D27 is Accepted. (2) A new Administrator action on the Clauses tab.
+
+**Evidence.** Making an apply insert clauses that are already there failed three `ClauseTemplateIT` tests, then restored. In Chromium against a mocked API: the dialog, the template's note, "24 clauses, none in the register yet", and "Added 24 clauses."; the button appears for administrators only.
+
+**Not done / to know**
+- **The clause numbers and the paraphrases need checking by someone with the licensed standard**: I could not verify them, and a compliance register should not be trusted on my word.
+- Only clause-level entries; no sub-clauses, work products or ASIL-specific requirements.
+- No import of a template from a file in the screen; a new framework is a new file in the repository.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 103 — VYB-0954 (F39): the tenant model spike
+
+Phase 6 Sprint 11. Branch `dev`. **No code and no tests**: the row is a spike and its deliverable is `docs/08-architecture/system-architecture/second-customer-spike.md`. The finding text F39 is not in the repository; the question is taken from D25 and the register row. I started it ahead of the rest of Sprint 11 at the product owner's request: it is analysis only, it is the input D25 is waiting for, and it touches no code or schema, so it did not disturb the Sprint 10 work in flight.
+
+**Decisions with the product owner this session.** None asked: the spike recommends and the decision stays with the product owner (D25 remains Open, with a note pointing to the spike).
+
+**What I found.** The single-customer assumption is concentrated in a few places, not spread everywhere: one settings row with `CHECK (id = 1)` read by 15 classes (43 references); one global sequence for each kind of key; seeded reference data that exists once; one Keycloak realm, but its address is already an environment variable; one bootstrap per deployment; five scheduled jobs and a lock that assume one data set; whole-database export and reset with no import. Three things are already per deployment: the key prefix, the identity issuer and every secret. There are 90 tables and 59 hard-coded check lists, which is what makes a tenant column on every table (option C) the largest option.
+
+**The options and the recommendation.** A: one deployment per customer (S to M once, no code change, strongest isolation, upgrades once per customer). B: one application with a schema per customer (L to XL, wide mechanical change, real leak risk). C: a tenant column and row-level security (XL, reverses D3). Recommended: A when a second customer exists, and build nothing for tenancy before then; revisit at more than about five customers or when upgrades become the main cost. Two habits to keep: new configuration in tables, and no new assumptions of global sequences or seeded data.
+
+**The finding that changes D25.** The artifact type registry and custom fields (VYB-0951, VYB-0952) do not need tenancy: under A each deployment has its own, and stored in tables they travel under B. So D25 can be decided in two parts.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Sizes use the register's S, M, L, plus XL for more than one row; no hours and no money. (2) "Cost" is read as the work to build and what each option adds to keep running (an instance, a schema, a realm), not a price. (3) The recommendation is a recommendation: I did not edit D25 beyond pointing to the spike.
+
+**Not done / to know**
+- No second customer, contract or requirement was available; the shape of the customer and its identity, location and isolation needs are assumptions, and are the first question the spike hands back (section 7).
+- The sizes are judgements from reading the code and migrations, not measured. Nothing was built or tried.
+- VYB-0951 to VYB-0953 are not started.
 
 ---
 

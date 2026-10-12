@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 37, PARTIAL 1, TODO 17.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 40, PARTIAL 1, TODO 14.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -125,12 +125,17 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 |---|---|---|---|---|---|
 | VYB-0948 | 6 | Compliance evidence and risk | Evidence pack export: requirement, design, test, result, approval and baseline in one bundle [L; F41] | DONE on dev: an Evidence pack button on each baseline downloads a zip for that baseline: a Word report, CSV files (requirements as frozen, design, tests, results, approvals), a README, and SHA256SUMS and a manifest hashing every file; Approver, Compliance Lead, Architect or Administrator only (new access rule), every export audited (6 integration and 8 unit new tests; checked in a browser against mocked data and the real pack verified with sha256sum and a Word library; commit only, no PR yet) | S10,100 |
 
-## S10: Compliance evidence and risk
+## S10,101: Compliance evidence and risk
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | TODO | S10 |
-| VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | TODO | S10 |
+| VYB-0949 | 6 | Compliance evidence and risk | Risk register with links to requirements and releases [M; F41] | DONE on dev: a Risks tab on the Compliance screen: a 5x5 likelihood-by-impact grid of open risks, a list highest rating first, and a panel to edit a risk, move it between Open, Mitigating, Accepted and Closed (a reason is needed to accept or close), and link it to requirements and releases; a requirement's Linked work shows its open risks; Approver, Compliance Lead, Architect or Administrator manage risks (new access rule), every change audited (V055; 15 integration, 3 domain unit and 6 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,101 |
+
+## S10,102: Compliance evidence and risk
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0950 | 6 | Compliance evidence and risk | Standard templates for the chosen framework [M; F41] | DONE on dev: D27 settled as ISO 26262; From a template on the clause register adds a starter set of 24 clauses (parts 2, 3, 4, 6, 8) in our own words, numbering flagged as unchecked against the licensed standard; applying again adds nothing and leaves edits alone; Administrators only, audited (6 integration, 5 domain unit and 3 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S10,102 |
 
 ## S11: Configurability and boards
 
@@ -139,7 +144,12 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | VYB-0951 | 6 | Configurability and boards | Artifact type registry replacing type lists in checks, enums, detectors and UI [L; F39] | TODO | S11 |
 | VYB-0952 | 6 | Configurability and boards | Custom fields on requirements with revision capture and import mapping [L; F39] | TODO | S11 |
 | VYB-0953 | 6 | Configurability and boards | Kanban board driven from status, with templates per team [M; F42] | TODO | S11 |
-| VYB-0954 | 6 | Configurability and boards | Tenant model spike: what a second customer would need, cost and migration path [S; F39] | TODO | S11 |
+
+## S11,103: Configurability and boards
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0954 | 6 | Configurability and boards | Tenant model spike: what a second customer would need, cost and migration path [S; F39] | DONE on dev: a written spike, no code: `docs/08-architecture/system-architecture/second-customer-spike.md`. What the code assumes (90 tables, one settings row, global key sequences, one realm), three ways to serve a second customer (a deployment each, a schema each in one app, a tenant column with row-level security), what each needs, its size in register terms, the move to each, and a recommendation (a deployment per customer when one exists; build nothing before). D25 stays Open for the product owner (commit only, no PR yet) | S11,103 |
 
 ## S12: Reporting, notifications and release to pilot
 

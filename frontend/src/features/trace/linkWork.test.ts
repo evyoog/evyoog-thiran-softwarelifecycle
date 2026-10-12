@@ -8,6 +8,7 @@ const work: LinkedWork = {
   designNodes: [{ id: 'n1', flowId: 'f1', kind: 'step', label: 'Export step' }],
   releases: [{ id: 'rel1', name: 'R-1', state: 'PLANNED' }],
   defects: [{ id: 'd1', key: 'DEF-3', title: 'Blank export', severity: 'CRITICAL', state: 'OPEN' }],
+  risks: [{ id: 'k1', key: 'RSK-2', title: 'Provider outage', rating: 20, band: 'CRITICAL', status: 'OPEN' }],
 }
 
 describe('VYB-0943 — the Link dialog', () => {
@@ -47,15 +48,16 @@ describe('VYB-0943 — the Link dialog', () => {
 describe('VYB-0943 — the linked work list', () => {
   it('VYB0943_AC15_theFourGroupsNameWhatIsLinked', () => {
     const g = groupsOf(work)
-    expect(g.map((x) => x.title)).toEqual(['Tests', 'Design', 'Release', 'Defects'])
+    expect(g.map((x) => x.title)).toEqual(['Tests', 'Design', 'Release', 'Defects', 'Risks'])
     expect(g[0]!.items[0]!.label).toBe('TC-1 — Export works')
     expect(g[1]!.items[0]).toMatchObject({ label: 'Export step', detail: 'step' })
     expect(g[2]!.items[0]).toMatchObject({ label: 'R-1', detail: 'planned', href: '/releases/rel1' })
     expect(g[3]!.items[0]).toMatchObject({ label: 'DEF-3 — Blank export', detail: 'critical, open', href: '/defects/d1' })
+    expect(g[4]!.items[0]).toMatchObject({ label: 'RSK-2 — Provider outage', detail: 'critical (20), open', href: '/compliance?tab=risks&risk=k1' })
   })
 
   it('VYB0943_AC15_anEmptyGroupSaysSoInWordsAndNothingIsShownBeforeItLoads', () => {
-    const empty = groupsOf({ ...work, tests: [], designNodes: [], releases: [], defects: [] })
+    const empty = groupsOf({ ...work, tests: [], designNodes: [], releases: [], defects: [], risks: [] })
     for (const g of empty) {
       expect(g.items).toHaveLength(0)
       expect(g.empty.length).toBeGreaterThan(10)

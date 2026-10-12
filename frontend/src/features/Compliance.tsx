@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { LayoutTemplate, Plus } from 'lucide-react'
 import { api, type ClauseCoverage } from '@/shared/api/client'
 import { Empty, Page } from '@/shared/ui/Page'
 import { useMe } from '@/shared/useMe'
 import { ClauseForm } from './compliance/ClauseForm'
 import { ClausePanel } from './compliance/ClausePanel'
+import { TemplatePicker } from './compliance/TemplatePicker'
+import { RisksTab } from './compliance/RisksTab'
+import { canManageRisks } from './compliance/riskModel'
 import {
   COVERAGE_GLYPH, COVERAGE_HELP, COVERAGE_LABEL, NO_FILTER, excerpt, filterRows, standardsOf, summaryLine, summarise, type RegisterFilter,
 } from './compliance/complianceModel'
@@ -20,9 +24,36 @@ const COVERAGES: ClauseCoverage[] = ['UNMAPPED', 'MAPPED', 'EVIDENCED']
 export function Compliance() {
   const { data: me } = useMe()
   const isAdmin = !!me?.platformAdministrator
+  const [params, setParams] = useSearchParams()
+  const tab: 'clauses' | 'risks' = params.get('tab') === 'risks' ? 'risks' : 'clauses'
+  const [addingClause, setAddingClause] = useState(false)
+  const [templates, setTemplates] = useState(false)
+  const choose = (t: 'clauses' | 'risks') => setParams(t === 'risks' ? { tab: 'risks' } : {}, { replace: true })
+
+  return (
+    <Page
+      title="Compliance"
+      desc="Control clauses and whether each is evidenced by a passing test, and the risks you are carrying."
+      actions={tab === 'clauses' && isAdmin ? (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={() => setTemplates(true)}><LayoutTemplate /> From a template</button>
+          <button className="btn pri" onClick={() => setAddingClause(true)}><Plus /> Add a clause</button>
+        </div>
+      ) : undefined}
+    >
+      <div role="tablist" aria-label="Compliance" style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <button role="tab" aria-selected={tab === 'clauses'} className={`btn${tab === 'clauses' ? ' pri' : ''}`} onClick={() => choose('clauses')}>Clauses</button>
+        <button role="tab" aria-selected={tab === 'risks'} className={`btn${tab === 'risks' ? ' pri' : ''}`} onClick={() => choose('risks')}>Risks</button>
+      </div>
+      {templates && <TemplatePicker onClose={() => setTemplates(false)} />}
+      {tab === 'clauses' ? <ClausesTab isAdmin={isAdmin} adding={addingClause} setAdding={setAddingClause} /> : <RisksTab canManage={canManageRisks(me)} initialRisk={params.get('risk') ?? undefined} />}
+    </Page>
+  )
+}
+
+function ClausesTab({ isAdmin, adding, setAdding }: { isAdmin: boolean; adding: boolean; setAdding: (v: boolean) => void }) {
   const [filter, setFilter] = useState<RegisterFilter>(NO_FILTER)
   const [selected, setSelected] = useState('')
-  const [adding, setAdding] = useState(false)
   const set = (patch: Partial<RegisterFilter>) => setFilter((f) => ({ ...f, ...patch }))
 
   const { data: rows, isLoading, isError } = useQuery({ queryKey: ['clause-register'], queryFn: api.clauseRegister })
@@ -33,11 +64,7 @@ export function Compliance() {
   const filtered = filter.standard !== '' || filter.coverage !== '' || filter.q.trim() !== ''
 
   return (
-    <Page
-      title="Compliance"
-      desc="Control clauses, the requirements that satisfy them, and whether each is evidenced by a passing test."
-      actions={isAdmin ? <button className="btn pri" onClick={() => setAdding(true)}><Plus /> Add a clause</button> : undefined}
-    >
+    <>
       {isLoading && <p className="eyebrow">Loading…</p>}
       {isError && <p className="err-text" role="alert">The register could not be loaded.</p>}
       {rows && (
@@ -100,6 +127,6 @@ export function Compliance() {
         </>
       )}
       {adding && <ClauseForm onClose={() => setAdding(false)} onSaved={(id) => setSelected(id)} />}
-    </Page>
+    </>
   )
 }

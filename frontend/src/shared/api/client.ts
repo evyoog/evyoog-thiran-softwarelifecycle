@@ -603,7 +603,63 @@ export interface Clause {
   text: string
 }
 
+// ── Risk register (VYB-0949, D40) ────────────────────────────────────────────────
+
+export type RiskBand = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type RiskStatus = 'OPEN' | 'MITIGATING' | 'ACCEPTED' | 'CLOSED'
+
+export interface RiskRow {
+  id: string
+  key: string
+  title: string
+  /** 1 to 5 each; the rating is their product. */
+  likelihood: number
+  impact: number
+  rating: number
+  band: RiskBand
+  status: RiskStatus
+  ownerId?: string | null
+  ownerName?: string | null
+  requirements: number
+  releases: number
+  createdAt?: string | null
+  updatedAt?: string | null
+  closedAt?: string | null
+}
+
+export interface RiskLinkedRequirement { id: string; key: string; title: string; status: RequirementStatus }
+export interface RiskLinkedRelease { id: string; name: string; state: ReleaseState }
+
+export interface RiskDetail {
+  risk: RiskRow
+  description?: string | null
+  mitigation?: string | null
+  statusReason?: string | null
+  createdByName?: string | null
+  requirementLinks: RiskLinkedRequirement[]
+  releaseLinks: RiskLinkedRelease[]
+}
+
+export interface RiskBody {
+  title: string
+  description?: string
+  likelihood: number
+  impact: number
+  ownerId?: string
+  mitigation?: string
+}
+
 // ── Clause register and control mapping (VYB-0947, D38) ──────────────────────────
+
+export interface ClauseTemplate {
+  id: string
+  name: string
+  standard: string
+  note: string
+  clauses: number
+  alreadyInRegister: number
+}
+export interface ClauseTemplateApplied { templateId: string; added: number; skipped: number; skippedSections: string[] }
 
 export type ClauseCoverage = 'UNMAPPED' | 'MAPPED' | 'EVIDENCED'
 
@@ -1210,6 +1266,8 @@ export interface LinkedTest { id: string; key: string; title: string }
 export interface LinkedDesignNode { id: string; flowId: string; kind: string; label: string }
 export interface LinkedRelease { id: string; name: string; state: ReleaseState }
 export interface LinkedDefect { id: string; key: string; title: string; severity: DefectSeverity; state: DefectState }
+/** VYB-0949: a risk that is not closed and names the requirement. */
+export interface LinkedRisk { id: string; key: string; title: string; rating: number; band: RiskBand; status: RiskStatus }
 
 /** What a requirement is linked to besides other requirements, by name. `applicationId` is absent for an unplaced requirement. */
 export interface LinkedWork {
@@ -1219,6 +1277,7 @@ export interface LinkedWork {
   designNodes: LinkedDesignNode[]
   releases: LinkedRelease[]
   defects: LinkedDefect[]
+  risks: LinkedRisk[]
 }
 
 export interface ReleaseMatrixColumn { id: string; name: string; state: ReleaseState; requirements: number }
@@ -2172,6 +2231,19 @@ export const api = {
   clauses: () => request<Clause[]>('/clauses'),
   createClause: (body: { standard: string; section?: string; text: string }) =>
     request<Clause>('/clauses', { method: 'POST', body: JSON.stringify(body) }),
+  // Risk register (VYB-0949)
+  risks: () => request<RiskRow[]>('/risks'),
+  risk: (id: string) => request<RiskDetail>(`/risks/${id}`),
+  createRisk: (body: RiskBody) => request<{ id: string }>('/risks', { method: 'POST', body: JSON.stringify(body) }),
+  updateRisk: (id: string, body: RiskBody) => request<RiskDetail>(`/risks/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  changeRiskStatus: (id: string, status: RiskStatus, reason?: string) =>
+    request<RiskDetail>(`/risks/${id}/status`, { method: 'POST', body: JSON.stringify({ status, reason }) }),
+  linkRiskRequirement: (id: string, requirementId: string) => request<void>(`/risks/${id}/requirements/${requirementId}`, { method: 'PUT' }),
+  unlinkRiskRequirement: (id: string, requirementId: string) => request<void>(`/risks/${id}/requirements/${requirementId}`, { method: 'DELETE' }),
+  linkRiskRelease: (id: string, releaseId: string) => request<void>(`/risks/${id}/releases/${releaseId}`, { method: 'PUT' }),
+  unlinkRiskRelease: (id: string, releaseId: string) => request<void>(`/risks/${id}/releases/${releaseId}`, { method: 'DELETE' }),
+  clauseTemplates: () => request<ClauseTemplate[]>('/clauses/templates'),
+  applyClauseTemplate: (id: string) => request<ClauseTemplateApplied>(`/clauses/templates/${id}/apply`, { method: 'POST' }),
   clauseRegister: () => request<ClauseRegisterRow[]>('/clauses/register'),
   clauseMapping: (id: string) => request<ClauseMapping>(`/clauses/${id}/mapping`),
   updateClause: (id: string, body: { standard: string; section?: string; text: string }) =>

@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1115 tests cover 69 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1153 tests cover 71 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1325,3 +1325,47 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` theReportIsAWellFormedWordFileThatSaysWhatWasFrozenWhatChangedAndWhatPassed (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
 - `AC7` aBaselineWithNothingInItStillMakesAValidPack (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
 - `AC8` theFileNameIsSafeAndDated (`backend/vyoog-domain/src/test/java/com/vyoog/baseline/EvidencePackWriterTest.java`)
+
+## VYB-0949: Risk register with links to requirements and releases [M; F41]
+
+- `AC1` aRiskIsRefusedWithoutATitleOrWithALevelOutsideOneToFiveOrAnUnknownOwner (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC1` aRiskIsStoredOpenWithItsOwnKeyAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC10` theDatabaseRefusesALevelOutsideOneToFiveAndAnUnknownStatus (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC11` whoMayManageRisksOverHttpApproverComplianceLeadArchitectAdministratorNotReviewerAnalystViewerOrNoOneAndAnyoneReads (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC12` aRiskIsNeverDeletedAndBadRequestsAreRefusedWithTheirReason (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC13` aLevelIsOneToFive (`backend/vyoog-domain/src/test/java/com/vyoog/risk/RiskScaleTest.java`)
+- `AC13` theBandsStartWhereTheDecisionSays (`backend/vyoog-domain/src/test/java/com/vyoog/risk/RiskScaleTest.java`)
+- `AC13` theRatingIsLikelihoodTimesImpactAndEveryCellOfTheGridHasABand (`backend/vyoog-domain/src/test/java/com/vyoog/risk/RiskScaleTest.java`)
+- `AC17` theBandsAreTheSameOnTheScreenAsOnTheServerAndEachHasAWordAndAGlyph (`frontend/src/features/compliance/riskModel.test.ts`)
+- `AC18` theDefaultViewHidesClosedRisksAndEveryFilterNarrows (`frontend/src/features/compliance/riskModel.test.ts`)
+- `AC19` theSummaryCountsOpenRisksByBandAndClosedOnesApart (`frontend/src/features/compliance/riskModel.test.ts`)
+- `AC2` theRatingIsLikelihoodTimesImpactTheBandIsReadFromItAndTheListIsHighestFirstWithClosedLast (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC20` theHeatGridIsFiveByFiveWithOpenRisksCountedWhereTheyBelongAndClosedLeftOut (`frontend/src/features/compliance/riskModel.test.ts`)
+- `AC21` acceptingOrClosingNeedsAReasonAndAChangeToTheSameStatusIsRefused (`frontend/src/features/compliance/riskModel.test.ts`)
+- `AC22` theRiskControlsAreShownToAdministratorsAndTheThreeRolesOnly (`frontend/src/features/compliance/riskModel.test.ts`)
+- `AC3` aRiskCanBeEditedTheOldValuesAreAuditedAndTheStatusIsUntouched (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC4` aStatusThatIsUnknownOrTheSameAsNowIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC4` acceptingOrClosingNeedsAReasonWhichIsKeptAndReopeningClearsTheClosedDate (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC5` aClosedRiskIsHistoryItIsNotEditedOrRelinkedUntilReopened (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC6` aMissingDeletedOrReplacedRequirementCannotBeLinked (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC6` linkingARequirementIsIdempotentAuditedAndUnlinkingRemovesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC7` aRequirementDeletedAfterBeingLinkedIsNotCountedOrListed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC8` linkingAReleaseIsIdempotentAuditedAndAMissingReleaseIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+- `AC9` aRequirementsLinkedWorkListsItsOpenRisksHighestFirstAndNotClosedOnes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RiskRegisterIT.java`)
+
+## VYB-0950: Standard templates for the chosen framework [M; F41]
+
+- `AC1` theIso26262TemplateIsShippedAndWellFormed (`backend/vyoog-domain/src/test/java/com/vyoog/clause/ClauseTemplateServiceTest.java`)
+- `AC10` applyingAgainAddsNothingAndChangesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)
+- `AC11` aClauseAlreadyThereIsLeftExactlyAsItIsAndTheRestAreAdded (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)
+- `AC12` theListSaysHowManyOfEachTemplateTheRegisterAlreadyHas (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)
+- `AC13` anUnknownTemplateIsRefusedAndNothingIsAdded (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)
+- `AC14` onlyAnAdministratorAppliesATemplateAndAnyoneSignedInReadsTheList (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)
+- `AC2` theTemplateCoversTheSoftwareProcessAndSupportingParts (`backend/vyoog-domain/src/test/java/com/vyoog/clause/ClauseTemplateServiceTest.java`)
+- `AC3` aStoredClauseIsTheTitleThenWhatItIsFor (`backend/vyoog-domain/src/test/java/com/vyoog/clause/ClauseTemplateServiceTest.java`)
+- `AC4` everyShippedTemplateStaysInsideTheRegistersOwnLimits (`backend/vyoog-domain/src/test/java/com/vyoog/clause/ClauseTemplateServiceTest.java`)
+- `AC5` aMalformedTemplateIsRefusedWithItsReason (`backend/vyoog-domain/src/test/java/com/vyoog/clause/ClauseTemplateServiceTest.java`)
+- `AC6` aTemplateSaysHowManyClausesItHoldsAndHowManyTheRegisterAlreadyHas (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC7` applyingIsOfferedOnlyWhenThereIsSomethingToAdd (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC8` theResultSaysWhatWasAddedAndThatWhatWasThereIsUntouched (`frontend/src/features/compliance/complianceModel.test.ts`)
+- `AC9` applyingATemplateAddsItsClausesAsOrdinaryClausesAndIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)

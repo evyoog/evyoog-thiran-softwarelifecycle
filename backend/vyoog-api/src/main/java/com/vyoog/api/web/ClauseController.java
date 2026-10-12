@@ -4,6 +4,7 @@ import com.vyoog.api.config.RequiresAccess;
 import com.vyoog.clause.Clause;
 import com.vyoog.clause.ClauseRepository;
 import com.vyoog.clause.ClauseService;
+import com.vyoog.clause.ClauseTemplateService;
 import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.UserProvisioningService;
 import jakarta.validation.constraints.NotBlank;
@@ -25,11 +26,13 @@ public class ClauseController {
 
     private final ClauseRepository clauses;
     private final ClauseService service;
+    private final ClauseTemplateService templates;
     private final UserProvisioningService provisioning;
 
-    public ClauseController(ClauseRepository clauses, ClauseService service, UserProvisioningService provisioning) {
+    public ClauseController(ClauseRepository clauses, ClauseService service, ClauseTemplateService templates, UserProvisioningService provisioning) {
         this.clauses = clauses;
         this.service = service;
+        this.templates = templates;
         this.provisioning = provisioning;
     }
 
@@ -73,6 +76,24 @@ public class ClauseController {
                                           boolean staleEvidence, String replacedByKey, List<ClauseMappedTest> tests) {}
     public record ClauseMappingView(String id, String standard, String section, String text, String coverage,
                                     List<ClauseMappedRequirement> requirements) {}
+
+    public record ClauseTemplateView(String id, String name, String standard, String note, int clauses, int alreadyInRegister) {}
+    public record ClauseTemplateApplied(String templateId, int added, int skipped, List<String> skippedSections) {}
+
+    /** VYB-0950: the standard templates that can start a register, with how many of each the register already has. Any signed-in person. */
+    @GetMapping("/templates")
+    public List<ClauseTemplateView> templates() {
+        return templates.summaries().stream()
+            .map(t -> new ClauseTemplateView(t.id(), t.name(), t.standard(), t.note(), t.clauses(), t.alreadyInRegister())).toList();
+    }
+
+    /** VYB-0950: adds the template's clauses the register does not already have. Administrators, like the rest of the register. */
+    @RequiresAccess(value = AccessRule.ADMIN)
+    @PostMapping("/templates/{templateId}/apply")
+    public ClauseTemplateApplied applyTemplate(@PathVariable String templateId, @AuthenticationPrincipal Jwt jwt) {
+        var a = templates.apply(templateId, currentUserId(jwt));
+        return new ClauseTemplateApplied(a.templateId(), a.added(), a.skipped(), a.skippedSections());
+    }
 
     /** Every clause with how many requirements count toward it and how many of those have passing evidence. Read by any signed-in person. */
     @GetMapping("/register")

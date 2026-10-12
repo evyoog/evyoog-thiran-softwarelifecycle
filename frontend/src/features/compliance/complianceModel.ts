@@ -1,4 +1,4 @@
-import type { ClauseCoverage, ClauseMappedRequirement, ClauseMappedTest, ClauseRegisterRow } from '@/shared/api/client'
+import type { ClauseCoverage, ClauseMappedRequirement, ClauseMappedTest, ClauseRegisterRow, ClauseTemplate, ClauseTemplateApplied } from '@/shared/api/client'
 
 /** VYB-0947 (D38): how the register reads. A glyph and a word, never colour alone, and never amber (that is AI's). */
 export const COVERAGE_LABEL: Record<ClauseCoverage, string> = {
@@ -66,4 +66,24 @@ export function clauseName(c: { standard: string; section?: string | null }): st
 export function excerpt(text: string, max = 140): string {
   const t = text.replace(/\s+/g, ' ').trim()
   return t.length <= max ? t : `${t.slice(0, max - 1).trimEnd()}…`
+}
+
+/** VYB-0950: a standard template, in one line: how many clauses it holds and how many the register already has. */
+export function templateLine(t: Pick<ClauseTemplate, 'clauses' | 'alreadyInRegister'>): string {
+  const n = `${t.clauses} clause${t.clauses === 1 ? '' : 's'}`
+  if (t.alreadyInRegister === 0) return `${n}, none in the register yet`
+  if (t.alreadyInRegister >= t.clauses) return `${n}, all already in the register`
+  return `${n}, ${t.alreadyInRegister} already in the register`
+}
+
+/** What applying a template did, in words. */
+export function appliedLine(a: Pick<ClauseTemplateApplied, 'added' | 'skipped'>): string {
+  if (a.added === 0) return `Nothing to add: all ${a.skipped} were already in the register, and none was changed.`
+  const added = `Added ${a.added} clause${a.added === 1 ? '' : 's'}`
+  return a.skipped === 0 ? `${added}.` : `${added}; ${a.skipped} were already in the register and were left as they are.`
+}
+
+/** Applying only helps when there is something to add. */
+export function canApply(t: Pick<ClauseTemplate, 'clauses' | 'alreadyInRegister'>): boolean {
+  return t.alreadyInRegister < t.clauses
 }

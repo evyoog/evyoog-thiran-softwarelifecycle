@@ -27,7 +27,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_17"];
+        get: operations["list_18"];
         put?: never;
         post?: never;
         delete?: never;
@@ -43,7 +43,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -155,9 +155,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_16"];
+        get: operations["list_17"];
         put?: never;
-        post: operations["create_14"];
+        post: operations["create_15"];
         delete?: never;
         options?: never;
         head?: never;
@@ -177,7 +177,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_5"];
+        patch: operations["update_6"];
         trace?: never;
     };
     "/api/v1/applications/{applicationId}/capabilities/{id}/archive": {
@@ -299,7 +299,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_15"];
+        get: operations["list_16"];
         put?: never;
         post: operations["freeze"];
         delete?: never;
@@ -395,7 +395,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -427,7 +427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_14"];
+        get: operations["list_15"];
         put?: never;
         post: operations["raise_2"];
         delete?: never;
@@ -443,7 +443,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_3"];
+        get: operations["get_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -603,9 +603,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -628,6 +628,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clauses/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["templates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clauses/templates/{templateId}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["applyTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clauses/{id}": {
         parameters: {
             query?: never;
@@ -635,8 +667,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_2"];
-        put: operations["update"];
+        get: operations["get_3"];
+        put: operations["update_1"];
         post?: never;
         delete: operations["delete_2"];
         options?: never;
@@ -683,7 +715,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post: operations["raise_1"];
         delete?: never;
@@ -844,7 +876,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["linkRequirement"];
+        put: operations["linkRequirement_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1117,7 +1149,7 @@ export interface paths {
         };
         get: operations["register"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1211,9 +1243,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1323,7 +1355,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1403,9 +1435,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1453,7 +1485,7 @@ export interface paths {
         };
         get: operations["all_3"];
         put?: never;
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1885,7 +1917,7 @@ export interface paths {
         };
         get: operations["all_2"];
         put?: never;
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2091,9 +2123,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2161,7 +2193,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_4"];
+        patch: operations["update_5"];
         trace?: never;
     };
     "/api/v1/products/{id}/archive": {
@@ -2187,9 +2219,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2209,7 +2241,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/api/v1/products/{productId}/applications/{id}/archive": {
@@ -2283,9 +2315,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2315,7 +2347,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_1"];
+        get: operations["get_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2555,9 +2587,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2715,13 +2747,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get"];
+        get: operations["get_1"];
         put?: never;
         post?: never;
         delete: operations["delete_1"];
         options?: never;
         head?: never;
-        patch: operations["update_2"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/v1/requirements/{id}/acceptance-criteria": {
@@ -2875,7 +2907,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post: operations["upload"];
         delete?: never;
@@ -2955,9 +2987,89 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post: operations["add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/risks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put?: never;
+        post: operations["create_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/risks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/risks/{id}/releases/{releaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["linkRelease"];
+        post?: never;
+        delete: operations["unlinkRelease"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/risks/{id}/requirements/{requirementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["linkRequirement"];
+        post?: never;
+        delete: operations["unlinkRequirement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/risks/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["changeStatus"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3825,7 +3937,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_1"];
+        patch: operations["update_2"];
         trace?: never;
     };
     "/api/v1/test-cases/{id}/steps": {
@@ -4771,6 +4883,24 @@ export interface components {
             standard?: string;
             text?: string;
         };
+        ClauseTemplateApplied: {
+            /** Format: int32 */
+            added?: number;
+            /** Format: int32 */
+            skipped?: number;
+            skippedSections?: string[];
+            templateId?: string;
+        };
+        ClauseTemplateView: {
+            /** Format: int32 */
+            alreadyInRegister?: number;
+            /** Format: int32 */
+            clauses?: number;
+            id?: string;
+            name?: string;
+            note?: string;
+            standard?: string;
+        };
         ClauseView: {
             id?: string;
             section?: string;
@@ -5538,6 +5668,16 @@ export interface components {
             name?: string;
             state?: string;
         };
+        LinkedRisk: {
+            band?: string;
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            /** Format: int32 */
+            rating?: number;
+            status?: string;
+            title?: string;
+        };
         LinkedTest: {
             /** Format: uuid */
             id?: string;
@@ -5552,6 +5692,7 @@ export interface components {
             releases?: components["schemas"]["LinkedRelease"][];
             /** Format: uuid */
             requirementId?: string;
+            risks?: components["schemas"]["LinkedRisk"][];
             tests?: components["schemas"]["LinkedTest"][];
         };
         LintFinding: {
@@ -6212,6 +6353,65 @@ export interface components {
             proposalId?: string;
             rewrittenStatement?: string;
         };
+        RiskBody: {
+            description?: string;
+            /** Format: int32 */
+            impact?: number;
+            /** Format: int32 */
+            likelihood?: number;
+            mitigation?: string;
+            ownerId?: string;
+            title: string;
+        };
+        RiskCreated: {
+            id?: string;
+        };
+        RiskDetailView: {
+            createdByName?: string;
+            description?: string;
+            mitigation?: string;
+            releaseLinks?: components["schemas"]["RiskLinkedReleaseView"][];
+            requirementLinks?: components["schemas"]["RiskLinkedRequirementView"][];
+            risk?: components["schemas"]["RiskRowView"];
+            statusReason?: string;
+        };
+        RiskLinkedReleaseView: {
+            id?: string;
+            name?: string;
+            state?: string;
+        };
+        RiskLinkedRequirementView: {
+            id?: string;
+            key?: string;
+            status?: string;
+            title?: string;
+        };
+        RiskRowView: {
+            band?: string;
+            closedAt?: string;
+            createdAt?: string;
+            id?: string;
+            /** Format: int32 */
+            impact?: number;
+            key?: string;
+            /** Format: int32 */
+            likelihood?: number;
+            ownerId?: string;
+            ownerName?: string;
+            /** Format: int32 */
+            rating?: number;
+            /** Format: int32 */
+            releases?: number;
+            /** Format: int32 */
+            requirements?: number;
+            status?: string;
+            title?: string;
+            updatedAt?: string;
+        };
+        RiskStatusChange: {
+            reason?: string;
+            status: string;
+        };
         RoleCapabilityView: {
             description?: string;
             enforced?: boolean;
@@ -6818,7 +7018,7 @@ export interface operations {
             };
         };
     };
-    list_17: {
+    list_18: {
         parameters: {
             query?: {
                 state?: string;
@@ -6844,7 +7044,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6997,7 +7197,7 @@ export interface operations {
             };
         };
     };
-    list_16: {
+    list_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -7019,7 +7219,7 @@ export interface operations {
             };
         };
     };
-    create_14: {
+    create_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -7045,7 +7245,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -7238,7 +7438,7 @@ export interface operations {
             };
         };
     };
-    list_15: {
+    list_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -7442,7 +7642,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -7486,7 +7686,7 @@ export interface operations {
             };
         };
     };
-    list_14: {
+    list_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -7530,7 +7730,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -7762,7 +7962,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -7782,7 +7982,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -7826,7 +8026,49 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    templates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClauseTemplateView"][];
+                };
+            };
+        };
+    };
+    applyTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                templateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClauseTemplateApplied"];
+                };
+            };
+        };
+    };
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -7848,7 +8090,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -7958,7 +8200,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 state?: string;
@@ -8281,7 +8523,7 @@ export interface operations {
             };
         };
     };
-    linkRequirement: {
+    linkRequirement_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -8848,7 +9090,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -9004,7 +9246,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -9024,7 +9266,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -9172,7 +9414,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 state?: "OPEN" | "ACCEPTED" | "DISMISSED" | "RESOLVED";
@@ -9287,7 +9529,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -9307,7 +9549,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -9396,7 +9638,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -10078,7 +10320,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10372,7 +10614,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -10392,7 +10634,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -10478,7 +10720,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -10526,7 +10768,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10548,7 +10790,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -10574,7 +10816,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -10694,7 +10936,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -10714,7 +10956,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -10758,7 +11000,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -11133,7 +11375,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query: {
                 status?: "DRAFT" | "IN_REVIEW" | "REVIEWED" | "NEEDS_REVISION" | "APPROVED" | "REJECTED";
@@ -11163,7 +11405,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: {
@@ -11399,7 +11641,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -11443,7 +11685,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: {
                 changeRequestId?: string;
@@ -11709,7 +11951,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -11878,7 +12120,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -11922,6 +12164,208 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CommentView"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RiskRowView"][];
+                };
+            };
+        };
+    };
+    create_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RiskCreated"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RiskDetailView"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RiskDetailView"];
+                };
+            };
+        };
+    };
+    linkRelease: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlinkRelease: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    linkRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requirementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlinkRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requirementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskStatusChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RiskDetailView"];
                 };
             };
         };
@@ -13215,7 +13659,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;

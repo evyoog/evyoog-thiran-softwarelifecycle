@@ -59,9 +59,9 @@ export function releaseChoice(r: Pick<VyoogRelease, 'name' | 'state'>): { label:
   }
 }
 
-export interface Group { kind: Exclude<LinkKind, 'requirement'>; title: string; empty: string; items: { id: string; label: string; detail?: string; href?: string }[] }
+export interface Group { kind: Exclude<LinkKind, 'requirement'> | 'risk'; title: string; empty: string; items: { id: string; label: string; detail?: string; href?: string }[] }
 
-/** The linked work as four groups, each with words for when it is empty, never a blank. */
+/** The linked work as five groups, each with words for when it is empty, never a blank. */
 export function groupsOf(w: LinkedWork | undefined): Group[] {
   if (!w) return []
   return [
@@ -80,6 +80,11 @@ export function groupsOf(w: LinkedWork | undefined): Group[] {
     {
       kind: 'defect', title: 'Defects', empty: 'No defect is linked to this requirement.',
       items: w.defects.map((d) => ({ id: d.id, label: `${d.key} — ${d.title}`, detail: `${d.severity.toLowerCase()}, ${d.state.toLowerCase()}`, href: `/defects/${d.id}` })),
+    },
+    {
+      // VYB-0949: the open risks that name this requirement (a closed risk is history and is not shown here).
+      kind: 'risk', title: 'Risks', empty: 'No open risk names this requirement.',
+      items: (w.risks ?? []).map((r) => ({ id: r.id, label: `${r.key} — ${r.title}`, detail: `${r.band.toLowerCase()} (${r.rating}), ${r.status.toLowerCase()}`, href: `/compliance?tab=risks&risk=${r.id}` })),
     },
   ]
 }

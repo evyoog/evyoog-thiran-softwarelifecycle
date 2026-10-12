@@ -19,11 +19,13 @@ public class RequirementLinkedWorkService {
     public record LinkedTest(UUID id, String key, String title) {}
     public record LinkedDesignNode(UUID id, UUID flowId, String kind, String label) {}
     public record LinkedRelease(UUID id, String name, String state) {}
+    /** VYB-0949: a risk that is not closed and names this requirement; rating and band as the risk register reads them. */
+    public record LinkedRisk(UUID id, String key, String title, int rating, String band, String status) {}
     public record LinkedDefect(UUID id, String key, String title, String severity, String state) {}
 
     /** {@code applicationId} is the application the requirement sits in (via its capability, or directly); null if it is unplaced or sits on a product. */
     public record LinkedWork(UUID requirementId, UUID applicationId, List<LinkedTest> tests, List<LinkedDesignNode> designNodes,
-                             List<LinkedRelease> releases, List<LinkedDefect> defects) {}
+                             List<LinkedRelease> releases, List<LinkedDefect> defects, List<LinkedRisk> risks) {}
 
     private final JdbcTemplate jdbc;
 
@@ -59,6 +61,11 @@ public class RequirementLinkedWorkService {
             ORDER BY CASE d.severity WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END, d.key
             """, (rs, n) -> new LinkedDefect(UUID.fromString(rs.getString("id")), rs.getString("key"), rs.getString("title"),
                 rs.getString("severity"), rs.getString("state")), requirementId);
-        return new LinkedWork(requirementId, applicationId, tests, nodes, releases, defects);
+        List<LinkedRisk> risks = jdbc.query("""
+            SELECT k.id, k.key, k.title, k.likelihood * k.impact AS rating, k.status FROM risk_requirement rr JOIN risk k ON k.id = rr.risk_id
+            WHERE rr.requirement_id = ? AND k.status <> 'CLOSED' ORDER BY k.likelihood * k.impact DESC, k.key
+            """, (rs, n) -> new LinkedRisk(UUID.fromString(rs.getString("id")), rs.getString("key"), rs.getString("title"), rs.getInt("rating"),
+                com.vyoog.risk.RiskScale.band(rs.getInt("rating")), rs.getString("status")), requirementId);
+        return new LinkedWork(requirementId, applicationId, tests, nodes, releases, defects, risks);
     }
 }

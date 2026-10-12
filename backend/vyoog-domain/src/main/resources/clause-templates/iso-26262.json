@@ -1,0 +1,36 @@
+{
+  "id": "iso-26262",
+  "name": "ISO 26262, road vehicles: functional safety",
+  "standard": "ISO 26262",
+  "note": "A starter set at the level of the standard's clauses, for software and the processes around it (parts 2, 3, 4, 6 and 8). The wording is our own short paraphrase of what each clause is for, never the standard's text. The part-and-clause numbers come from public descriptions of the 2018 edition: check each against your licensed copy before relying on it, and edit or delete what does not fit your product. Hardware (part 5) is left out.",
+  "clauses": [
+    { "section": "2-5", "title": "Overall safety management", "text": "A safety culture, a safety organisation and a safety plan exist for the item." },
+    { "section": "2-6", "title": "Safety management during the concept phase and product development", "text": "Safety activities are planned, carried out, tracked and confirmed (reviews, audits, assessment) from concept to release." },
+    { "section": "2-7", "title": "Safety management after release for production", "text": "Responsibility for functional safety after release is assigned, and field experience is monitored and acted on." },
+
+    { "section": "3-5", "title": "Item definition", "text": "The item, its functions, boundaries, interfaces and operating environment are defined well enough to analyse." },
+    { "section": "3-6", "title": "Hazard analysis and risk assessment", "text": "Hazards are identified and rated, and safety goals with their integrity levels are set." },
+    { "section": "3-7", "title": "Functional safety concept", "text": "Each safety goal is refined into functional safety requirements and allocated to elements of the item." },
+
+    { "section": "4-6", "title": "Technical safety concept", "text": "Functional safety requirements are refined into technical safety requirements that can be designed and verified." },
+    { "section": "4-7", "title": "System architectural design", "text": "The system architecture implements the technical safety concept, and its elements carry the allocated safety requirements." },
+    { "section": "4-8", "title": "System and item integration and testing", "text": "Integrated elements are tested against the technical safety requirements, and the results are recorded." },
+    { "section": "4-9", "title": "Safety validation", "text": "The item is shown, in its intended use, to meet its safety goals." },
+
+    { "section": "6-6", "title": "Specification of software safety requirements", "text": "Software safety requirements are derived from the technical safety requirements, are unambiguous and verifiable, and trace to their source." },
+    { "section": "6-7", "title": "Software architectural design", "text": "The software architecture realises the software safety requirements, with its elements, interfaces and resource use described and checked." },
+    { "section": "6-8", "title": "Software unit design and implementation", "text": "Each software unit is designed and implemented to its requirements under the rules the safety level calls for." },
+    { "section": "6-9", "title": "Software unit verification", "text": "Software units are verified against their design and requirements, by review, analysis and test, and coverage is measured." },
+    { "section": "6-10", "title": "Software integration and verification", "text": "Software units are integrated step by step and the integrated software is verified against the architecture and its safety requirements." },
+    { "section": "6-11", "title": "Testing of the embedded software", "text": "The software is tested on target-representative hardware against the software safety requirements." },
+
+    { "section": "8-5", "title": "Interfaces within distributed developments", "text": "Where work is shared between organisations, each party's safety responsibilities and the evidence exchanged are agreed and recorded." },
+    { "section": "8-6", "title": "Specification and management of safety requirements", "text": "Safety requirements are written clearly, are consistent, are traced to their sources and to what satisfies them, and their changes are managed." },
+    { "section": "8-7", "title": "Configuration management", "text": "Work products are identified, versioned and baselined, and what was delivered can be reconstructed." },
+    { "section": "8-8", "title": "Change management", "text": "Changes to safety-related work products are requested, impact-analysed, approved and tracked." },
+    { "section": "8-9", "title": "Verification", "text": "Work products are verified against their inputs by planned, specified and recorded reviews, analyses and tests." },
+    { "section": "8-10", "title": "Documentation management", "text": "Safety-related documents are controlled: identified, reviewed, approved, kept and retrievable." },
+    { "section": "8-11", "title": "Confidence in the use of software tools", "text": "Tools whose failure could introduce or hide a fault are assessed, and the confidence placed in them is justified." },
+    { "section": "8-12", "title": "Qualification of software components", "text": "A software component reused from elsewhere is shown to be suitable for the safety requirements it is used for." }
+  ]
+}

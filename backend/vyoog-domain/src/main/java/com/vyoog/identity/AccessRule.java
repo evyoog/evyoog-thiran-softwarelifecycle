@@ -39,6 +39,12 @@ public enum AccessRule {
      */
     EVIDENCE("export an evidence pack", List.of(AccessRole.APPROVER, AccessRole.COMPLIANCE_LEAD, AccessRole.ARCHITECT)),
 
+    /**
+     * VYB-0949 (D40): adding, editing, closing and linking risks in the risk register. Approver, Compliance Lead, Architect: the
+     * people accountable for a risk. Not in the original matrix; the product owner chose it. Reading is open to any signed-in person.
+     */
+    RISK("manage risks", List.of(AccessRole.APPROVER, AccessRole.COMPLIANCE_LEAD, AccessRole.ARCHITECT)),
+
     /** Matrix "Admin": platform Administrator only. */
     ADMIN("administer", List.of());
 

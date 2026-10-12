@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { ClauseRegisterRow } from '@/shared/api/client'
 import {
+  appliedLine, canApply, templateLine,
   COVERAGE_GLYPH, COVERAGE_LABEL, NO_FILTER, clauseName, evidenceLabel, excerpt, filterRows, standardsOf, summaryLine, summarise, testResultLabel,
 } from './complianceModel'
 
@@ -68,5 +69,27 @@ describe('VYB-0947 — the clause register screen', () => {
     expect(excerpt('a  b\n c')).toBe('a b c')
     expect(excerpt('x'.repeat(200), 20)).toHaveLength(20)
     expect(excerpt('x'.repeat(200), 20).endsWith('…')).toBe(true)
+  })
+})
+
+describe('VYB-0950 — standard templates', () => {
+  it('VYB0950_AC6_aTemplateSaysHowManyClausesItHoldsAndHowManyTheRegisterAlreadyHas', () => {
+    expect(templateLine({ clauses: 24, alreadyInRegister: 0 })).toBe('24 clauses, none in the register yet')
+    expect(templateLine({ clauses: 24, alreadyInRegister: 3 })).toBe('24 clauses, 3 already in the register')
+    expect(templateLine({ clauses: 24, alreadyInRegister: 24 })).toBe('24 clauses, all already in the register')
+    expect(templateLine({ clauses: 1, alreadyInRegister: 0 })).toBe('1 clause, none in the register yet')
+  })
+
+  it('VYB0950_AC7_applyingIsOfferedOnlyWhenThereIsSomethingToAdd', () => {
+    expect(canApply({ clauses: 24, alreadyInRegister: 0 })).toBe(true)
+    expect(canApply({ clauses: 24, alreadyInRegister: 23 })).toBe(true)
+    expect(canApply({ clauses: 24, alreadyInRegister: 24 })).toBe(false)
+  })
+
+  it('VYB0950_AC8_theResultSaysWhatWasAddedAndThatWhatWasThereIsUntouched', () => {
+    expect(appliedLine({ added: 24, skipped: 0 })).toBe('Added 24 clauses.')
+    expect(appliedLine({ added: 1, skipped: 0 })).toBe('Added 1 clause.')
+    expect(appliedLine({ added: 20, skipped: 4 })).toBe('Added 20 clauses; 4 were already in the register and were left as they are.')
+    expect(appliedLine({ added: 0, skipped: 24 })).toBe('Nothing to add: all 24 were already in the register, and none was changed.')
   })
 })

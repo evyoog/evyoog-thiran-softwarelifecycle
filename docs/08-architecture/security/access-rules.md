@@ -17,6 +17,7 @@ Every write endpoint (POST, PUT, PATCH, DELETE) states who may call it. Added by
 | `VERIFY` | Tester | Verify |
 | `BASELINE` | Approver | Baseline |
 | `EVIDENCE` | Approver, Compliance Lead, Architect | (not in the original matrix; VYB-0948) |
+| `RISK` | Approver, Compliance Lead, Architect | (not in the original matrix; VYB-0949) |
 | `ADMIN` | Administrator | Admin |
 
 A platform **Administrator passes every rule**. A **service account**, or a token with neither a registered client nor an email claim, passes none of them.
@@ -49,6 +50,7 @@ VYB-0906 was done in three sessions (`BUILD-REGISTER.md`); all 88 write endpoint
 - **VYB-0923, done:** test plans, suites, a suite's cases, a case's steps and run creation (9 write endpoints, `TestManagementController`), and VYB-0924a added four more on the same rule (start, record a step result, record a case result, complete a run), VYB-0924b three more (add step evidence, add case evidence, retest) and VYB-0926 two more (raise a defect from a step or a case) are `VERIFY` (Tester), anywhere. The matrix has no column for test planning; Verify is the nearest, the same rule test cases use. Reads are open to any signed-in person.
 - **VYB-0928, done:** moving a release (`ReleaseLifecycleController#transition`) is `BASELINE` (Approver), anywhere, like every release write. Editing the readiness-gate configuration is administrator-only, guarded in the handler. Reads are open to any signed-in person.
 - **VYB-0929, done:** the same transition endpoint additionally requires **step-up** (checked in the handler, before the domain runs) and a person, not a service account, when the target is FROZEN or RELEASED; opening and reopening do not.
+- **VYB-0949, done:** adding, editing, moving and linking risks (`RiskController`, seven write endpoints) is `RISK` (Approver, Compliance Lead, Architect; an Administrator passes every rule), anywhere. Reads are open to any signed-in person. Reviewer, Business Analyst and Viewer are refused.
 - **VYB-0948, done:** taking a baseline's evidence pack out of the system (`BaselineController#evidencePack`, a read that leaves the system) is `EVIDENCE` (Approver, Compliance Lead, Architect; an Administrator passes every rule), anywhere. Each export is audited. Reviewer is not in it.
 - **VYB-0930, done:** committing several requirements at once (`ReleaseController#commitMany`) is `BASELINE` (Approver), anywhere, like committing one. The candidates, the committed list with titles and the notes export are reads, open to any signed-in person.
 - **VYB-0931, done:** reopening, editing, assigning and linking a defect (`DefectController#reopen`, `#edit`, `#assign`, `#link`) are `VERIFY` (Tester), anywhere, like closing one. Marking a defect fixed (`#markFixed`) is guarded in the handler: its assigned developer, or a Tester, or an administrator. Commenting (`#addComment`) is any signed-in person, not a service account. Reads are open to any signed-in person.
