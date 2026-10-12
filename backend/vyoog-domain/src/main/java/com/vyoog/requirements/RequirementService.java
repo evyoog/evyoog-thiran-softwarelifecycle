@@ -262,12 +262,10 @@ public class RequirementService {
             throw new IllegalArgumentException(
                 "Submitting with no acceptance criteria requires an explicit override reason");
         }
-        // VYB-0802: the same "no open blocking clarification" gate ReviewService#close
-        // already applies to an entire review round, scoped here to the one requirement
-        // being moved into the manual review gate. Read directly off the clarification
-        // table via SQL — same as ReviewService does — rather than through a
-        // ClarificationService dependency, so this stays a data read and not a new
-        // module-to-module coupling.
+        // VYB-0802: the "no open blocking clarification" gate, for the one requirement being
+        // moved into the manual review gate. Read directly off the clarification table via SQL
+        // rather than through a ClarificationService dependency, so this stays a data read and
+        // not a new module-to-module coupling.
         if (target == RequirementStatus.REVIEWED) {
             Boolean blocked = jdbc.queryForObject("""
                 SELECT EXISTS(

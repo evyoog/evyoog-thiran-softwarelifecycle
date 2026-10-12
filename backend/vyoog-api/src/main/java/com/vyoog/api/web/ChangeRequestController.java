@@ -100,10 +100,8 @@ public class ChangeRequestController {
      * VYB-0790: {@code requireHuman} alone let any authenticated human — not just an
      * approver — approve or reject a change request touching an arbitrary set of
      * requirements. `APPROVER` in {@code access_grant} isn't reused here on purpose:
-     * per {@code RoleCapabilityRegistry}, that role name is already tied to a
-     * different, review-participant-scoped mechanism (`review_participant.role`) —
-     * reusing it for a platform-wide grant here would give the same name two
-     * unrelated meanings. `ADMINISTRATOR` is the one role this codebase already uses
+     * that role is scoped to an application and to the approval of a
+     * requirement, not to deciding a change request that can span several. `ADMINISTRATOR` is the one role this codebase already uses
      * consistently for every other cross-cutting, high-impact action.
      */
     @PostMapping("/{id}/decide")

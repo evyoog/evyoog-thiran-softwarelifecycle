@@ -19,11 +19,10 @@ import org.springframework.stereotype.Component;
  * VYB-0704 — "rbac-sod": a user holding both an authoring role (BUSINESS_ANALYST or
  * ARCHITECT — the two roles in {@link AccessRole} that actually write requirement
  * content) and APPROVER, or ADMINISTRATOR and APPROVER, at overlapping scope. This is
- * the grant model's own policy report — distinct from {@link
- * com.vyoog.review.SeparationOfDutiesDetector} ("sod"), which catches an actual
- * owner/author signing as approver on one specific review round. A user can hold
- * conflicting grants for months before ever chairing a round; this finds that without
- * waiting for someone to sign anything.
+ * the grant model's own policy report — the grant-level check that
+ * remains now that review rounds, and the per-round "sod" rule that watched them, are retired (D26). A user can hold
+ * conflicting grants for months before ever approving anything; this finds that without
+ * waiting for someone to act. Approving your own requirement is refused at the transition itself (D17).
  *
  * <p>"Same scope" means overlapping, not identical — a PRODUCT-level APPROVER grant
  * conflicts with a CAPABILITY-level BUSINESS_ANALYST grant underneath that product,

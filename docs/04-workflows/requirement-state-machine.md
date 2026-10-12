@@ -28,8 +28,8 @@ this machine is untouched. See [`requirement-versions.md`](requirement-versions.
 `created_by`), not a grant — submitting, withdrawing and resubmitting are author-only.
 "Reviewer" and "decision maker" reuse the existing `REVIEWER`/`APPROVER` roles (§4.4) at
 the requirement's own scope — no new role. A decision maker may not decide on a
-requirement they own or authored (SoD, the same principle already enforced when signing
-a review round, VYB-0304, now also enforced on the transition itself) — this closes a
+requirement they own or authored (SoD, the same principle once enforced when signing
+a review round, VYB-0304, which D26 retired; it is enforced on the transition itself) — this closes a
 gap D15 explicitly left open, where the generic transition endpoint enforced no
 role/SoD at all, for any edge. `RequirementTransitionAuthorizer` is the one place this
 lives, shared by the single-transition endpoint and bulk edit, so the two cannot drift
@@ -55,7 +55,7 @@ the way the reason/blocking-clarification guards briefly did before VYB-0810.
 
 | Transition | Entry condition | Actor | Side effects |
 |---|---|---|---|
-| DRAFT → IN_REVIEW | Statement non-empty; ≥1 acceptance criterion **or** an explicit override with reason | Author | Creates review round; notifies participants |
+| DRAFT → IN_REVIEW | Statement non-empty; ≥1 acceptance criterion **or** an explicit override with reason | Author | None. No review round is created (rounds are retired, D26) |
 | IN_REVIEW → DRAFT | — | Author (withdraw) | — |
 | IN_REVIEW → REVIEWED | All required reviewers signed; no open blocking clarification | Reviewer on scope | The "Verify" action — Manual today (read the requirement on the Design screen, then confirm); AI-assisted is deferred (Rule 6), shown only as a disabled placeholder |
 | REVIEWED → APPROVED | — | Decision maker (Approver) on scope, **not** the owner (SoD) | Step-up auth; signature recorded; revision frozen — this is the pipeline's terminal status |

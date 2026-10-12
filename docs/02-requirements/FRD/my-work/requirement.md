@@ -2,7 +2,7 @@
 
 # My Work: requirements
 
-Requirements for **My Work**, from `BUILD-REGISTER.md` (phases 0 to 5, everything built so far). Status: DONE 17, PARTIAL 1.
+Requirements for **My Work**, from `BUILD-REGISTER.md` (phases 0 to 5, everything built so far). Status: DONE 15, PARTIAL 1, SUPERSEDED 2.
 
 The screen or topic specification (spec §7.2) is [`ui-requirements.md`](ui-requirements.md)
 
@@ -12,8 +12,8 @@ The screen or topic specification (spec §7.2) is [`ui-requirements.md`](ui-requ
 |---|---|---|---|---|---|---|
 | VYB-0340 | 2 | Tasks | No task authoring exists | DONE | 9 | — |
 | VYB-0341 | 2 | Tasks | Author task — unmeasurable wording | DONE | 9 | — |
-| VYB-0342 | 2 | Tasks | Reviewer task — review pending | DONE | 9 | — |
-| VYB-0343 | 2 | Tasks | Approver task — awaiting signature | DONE | 9 | — |
+| VYB-0342 | 2 | Tasks | ~~Reviewer task — review pending~~ | SUPERSEDED | 9,96 | — |
+| VYB-0343 | 2 | Tasks | ~~Approver task — awaiting signature~~ | SUPERSEDED | 9,96 | — |
 | VYB-0344 | 2 | Tasks | Developer task — implement | DONE | 9 | — |
 | VYB-0345 | 2 | Tasks | Developer task — re-implement | DONE | 9 | — |
 | VYB-0346 | 2 | Tasks | Tester task — verify | DONE | 9 | — |

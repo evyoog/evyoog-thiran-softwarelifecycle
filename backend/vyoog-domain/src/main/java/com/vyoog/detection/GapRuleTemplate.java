@@ -15,6 +15,7 @@ public class GapRuleTemplate {
     private String severity;
     private String description;
     private short phase;
+    private java.time.Instant retiredAt;
 
     protected GapRuleTemplate() {}
 
@@ -24,4 +25,7 @@ public class GapRuleTemplate {
     public String getSeverity() { return severity; }
     public String getDescription() { return description; }
     public short getPhase() { return phase; }
+
+    /** Set when the rule was retired (V053, the review-round 'sod' rule): its findings stay as history, the rule is no longer listed. */
+    public java.time.Instant getRetiredAt() { return retiredAt; }
 }

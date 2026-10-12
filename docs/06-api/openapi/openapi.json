@@ -826,18 +826,6 @@
         },
         "type" : "object"
       },
-      "CommentBody" : {
-        "properties" : {
-          "body" : {
-            "type" : "string"
-          },
-          "requirementId" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "body" ],
-        "type" : "object"
-      },
       "CommentView" : {
         "properties" : {
           "authorId" : {
@@ -852,8 +840,11 @@
           "id" : {
             "type" : "string"
           },
-          "requirementId" : {
-            "type" : "string"
+          "mentionedUserIds" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -3330,33 +3321,6 @@
         },
         "type" : "object"
       },
-      "OpenRequest" : {
-        "properties" : {
-          "closesAt" : {
-            "type" : "string"
-          },
-          "participants" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ParticipantInputBody"
-            },
-            "type" : "array"
-          },
-          "requirementIds" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "scopeRef" : {
-            "type" : "string"
-          },
-          "title" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "requirementIds", "title" ],
-        "type" : "object"
-      },
       "OrphanView" : {
         "properties" : {
           "id" : {
@@ -3858,35 +3822,6 @@
           },
           "unpaged" : {
             "type" : "boolean"
-          }
-        },
-        "type" : "object"
-      },
-      "ParticipantInputBody" : {
-        "properties" : {
-          "role" : {
-            "type" : "string"
-          },
-          "userId" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "role", "userId" ],
-        "type" : "object"
-      },
-      "ParticipantView" : {
-        "properties" : {
-          "role" : {
-            "type" : "string"
-          },
-          "signatureAcr" : {
-            "type" : "string"
-          },
-          "signedAt" : {
-            "type" : "string"
-          },
-          "userId" : {
-            "type" : "string"
           }
         },
         "type" : "object"
@@ -4822,47 +4757,6 @@
             "type" : "string"
           },
           "buildLabel" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "ReviewView" : {
-        "properties" : {
-          "closedAt" : {
-            "type" : "string"
-          },
-          "closesAt" : {
-            "type" : "string"
-          },
-          "id" : {
-            "type" : "string"
-          },
-          "openedAt" : {
-            "type" : "string"
-          },
-          "participants" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ParticipantView"
-            },
-            "type" : "array"
-          },
-          "requirementIds" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "scopeRef" : {
-            "type" : "string"
-          },
-          "stale" : {
-            "type" : "boolean"
-          },
-          "state" : {
-            "type" : "string"
-          },
-          "title" : {
             "type" : "string"
           }
         },
@@ -6482,7 +6376,7 @@
     },
     "/api/v1/ai-proposals" : {
       "get" : {
-        "operationId" : "list_18",
+        "operationId" : "list_17",
         "parameters" : [ {
           "in" : "query",
           "name" : "state",
@@ -6542,7 +6436,7 @@
     },
     "/api/v1/ai-proposals/{id}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6728,7 +6622,7 @@
     },
     "/api/v1/applications/{applicationId}/capabilities" : {
       "get" : {
-        "operationId" : "list_17",
+        "operationId" : "list_16",
         "parameters" : [ {
           "in" : "path",
           "name" : "applicationId",
@@ -7109,7 +7003,7 @@
     },
     "/api/v1/baselines" : {
       "get" : {
-        "operationId" : "list_16",
+        "operationId" : "list_15",
         "responses" : {
           "200" : {
             "content" : {
@@ -7341,7 +7235,7 @@
     },
     "/api/v1/briefs/{id}" : {
       "get" : {
-        "operationId" : "get_5",
+        "operationId" : "get_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7395,7 +7289,7 @@
     },
     "/api/v1/change-requests" : {
       "get" : {
-        "operationId" : "list_15",
+        "operationId" : "list_14",
         "responses" : {
           "200" : {
             "content" : {
@@ -7442,7 +7336,7 @@
     },
     "/api/v1/change-requests/{id}" : {
       "get" : {
-        "operationId" : "get_4",
+        "operationId" : "get_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7732,7 +7626,7 @@
     },
     "/api/v1/clauses" : {
       "get" : {
-        "operationId" : "list_14",
+        "operationId" : "list_13",
         "responses" : {
           "200" : {
             "content" : {
@@ -7779,7 +7673,7 @@
     },
     "/api/v1/clauses/{id}" : {
       "get" : {
-        "operationId" : "get_3",
+        "operationId" : "get_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7806,7 +7700,7 @@
     },
     "/api/v1/defects" : {
       "get" : {
-        "operationId" : "list_13",
+        "operationId" : "list_12",
         "parameters" : [ {
           "in" : "query",
           "name" : "state",
@@ -8082,7 +7976,7 @@
     },
     "/api/v1/defects/{id}/close" : {
       "post" : {
-        "operationId" : "close_1",
+        "operationId" : "close",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8109,7 +8003,7 @@
     },
     "/api/v1/defects/{id}/comments" : {
       "get" : {
-        "operationId" : "comments_1",
+        "operationId" : "comments",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -9062,7 +8956,7 @@
     },
     "/api/v1/environments" : {
       "get" : {
-        "operationId" : "list_12",
+        "operationId" : "list_11",
         "responses" : {
           "200" : {
             "content" : {
@@ -9250,7 +9144,7 @@
     },
     "/api/v1/findings" : {
       "get" : {
-        "operationId" : "list_11",
+        "operationId" : "list_10",
         "parameters" : [ {
           "in" : "query",
           "name" : "state",
@@ -9415,7 +9309,7 @@
     },
     "/api/v1/glossary" : {
       "get" : {
-        "operationId" : "list_10",
+        "operationId" : "list_9",
         "responses" : {
           "200" : {
             "content" : {
@@ -10787,7 +10681,7 @@
     },
     "/api/v1/products" : {
       "get" : {
-        "operationId" : "list_8",
+        "operationId" : "list_7",
         "responses" : {
           "200" : {
             "content" : {
@@ -10965,7 +10859,7 @@
     },
     "/api/v1/products/{productId}/applications" : {
       "get" : {
-        "operationId" : "list_9",
+        "operationId" : "list_8",
         "parameters" : [ {
           "in" : "path",
           "name" : "productId",
@@ -11207,7 +11101,7 @@
     },
     "/api/v1/releases" : {
       "get" : {
-        "operationId" : "list_7",
+        "operationId" : "list_6",
         "responses" : {
           "200" : {
             "content" : {
@@ -11272,7 +11166,7 @@
     },
     "/api/v1/releases/{id}" : {
       "get" : {
-        "operationId" : "get_2",
+        "operationId" : "get_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -11799,7 +11693,7 @@
     },
     "/api/v1/requirements" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_3",
         "parameters" : [ {
           "in" : "query",
           "name" : "status",
@@ -12197,7 +12091,7 @@
         "tags" : [ "requirement-controller" ]
       },
       "get" : {
-        "operationId" : "get_1",
+        "operationId" : "get",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -12592,7 +12486,7 @@
     },
     "/api/v1/requirements/{requirementId}/attachments" : {
       "get" : {
-        "operationId" : "list_6",
+        "operationId" : "list_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "requirementId",
@@ -12846,7 +12740,7 @@
     },
     "/api/v1/requirements/{requirementId}/comments" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "requirementId",
@@ -12907,199 +12801,6 @@
           }
         },
         "tags" : [ "comment-controller" ]
-      }
-    },
-    "/api/v1/reviews" : {
-      "get" : {
-        "operationId" : "list_3",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/ReviewView"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "review-controller" ]
-      },
-      "post" : {
-        "operationId" : "open",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/OpenRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewView"
-                }
-              }
-            },
-            "description" : "Created"
-          }
-        },
-        "tags" : [ "review-controller" ]
-      }
-    },
-    "/api/v1/reviews/{id}" : {
-      "get" : {
-        "operationId" : "get",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewView"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "review-controller" ]
-      }
-    },
-    "/api/v1/reviews/{id}/close" : {
-      "post" : {
-        "operationId" : "close",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewView"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "review-controller" ]
-      }
-    },
-    "/api/v1/reviews/{id}/comments" : {
-      "get" : {
-        "operationId" : "comments",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/CommentView"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "review-controller" ]
-      },
-      "post" : {
-        "operationId" : "comment",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CommentBody"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/CommentView"
-                }
-              }
-            },
-            "description" : "Created"
-          }
-        },
-        "tags" : [ "review-controller" ]
-      }
-    },
-    "/api/v1/reviews/{id}/sign" : {
-      "post" : {
-        "operationId" : "sign",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewView"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "review-controller" ]
       }
     },
     "/api/v1/rules" : {

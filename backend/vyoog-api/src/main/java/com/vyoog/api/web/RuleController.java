@@ -73,7 +73,7 @@ public class RuleController {
     public List<RuleView> list() {
         var rates = quality.dismissalRateByRule().stream()
             .collect(java.util.stream.Collectors.toMap(DetectorQualityService.DismissalRate::ruleKey, r -> r));
-        return templates.findAll().stream().map(t -> toView(t, rates)).toList();
+        return templates.findAll().stream().filter(t -> t.getRetiredAt() == null).map(t -> toView(t, rates)).toList();
     }
 
     /** VYB-0790: this is the exact same class of action SettingsController's own mutations already require ADMINISTRATOR for — this endpoint just never actually enforced it despite its own Javadoc saying "an administrator adjusts." */

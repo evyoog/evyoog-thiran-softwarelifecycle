@@ -27,7 +27,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_18"];
+        get: operations["list_17"];
         put?: never;
         post?: never;
         delete?: never;
@@ -43,7 +43,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -155,7 +155,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_17"];
+        get: operations["list_16"];
         put?: never;
         post: operations["create_14"];
         delete?: never;
@@ -299,7 +299,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_16"];
+        get: operations["list_15"];
         put?: never;
         post: operations["freeze"];
         delete?: never;
@@ -379,7 +379,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -411,7 +411,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_15"];
+        get: operations["list_14"];
         put?: never;
         post: operations["raise_2"];
         delete?: never;
@@ -427,7 +427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -587,7 +587,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_14"];
+        get: operations["list_13"];
         put?: never;
         post: operations["create_13"];
         delete?: never;
@@ -603,7 +603,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_3"];
+        get: operations["get_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -619,7 +619,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_12"];
         put?: never;
         post: operations["raise_1"];
         delete?: never;
@@ -701,7 +701,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["close_1"];
+        post: operations["close"];
         delete?: never;
         options?: never;
         head?: never;
@@ -715,7 +715,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["comments_1"];
+        get: operations["comments"];
         put?: never;
         post: operations["addComment"];
         delete?: never;
@@ -1115,7 +1115,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_11"];
         put?: never;
         post: operations["create_11"];
         delete?: never;
@@ -1227,7 +1227,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1307,7 +1307,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_9"];
         put?: never;
         post: operations["create_10"];
         delete?: never;
@@ -1995,7 +1995,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_7"];
         put?: never;
         post: operations["create_6"];
         delete?: never;
@@ -2091,7 +2091,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_8"];
         put?: never;
         post: operations["create_7"];
         delete?: never;
@@ -2187,7 +2187,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_6"];
         put?: never;
         post: operations["create_5"];
         delete?: never;
@@ -2219,7 +2219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_2"];
+        get: operations["get_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2459,7 +2459,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_3"];
         put?: never;
         post: operations["create_4"];
         delete?: never;
@@ -2619,7 +2619,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_1"];
+        get: operations["get"];
         put?: never;
         post?: never;
         delete: operations["delete_1"];
@@ -2779,7 +2779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_5"];
         put?: never;
         post: operations["upload"];
         delete?: never;
@@ -2859,89 +2859,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_4"];
         put?: never;
         post: operations["add"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reviews": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_3"];
-        put?: never;
-        post: operations["open"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reviews/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reviews/{id}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["close"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reviews/{id}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["comments"];
-        put?: never;
-        post: operations["comment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reviews/{id}/sign": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["sign"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4736,16 +4656,12 @@ export interface components {
             selected?: boolean;
             title?: string;
         };
-        CommentBody: {
-            body: string;
-            requirementId?: string;
-        };
         CommentView: {
             authorId?: string;
             body?: string;
             createdAt?: string;
             id?: string;
-            requirementId?: string;
+            mentionedUserIds?: string[];
         };
         CommitBody: {
             authorEmail?: string;
@@ -5607,13 +5523,6 @@ export interface components {
             signatureRequired?: boolean;
             to?: string;
         };
-        OpenRequest: {
-            closesAt?: string;
-            participants?: components["schemas"]["ParticipantInputBody"][];
-            requirementIds: string[];
-            scopeRef?: string;
-            title: string;
-        };
         OrphanView: {
             id?: string;
             kind?: string;
@@ -5798,16 +5707,6 @@ export interface components {
             paged?: boolean;
             sort?: components["schemas"]["SortObject"][];
             unpaged?: boolean;
-        };
-        ParticipantInputBody: {
-            role: string;
-            userId: string;
-        };
-        ParticipantView: {
-            role?: string;
-            signatureAcr?: string;
-            signedAt?: string;
-            userId?: string;
         };
         PartitionInfo: {
             archived?: boolean;
@@ -6151,18 +6050,6 @@ export interface components {
             /** Format: uuid */
             assignedTo?: string;
             buildLabel?: string;
-        };
-        ReviewView: {
-            closedAt?: string;
-            closesAt?: string;
-            id?: string;
-            openedAt?: string;
-            participants?: components["schemas"]["ParticipantView"][];
-            requirementIds?: string[];
-            scopeRef?: string;
-            stale?: boolean;
-            state?: string;
-            title?: string;
         };
         RewriteSuggestionRequest: {
             /** Format: int32 */
@@ -6768,7 +6655,7 @@ export interface operations {
             };
         };
     };
-    list_18: {
+    list_17: {
         parameters: {
             query?: {
                 state?: string;
@@ -6794,7 +6681,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -6947,7 +6834,7 @@ export interface operations {
             };
         };
     };
-    list_17: {
+    list_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -7188,7 +7075,7 @@ export interface operations {
             };
         };
     };
-    list_16: {
+    list_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -7370,7 +7257,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -7414,7 +7301,7 @@ export interface operations {
             };
         };
     };
-    list_15: {
+    list_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -7458,7 +7345,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -7690,7 +7577,7 @@ export interface operations {
             };
         };
     };
-    list_14: {
+    list_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -7734,7 +7621,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -7756,7 +7643,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_12: {
         parameters: {
             query?: {
                 state?: string;
@@ -7931,7 +7818,7 @@ export interface operations {
             };
         };
     };
-    close_1: {
+    close: {
         parameters: {
             query?: never;
             header?: never;
@@ -7953,7 +7840,7 @@ export interface operations {
             };
         };
     };
-    comments_1: {
+    comments: {
         parameters: {
             query?: never;
             header?: never;
@@ -8682,7 +8569,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -8850,7 +8737,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_10: {
         parameters: {
             query?: {
                 state?: "OPEN" | "ACCEPTED" | "DISMISSED" | "RESOLVED";
@@ -8965,7 +8852,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10050,7 +9937,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -10204,7 +10091,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -10372,7 +10259,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -10436,7 +10323,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -10811,7 +10698,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_3: {
         parameters: {
             query: {
                 status?: "DRAFT" | "IN_REVIEW" | "REVIEWED" | "NEEDS_REVISION" | "APPROVED" | "REJECTED";
@@ -11077,7 +10964,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get: {
         parameters: {
             query?: never;
             header?: never;
@@ -11387,7 +11274,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -11556,7 +11443,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -11600,164 +11487,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CommentView"];
-                };
-            };
-        };
-    };
-    list_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewView"][];
-                };
-            };
-        };
-    };
-    open: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpenRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewView"];
-                };
-            };
-        };
-    };
-    get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewView"];
-                };
-            };
-        };
-    };
-    close: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewView"];
-                };
-            };
-        };
-    };
-    comments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CommentView"][];
-                };
-            };
-        };
-    };
-    comment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CommentBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CommentView"];
-                };
-            };
-        };
-    };
-    sign: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewView"];
                 };
             };
         };

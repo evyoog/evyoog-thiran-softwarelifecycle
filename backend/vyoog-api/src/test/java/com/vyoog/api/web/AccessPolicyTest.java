@@ -177,8 +177,6 @@ class AccessPolicyTest {
         Map.entry("SavedViewController#delete", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
         Map.entry("LintController#lint", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
         // review: Reviewer, Approver, Compliance Lead, Architect
-        Map.entry("ReviewController#open", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
-        Map.entry("ReviewController#comment", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("FindingController#dismiss", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("FindingController#accept", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("FindingController#reopen", new Expected(AccessRule.REVIEW, RequiresAccess.Scope.ANYWHERE)),

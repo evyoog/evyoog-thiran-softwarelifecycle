@@ -8,7 +8,7 @@ Every requirement in the register, by feature. `BUILD-REGISTER.md` is the source
 |---|---|---|
 | [Application shell](FRD/application-shell/requirement.md) | 4 | DONE 4 |
 | [Home](FRD/home/requirement.md) | 4 | DONE 3, PARTIAL 1 |
-| [My Work](FRD/my-work/requirement.md) | 18 | DONE 17, PARTIAL 1 |
+| [My Work](FRD/my-work/requirement.md) | 18 | DONE 15, PARTIAL 1, SUPERSEDED 2 |
 | [Portfolio](FRD/portfolio/requirement.md) | 6 | DONE 6 |
 | [Requirements](FRD/requirements/requirement.md) | 58 | DONE 58 |
 | [Design](FRD/design/requirement.md) | 15 | DONE 15 |
@@ -19,11 +19,11 @@ Every requirement in the register, by feature. `BUILD-REGISTER.md` is the source
 | [Administration](FRD/administration/requirement.md) | 33 | DONE 32, PARTIAL 1 |
 | [Trace graph](FRD/trace-graph/requirement.md) | 8 | DONE 8 |
 | [Gap detection and AI detectors](FRD/gap-detection/requirement.md) | 32 | DONE 30, PARTIAL 2 |
-| [Review, clarification and change requests](FRD/review-and-change-control/requirement.md) | 20 | DONE 18, PARTIAL 2 |
+| [Review, clarification and change requests](FRD/review-and-change-control/requirement.md) | 20 | DONE 13, SUPERSEDED 7 |
 | [Platform foundation](FRD/platform-foundation/requirement.md) | 12 | DONE 5, SUPERSEDED 7 |
 | [Non-functional: Performance and operability](non-functional-requirements/performance.md) | 6 | DONE 6 |
 | [Non-functional: Accessibility and cross-cutting UX](non-functional-requirements/accessibility-and-ux.md) | 7 | DONE 7 |
-| [Planned: Phase 6](functional-requirements/phase-6-planned.md) | 60 | BLOCKED 5, DONE 32, PARTIAL 1, TODO 22 |
+| [Planned: Phase 6](functional-requirements/phase-6-planned.md) | 60 | BLOCKED 5, DONE 33, PARTIAL 1, TODO 21 |
 
 Total: 358 requirements (298 in phases 0 to 5, 60 planned in phase 6).
 

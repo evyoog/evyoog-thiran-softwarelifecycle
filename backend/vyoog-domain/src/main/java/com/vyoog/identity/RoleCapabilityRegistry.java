@@ -11,10 +11,9 @@ import java.util.List;
  * <p>Honest inventory as of this session: {@code access_grant.role} (this enum) is
  * checked by exactly the endpoints {@link com.vyoog.api.config.PrincipalGuard
  * #requireRole}/{@code requireAdministrator} guard — all of them new this phase, all
- * under Administration. REVIEWER/APPROVER's real teeth today ("sign a review round")
- * come from a *different* column — {@code review_participant.role}, a free-text field
- * set per review round, unrelated to this grant model — noted explicitly below rather
- * than conflated with it. VYB-0902 added the first checks on BUSINESS_ANALYST, ARCHITECT
+ * under Administration. Review rounds, whose signing used a *different* column
+ * ({@code review_participant.role}, set per round), were retired in D26: that column is
+ * read-only history now, and REVIEWER/APPROVER mean only what the endpoints below say. VYB-0902 added the first checks on BUSINESS_ANALYST, ARCHITECT
  * and APPROVER grants (seven write endpoints only; the rest is VYB-0906). VIEWER, DEVELOPER,
  * TESTER and COMPLIANCE_LEAD exist in the schema and can be granted, but no endpoint
  * restricts anything by holding them — they're informational only until a real use for
@@ -33,10 +32,6 @@ public final class RoleCapabilityRegistry {
             "PrincipalGuard.requireAdministrator — SettingsController"),
         new Capability(AccessRole.ADMINISTRATOR, "Create or edit products, applications, capabilities and compliance clauses (VYB-0906)", true,
             "@RequiresAccess(AccessRule.ADMIN) — ProductController, ApplicationController, CapabilityController, ClauseController"),
-        new Capability(AccessRole.APPROVER, "Sign a review round as approver", true,
-            "ReviewService#sign, gated on review_participant.role='APPROVER' — a separate field from this grant, see class Javadoc"),
-        new Capability(AccessRole.REVIEWER, "Comment and sign a review round as reviewer", true,
-            "ReviewService#sign, gated on review_participant.role='REVIEWER' — same caveat as APPROVER above"),
         new Capability(AccessRole.ADMINISTRATOR, "Create deployment environments and teams; re-embed stale requirements (VYB-0906)", true,
             "@RequiresAccess(AccessRule.ADMIN) — EnvironmentController, TeamController#create, AiController"),
         new Capability(AccessRole.APPROVER, "Create a release, set its target date, commit or remove scope (VYB-0906)", true,
@@ -47,8 +42,8 @@ public final class RoleCapabilityRegistry {
             "PrincipalGuard.requireAnyRoleOrAdmin — RequirementController#update/delete, ImportController#commit/deleteBatch"),
         new Capability(AccessRole.ARCHITECT, "Edit or delete a requirement; commit or delete an import batch (VYB-0902)", true,
             "PrincipalGuard.requireAnyRoleOrAdmin — same endpoints as BUSINESS_ANALYST"),
-        new Capability(AccessRole.REVIEWER, "Open or comment on a review; accept, dismiss or reopen a finding; review a trace link (VYB-0906)", true,
-            "@RequiresAccess(AccessRule.REVIEW) — ReviewController, FindingController, TraceLinkController"),
+        new Capability(AccessRole.REVIEWER, "Accept, dismiss or reopen a finding; review a trace link (VYB-0906)", true,
+            "@RequiresAccess(AccessRule.REVIEW) — FindingController, TraceLinkController"),
         new Capability(AccessRole.COMPLIANCE_LEAD, "Same review actions as REVIEWER (VYB-0906)", true,
             "@RequiresAccess(AccessRule.REVIEW)"),
         new Capability(AccessRole.ARCHITECT, "Same review actions as REVIEWER (VYB-0906)", true,

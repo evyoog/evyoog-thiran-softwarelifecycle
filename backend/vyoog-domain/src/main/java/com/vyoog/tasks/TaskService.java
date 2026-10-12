@@ -5,8 +5,6 @@ import com.vyoog.identity.AppUserRepository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,11 +15,11 @@ import org.springframework.stereotype.Service;
 /**
  * VYB-0340–0349: every derived task, computed fresh on every call from current state
  * — never stored, never authored (VYB-0340 AC2: there is no task table). Each method
- * below is one of the seven conditions VYB-0341–0347 name; {@link #tasksFor} is all of
+ * below is one of the five conditions VYB-0341/0344–0347 name (VYB-0342/0343 went with review rounds, D26); {@link #tasksFor} is all of
  * them for one user, which is what My Work (VYB-0370) actually renders.
  *
  * <p>VYB-0838 (D19): {@link #tasksFor} additionally filters out anything the user
- * dismissed via {@link #complete} — the seven queries below are still exactly what they
+ * dismissed via {@link #complete} — the five queries below are still exactly what they
  * always were; {@code task_completion} is a separate predicate ("did this person
  * dismiss this, at this object's current revision"), not a new kind of task and not a
  * flag stored on one. See {@link #complete}/{@link #reopen}/{@link #completedToday}.
@@ -77,34 +75,6 @@ public class TaskService {
             """,
             (rs, n) -> requirementTask(rs, TaskKind.AUTHOR_WORDING, "Carries an open wording finding"),
             userId);
-    }
-
-    /** VYB-0342: each reviewer on an open round they haven't signed. AC2 — observers never appear; this query never selects them. */
-    public List<Task> reviewerPendingTasks(UUID userId) {
-        return jdbc.query("""
-            SELECT rv.id, rv.title FROM review rv
-            JOIN review_participant rp ON rp.review_id = rv.id
-            WHERE rv.state = 'OPEN' AND rp.user_id = ? AND rp.role = 'REVIEWER' AND rp.signed_at IS NULL
-            """,
-            (rs, n) -> new Task(TaskKind.REVIEWER_PENDING, UUID.fromString(rs.getString("id")),
-                rs.getString("title"), "Review round is open and awaiting your signature", null, null, null),
-            userId);
-    }
-
-    /** VYB-0343: approvers holding a grant on the round's scope. AC1 — never the item's own owner. */
-    public List<Task> approverAwaitingTasks(UUID userId) {
-        return jdbc.query("""
-            SELECT rv.id, rv.title FROM review rv
-            JOIN review_participant rp ON rp.review_id = rv.id
-            WHERE rv.state = 'OPEN' AND rp.user_id = ? AND rp.role = 'APPROVER' AND rp.signed_at IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM review_item ri JOIN requirement r2 ON r2.id = ri.requirement_id
-                WHERE ri.review_id = rv.id AND r2.owner_id = ?
-              )
-            """,
-            (rs, n) -> new Task(TaskKind.APPROVER_AWAITING, UUID.fromString(rs.getString("id")),
-                rs.getString("title"), "Approval round is open and awaiting your signature", null, null, null),
-            userId, userId);
     }
 
     /** VYB-0344: the assigned developer of an approved requirement with no code link at all. */
@@ -215,8 +185,6 @@ public class TaskService {
     private List<Task> ownTasks(UUID userId) {
         List<Task> all = new ArrayList<>();
         all.addAll(authorWordingTasks(userId));
-        all.addAll(reviewerPendingTasks(userId));
-        all.addAll(approverAwaitingTasks(userId));
         all.addAll(developerImplementTasks(userId));
         all.addAll(developerReimplementTasks(userId));
         all.addAll(testerVerifyTasks(userId));
@@ -227,32 +195,24 @@ public class TaskService {
 
     // ── VYB-0838 (D19): a real completion action on a derived task ───────────────────
 
-    private static final Set<TaskKind> REQUIREMENT_KINDS = EnumSet.of(
-        TaskKind.AUTHOR_WORDING, TaskKind.DEVELOPER_IMPLEMENT, TaskKind.DEVELOPER_REIMPLEMENT,
-        TaskKind.TESTER_VERIFY, TaskKind.TESTER_REVERIFY);
-
     private record CompletionKey(TaskKind kind, UUID objectId) {}
 
-    /** Null for a review-scoped kind — a review carries no revision to gate staleness against. */
     private Integer currentRevisionOf(TaskKind kind, UUID objectId) {
-        if (!REQUIREMENT_KINDS.contains(kind)) return null;
         return jdbc.query("SELECT revision FROM requirement WHERE id = ?",
             (rs, n) -> rs.getInt("revision"), objectId).stream().findFirst().orElse(null);
     }
 
     /**
      * (kind, objectId) pairs currently dismissed for this user — a completion counts
-     * only while it still matches the object's current revision (or, for a
-     * review-scoped kind, unconditionally: reviews carry no revision, so that
-     * dismissal holds until the review closes on its own or is explicitly reopened).
+     * only while it still matches the object's current revision. Rows of the two
+     * kinds retired with review rounds (D26) are history and never match anything.
      */
     private Set<CompletionKey> activeCompletions(UUID userId) {
         return Set.copyOf(jdbc.query("""
             SELECT tc.kind, tc.object_id
             FROM task_completion tc
-            WHERE tc.user_id = ?
-              AND (tc.object_revision IS NULL
-                   OR tc.object_revision = (SELECT revision FROM requirement WHERE id = tc.object_id))
+            WHERE tc.user_id = ? AND tc.kind IN ('AUTHOR_WORDING','DEVELOPER_IMPLEMENT','DEVELOPER_REIMPLEMENT','TESTER_VERIFY','TESTER_REVERIFY')
+              AND tc.object_revision = (SELECT revision FROM requirement WHERE id = tc.object_id)
             """,
             (rs, n) -> new CompletionKey(TaskKind.valueOf(rs.getString("kind")), UUID.fromString(rs.getString("object_id"))),
             userId));
@@ -278,30 +238,26 @@ public class TaskService {
 
     public record CompletedTask(TaskKind kind, UUID objectId, String objectLabel, java.time.Instant completedAt) {}
 
-    /** Everything this user completed since local midnight — My Work's "Closed today" group. */
+    /**
+     * Everything this user completed since local midnight — My Work's "Closed today" group.
+     * Completions of the two kinds retired with review rounds (D26) are history: they are
+     * not joined to a requirement, so they never appear here.
+     */
     public List<CompletedTask> completedToday(UUID userId) {
-        List<CompletedTask> out = new ArrayList<>();
-        out.addAll(jdbc.query("""
+        return jdbc.query("""
             SELECT tc.kind, tc.object_id, r.key AS label, tc.completed_at
             FROM task_completion tc JOIN requirement r ON r.id = tc.object_id
             WHERE tc.user_id = ? AND tc.completed_at >= date_trunc('day', now())
+              AND tc.kind IN ('AUTHOR_WORDING','DEVELOPER_IMPLEMENT','DEVELOPER_REIMPLEMENT','TESTER_VERIFY','TESTER_REVERIFY')
+            ORDER BY tc.completed_at DESC
             """,
             (rs, n) -> new CompletedTask(TaskKind.valueOf(rs.getString("kind")),
                 UUID.fromString(rs.getString("object_id")), rs.getString("label"), ts(rs, "completed_at")),
-            userId));
-        out.addAll(jdbc.query("""
-            SELECT tc.kind, tc.object_id, rv.title AS label, tc.completed_at
-            FROM task_completion tc JOIN review rv ON rv.id = tc.object_id
-            WHERE tc.user_id = ? AND tc.completed_at >= date_trunc('day', now())
-            """,
-            (rs, n) -> new CompletedTask(TaskKind.valueOf(rs.getString("kind")),
-                UUID.fromString(rs.getString("object_id")), rs.getString("label"), ts(rs, "completed_at")),
-            userId));
-        return out.stream().sorted(Comparator.comparing(CompletedTask::completedAt).reversed()).toList();
+            userId);
     }
 
     /**
-     * VYB-0370: everything derived for one person, across all seven kinds — plus,
+     * VYB-0370: everything derived for one person, across all five kinds — plus,
      * VYB-0706 AC1, everything derived for anyone who nominated this person as their
      * delegate, each tagged with {@link Task#onBehalfOfUserId} (AC2) so it's never
      * mistaken for the delegate's own work.

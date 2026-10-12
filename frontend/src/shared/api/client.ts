@@ -710,46 +710,6 @@ export interface ImportCommitOutcome {
   requirementId?: string
 }
 
-// ── Review rounds (VYB-0300–0307) ───────────────────────────────────────────────
-
-export type ReviewParticipantRole = 'REVIEWER' | 'APPROVER' | 'OBSERVER'
-export type ReviewState = 'OPEN' | 'CLOSED' | 'BLOCKED'
-
-export interface ReviewParticipant {
-  userId: string
-  role: ReviewParticipantRole
-  signedAt?: string
-  signatureAcr?: string
-}
-
-export interface Review {
-  id: string
-  title: string
-  scopeRef?: string
-  state: ReviewState
-  openedAt: string
-  closedAt?: string
-  closesAt?: string
-  stale: boolean
-  requirementIds: string[]
-  participants: ReviewParticipant[]
-}
-
-export interface ReviewComment {
-  id: string
-  requirementId?: string
-  authorId: string
-  body: string
-  createdAt: string
-}
-
-export interface OpenReviewRequest {
-  title: string
-  scopeRef?: string
-  requirementIds: string[]
-  participants?: { userId: string; role: ReviewParticipantRole }[]
-}
-
 // ── Test evidence (VYB-0310–0316) ────────────────────────────────────────────────
 
 export interface EvidenceSummary {
@@ -1101,7 +1061,7 @@ export interface Clarification {
 // ── Derived tasks / My Work (VYB-0340–0349/0370–0374) ────────────────────────────
 
 export type TaskKind =
-  | 'AUTHOR_WORDING' | 'REVIEWER_PENDING' | 'APPROVER_AWAITING'
+  | 'AUTHOR_WORDING'
   | 'DEVELOPER_IMPLEMENT' | 'DEVELOPER_REIMPLEMENT' | 'TESTER_VERIFY' | 'TESTER_REVERIFY'
 
 export interface Task {
@@ -2233,19 +2193,6 @@ export const api = {
     request<DocumentAnalysisInfo>(`/import/analysis/${id}/dismiss`, {
       method: 'POST', body: JSON.stringify({ reason }),
     }),
-
-  // Review rounds
-  reviews: () => request<Review[]>('/reviews'),
-  review: (id: string) => request<Review>(`/reviews/${id}`),
-  openReview: (body: OpenReviewRequest) =>
-    request<Review>('/reviews', { method: 'POST', body: JSON.stringify(body) }),
-  reviewComments: (id: string) => request<ReviewComment[]>(`/reviews/${id}/comments`),
-  addReviewComment: (id: string, body: string, requirementId?: string) =>
-    request<ReviewComment>(`/reviews/${id}/comments`, {
-      method: 'POST', body: JSON.stringify({ body, requirementId }),
-    }),
-  signReview: (id: string) => request<Review>(`/reviews/${id}/sign`, { method: 'POST' }),
-  closeReview: (id: string) => request<Review>(`/reviews/${id}/close`, { method: 'POST' }),
 
   // Test evidence
   // VYB-0923 to VYB-0927: manual test management. Writes need the Tester role (server-enforced); reads any signed-in person.

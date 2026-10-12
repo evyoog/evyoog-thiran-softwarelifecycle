@@ -99,14 +99,14 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0231 | 1 | Home | Blocking-this-release list | PARTIAL | 13 |
 | VYB-0232 | 1 | Home | Requirement flow, largest drop-off marked stuck | DONE | 7 |
 | VYB-0233 | 1 | Home | Not owned here (external systems) | DONE | 13 |
-| VYB-0300 | 2 | Review | Review rounds | DONE | 9 |
-| VYB-0301 | 2 | Review | Participants and their roles | DONE | 9 |
-| VYB-0302 | 2 | Review | Signatures | DONE | 9 |
-| VYB-0303 | 2 | Review | Step-up authentication for signing | PARTIAL | 9 |
+| VYB-0300 | 2 | Review | ~~Review rounds~~ | SUPERSEDED | 9,96 |
+| VYB-0301 | 2 | Review | ~~Participants and their roles~~ | SUPERSEDED | 9,96 |
+| VYB-0302 | 2 | Review | ~~Signatures~~ | SUPERSEDED | 9,96 |
+| VYB-0303 | 2 | Review | ~~Step-up authentication for signing~~ | SUPERSEDED | 9,96 |
 | VYB-0304 | 2 | Review | Separation of duties on approval | DONE | 9 |
-| VYB-0305 | 2 | Review | Service accounts cannot approve | PARTIAL | 9 |
-| VYB-0306 | 2 | Review | Review comments | DONE | 9 |
-| VYB-0307 | 2 | Review | Blocking clarifications block closure | DONE | 9 |
+| VYB-0305 | 2 | Review | ~~Service accounts cannot approve~~ | SUPERSEDED | 9,96 |
+| VYB-0306 | 2 | Review | ~~Review comments~~ | SUPERSEDED | 9,96 |
+| VYB-0307 | 2 | Review | ~~Blocking clarifications block closure~~ | SUPERSEDED | 9,96 |
 | VYB-0310 | 2 | Evidence | Test cases | DONE | 9 |
 | VYB-0311 | 2 | Evidence | Test runs ingested from CI | DONE | 9 |
 | VYB-0312 | 2 | Evidence | Verification binds to a revision | DONE | 9 |
@@ -125,8 +125,8 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0334 | 2 | Clarification | Ageing clarifications escalate | DONE | 20 |
 | VYB-0340 | 2 | Tasks | No task authoring exists | DONE | 9 |
 | VYB-0341 | 2 | Tasks | Author task — unmeasurable wording | DONE | 9 |
-| VYB-0342 | 2 | Tasks | Reviewer task — review pending | DONE | 9 |
-| VYB-0343 | 2 | Tasks | Approver task — awaiting signature | DONE | 9 |
+| VYB-0342 | 2 | Tasks | ~~Reviewer task — review pending~~ | SUPERSEDED | 9,96 |
+| VYB-0343 | 2 | Tasks | ~~Approver task — awaiting signature~~ | SUPERSEDED | 9,96 |
 | VYB-0344 | 2 | Tasks | Developer task — implement | DONE | 9 |
 | VYB-0345 | 2 | Tasks | Developer task — re-implement | DONE | 9 |
 | VYB-0346 | 2 | Tasks | Tester task — verify | DONE | 9 |
@@ -347,7 +347,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | DONE on dev: a History section on the requirement detail with revisions and status changes on one timeline and a word-level comparison of any two revisions (7 integration and 14 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | DONE on dev: a new version is a new requirement (new key, DRAFT) forked from an approved one for an approved change request; approving it supersedes the original, whose status stays APPROVED; a replaced requirement takes no new links or release; the in-place edit stays (11 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | DONE on dev: a Link dialog with a picker per kind (requirement, test, design node, release, untraced defect) and a Linked work list on the requirement detail; requirement-by-release and requirement-by-defect matrices; each impact count on a change request opens its items (11 integration and 18 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
-| VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | TODO | S9 |
+| VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | DONE on dev: retired, per D26 (accepted this session): the `/api/v1/reviews` endpoints, `ReviewService` and the `com.vyoog.review` package are removed, with the reviewer and approver tasks on My Work and the round-based `sod` gap rule (V053 marks it retired, resolves its open findings, audits it); the four round tables stay as read-only history; a requirement's REVIEW and APPROVAL stages and the spine counts now come from its status changes or an old round's signature (10 integration tests, `ReviewRetirementIT`; frontend client and My Work cleaned; commit only, no PR yet) | S9,96 |
 | VYB-0945 | 6 | Traceability, review and versioning depth | Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20] | TODO | S9 |
 | VYB-0946 | 6 | Traceability, review and versioning depth | Remove placeholders on Verify and My Work lanes [S; F26] | TODO | S9 |
 | VYB-0947 | 6 | Compliance evidence and risk | Clause register UI with control mapping to requirements and tests [M; F41] | TODO | S10 |
@@ -5516,6 +5516,31 @@ Phase 6 Sprint 9. Branch `dev`. **29 new tests**: `TraceUiIT` 11 (real PostgreSQ
 - Requirement-to-requirement links on the detail page are still shown by id; no unlink from the dialog; moving a defect between requirements is still an edit of the defect.
 - The matrices have no export or paging.
 - The severity-count form of the defect matrix and an Impact section on the requirement page were offered and not chosen.
+- Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 96 — VYB-0944 (F17): review rounds retired
+
+Phase 6 Sprint 9. Branch `dev`. **10 new tests**: `ReviewRetirementIT` (real PostgreSQL, HTTP with real tokens); `ReviewIT` (9 tests of the removed service) deleted. The finding text F17 is not in the repository; scope is the register row and decision D26. Description: `docs/04-workflows/review-rounds-retired.md`. Migration `V053__retire_review_rounds.sql`.
+
+**Decision with the product owner this session.** D26, **retire the backend and keep the old rows** (building a screen was the alternative and was not chosen). Recorded as Accepted in `docs/DECISIONS.md`.
+
+**What I found first.** The REVIEW and APPROVAL lifecycle stages (and the spine counts) were read only from round signatures. Since the rounds screen went (session 41) nothing creates a round, so those two stages were already empty for every new requirement. Retiring the rounds had to move them to the status history, and that fixes them.
+
+**Removed.** `ReviewController` (`/api/v1/reviews`, now 404), `com.vyoog.review` (service, entities, repositories, the round-based `SeparationOfDutiesDetector`), the two My Work task kinds `REVIEWER_PENDING` and `APPROVER_AWAITING` (five remain), the two `AccessPolicyTest` entries, the two capability rows in `RoleCapabilityRegistry` that described signing a round, and the review calls and types in the frontend client and the "Review closes" calendar entries in My Work (the calendar keeps clarification due dates).
+
+**Kept.** `review`, `review_item`, `review_participant`, `review_comment` with all their rows (nothing dropped). Old `task_completion` rows of the two retired kinds stay; `activeCompletions` and `completedToday` now only read the five live kinds, so such a row cannot break My Work.
+
+**Changed.** `LifecycleHistoryService`: REVIEW is the earlier of the first move into REVIEWED (audit log) and an old reviewer signature; APPROVAL likewise for APPROVED and an approver signature; the spine counts a requirement once however it qualifies. V053 adds `gap_rule_template.retired_at`, sets it on `sod`, resolves the open `sod` findings (dismissed and accepted left as decided) and writes a `rule.retired` audit event; the rules screen lists only rules that are not retired.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) `sod` is retired, not deleted: findings reference it, and they are history. (2) Its open findings are resolved, not dismissed (nobody dismissed them). (3) VYB-0300–0303, 0305–0307, 0342 and 0343 are SUPERSEDED; VYB-0304 stays DONE because separation of duties is still enforced, on the transition itself (D17). (4) A requirement with a status history but no audit event for it (older than the log) has no REVIEW or APPROVAL stage unless an old signature says so; I did not invent one from the current status.
+
+**Behaviour changes to know.** (1) `/api/v1/reviews/**` answers 404. (2) My Work no longer shows "Review pending" or "Approval pending". (3) The rules list has one rule fewer. (4) The OpenAPI document and `schema.d.ts` lost the review paths and the two task kinds.
+
+**Evidence.** Making the lifecycle read the wrong status failed `ReviewRetirementIT` AC3, then restored. V053 was run against the local database holding a seeded OPEN `sod` finding: it was resolved, and the test of the result passes. The integration tests prove: the five review paths answer 404; the round tables and their rows are still readable; a requirement taken to APPROVED shows REVIEW and APPROVAL with the person who moved it; a draft shows neither; an old round's signatures alone give both stages; the spine counts both ways and a requirement once; an open old round creates no task and the task kinds are exactly the five; a dismissal of an old round task breaks nothing; the `sod` rule is retired with no open finding and an audit event; the rules screen omits it.
+
+**Not done / to know**
+- Not looked at in a browser: the frontend change is deletions (the client, two task labels, a calendar source); `tsc`, lint (10 warnings, the baseline) and the 798 frontend tests pass.
+- Old round data has no screen and no endpoint; it is reachable only in the database.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---

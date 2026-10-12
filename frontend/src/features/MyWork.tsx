@@ -11,8 +11,6 @@ type Tab = 'today' | 'pipeline' | 'deployment' | 'calendar'
 
 const KIND_LABEL: Record<TaskKind, string> = {
   AUTHOR_WORDING: 'Fix unclear wording',
-  REVIEWER_PENDING: 'Review pending',
-  APPROVER_AWAITING: 'Approval pending',
   DEVELOPER_IMPLEMENT: 'Implement',
   DEVELOPER_REIMPLEMENT: 'Re-implement',
   TESTER_VERIFY: 'Verify',
@@ -24,8 +22,6 @@ type Stage = 'author' | 'review' | 'approve' | 'dev' | 'test' | 'deploy'
 
 const KIND_STAGE: Record<TaskKind, Stage> = {
   AUTHOR_WORDING: 'author',
-  REVIEWER_PENDING: 'review',
-  APPROVER_AWAITING: 'approve',
   DEVELOPER_IMPLEMENT: 'dev',
   DEVELOPER_REIMPLEMENT: 'dev',
   TESTER_VERIFY: 'test',
@@ -589,7 +585,7 @@ type CalEvent = { date: Date; label: string; kind: CalKind }
 
 const LEGEND: { kind: CalKind; colour: string; label: string }[] = [
   { kind: 'task', colour: 'var(--tx-3)', label: 'My task due' },
-  { kind: 'rev', colour: 'var(--info)', label: 'Review closes' },
+  { kind: 'rev', colour: 'var(--info)', label: 'Clarification due' },
   { kind: 'rel', colour: 'var(--brand)', label: 'Release milestone' },
   { kind: 'dep', colour: 'var(--ok)', label: 'Deployment' },
   { kind: 'risk', colour: 'var(--crit)', label: 'Overdue' },
@@ -601,7 +597,7 @@ function sameDay(a: Date, b: Date) {
 
 /**
  * VYB-0372: plots only dates this domain genuinely has — a release's target date, a
- * review's close date, a clarification's derived due date, and a deployment's timestamp.
+ * clarification's derived due date, and a deployment's timestamp.
  * No date is invented: a release with no target simply does not appear, and a task has no
  * date of its own now that Planning is gone.
  */
@@ -609,7 +605,6 @@ function CalendarTab() {
   const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d })
 
   const { data: releases } = useQuery({ queryKey: ['releases'], queryFn: api.releases })
-  const { data: reviews } = useQuery({ queryKey: ['reviews'], queryFn: api.reviews })
   const { data: clarifications } = useQuery({ queryKey: ['clarifications-blocking'], queryFn: api.blockingClarifications })
   const { data: deployments } = useQuery({ queryKey: ['recent-deployments'], queryFn: () => api.recentDeployments(8) })
 
@@ -618,9 +613,6 @@ function CalendarTab() {
     for (const r of releases ?? []) {
       if (r.targetDate) out.push({ date: new Date(r.targetDate), label: `${r.name} target`, kind: 'rel' })
     }
-    for (const rv of reviews ?? []) {
-      if (rv.closesAt) out.push({ date: new Date(rv.closesAt), label: `Review closes`, kind: 'rev' })
-    }
     for (const c of clarifications ?? []) {
       if (c.dueAt) out.push({ date: new Date(c.dueAt), label: `Clarification due`, kind: 'rev' })
     }
@@ -628,7 +620,7 @@ function CalendarTab() {
       out.push({ date: new Date(d.deployedAt), label: `${d.buildLabel} → ${d.environmentName}`, kind: 'dep' })
     }
     return out
-  }, [releases, reviews, clarifications, deployments])
+  }, [releases, clarifications, deployments])
 
   // Monday-first, the way the prototype's grid reads.
   const lead = (month.getDay() + 6) % 7

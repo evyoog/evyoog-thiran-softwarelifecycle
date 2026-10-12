@@ -2,20 +2,20 @@
 
 # Review, clarification and change requests: requirements
 
-Requirements for **Review, clarification and change requests**, from `BUILD-REGISTER.md` (phases 0 to 5, everything built so far). Status: DONE 18, PARTIAL 2.
+Requirements for **Review, clarification and change requests**, from `BUILD-REGISTER.md` (phases 0 to 5, everything built so far). Status: DONE 13, SUPERSEDED 7.
 
 `Tests` is the number of automated tests named for the requirement (`VYBnnnn_ACn_...`); they are listed in [`test-cases/automated-tests-index.md`](../../../../test-cases/automated-tests-index.md). `SUPERSEDED` rows are kept for the record and are not in force.
 
 | ID | Phase | Capability | Requirement | Status | Session | Tests |
 |---|---|---|---|---|---|---|
-| VYB-0300 | 2 | Review | Review rounds | DONE | 9 | — |
-| VYB-0301 | 2 | Review | Participants and their roles | DONE | 9 | — |
-| VYB-0302 | 2 | Review | Signatures | DONE | 9 | — |
-| VYB-0303 | 2 | Review | Step-up authentication for signing | PARTIAL | 9 | — |
+| VYB-0300 | 2 | Review | ~~Review rounds~~ | SUPERSEDED | 9,96 | — |
+| VYB-0301 | 2 | Review | ~~Participants and their roles~~ | SUPERSEDED | 9,96 | — |
+| VYB-0302 | 2 | Review | ~~Signatures~~ | SUPERSEDED | 9,96 | — |
+| VYB-0303 | 2 | Review | ~~Step-up authentication for signing~~ | SUPERSEDED | 9,96 | — |
 | VYB-0304 | 2 | Review | Separation of duties on approval | DONE | 9 | — |
-| VYB-0305 | 2 | Review | Service accounts cannot approve | PARTIAL | 9 | — |
-| VYB-0306 | 2 | Review | Review comments | DONE | 9 | — |
-| VYB-0307 | 2 | Review | Blocking clarifications block closure | DONE | 9 | — |
+| VYB-0305 | 2 | Review | ~~Service accounts cannot approve~~ | SUPERSEDED | 9,96 | — |
+| VYB-0306 | 2 | Review | ~~Review comments~~ | SUPERSEDED | 9,96 | — |
+| VYB-0307 | 2 | Review | ~~Blocking clarifications block closure~~ | SUPERSEDED | 9,96 | — |
 | VYB-0330 | 2 | Clarification | Clarification record | DONE | 9 | — |
 | VYB-0331 | 2 | Clarification | Blocking clarifications block derived tasks | DONE | 9 | — |
 | VYB-0332 | 2 | Clarification | Answers are recorded with an actor | DONE | 9 | — |
