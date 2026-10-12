@@ -5580,10 +5580,9 @@ Phase 6 Sprint 9. Branch `dev`. **2 new tests** (`pipelineVerify.test.ts`). Fron
 
 **Behaviour changes to know.** (1) My Work's Pipeline has five lanes, not nine. (2) Verify is one click to the Design screen. (3) `docs/02-requirements/FRD/my-work/ui-requirements.md` described six lanes that never matched the build; it now describes the five real ones.
 
-**Evidence.** In Chromium against a mocked API: the Pipeline lanes are exactly Draft, In review, Reviewed, Needs revision and Approved with no "Not tracked yet" text; clicking Verify on an In-review requirement went to `/design?requirementId=r1` with no modal. `tsc` clean, lint 10 warnings (the baseline), frontend tests pass. The backend is unchanged from the last green full verify (542, 118 and 371 tests at the pushed VYB-0945 commit), so I did not re-run it.
+**Evidence.** Adding a sixth status to the Pipeline's lane list failed `VYB0946_AC1`, then restored. In Chromium against a mocked API: the Pipeline lanes are exactly Draft, In review, Reviewed, Needs revision and Approved with no "Not tracked yet" text; clicking Verify on an In-review requirement went to `/design?requirementId=r1` with no modal. `tsc` clean, lint 10 warnings (the baseline), frontend tests pass. The backend is unchanged from the last green full verify (542, 118 and 371 tests at the pushed VYB-0945 commit), so I did not re-run it.
 
 **Not done / to know**
-- No test mutation check: the change is a deletion, and the tests assert the lane list and the destination, which a re-added lane or a changed path would fail.
 - Whether the two post-approval ideas (lanes from real evidence, an AI reviewer) come back is a product decision for later; neither is promised on screen now.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
