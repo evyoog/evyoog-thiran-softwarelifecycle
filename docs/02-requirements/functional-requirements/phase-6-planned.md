@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 29, PARTIAL 1, TODO 25.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 30, PARTIAL 1, TODO 24.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -91,7 +91,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | TODO | S9 |
+| VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | DONE on dev: a History section on the requirement detail with revisions and status changes on one timeline and a word-level comparison of any two revisions (7 integration and 14 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | TODO | S9 |
 | VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | TODO | S9 |
 | VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | TODO | S9 |

@@ -10,6 +10,7 @@ import { CapabilityPicker } from '@/shared/ui/CapabilityPicker'
 import { StatusBadge, PriorityBadge, CoveragePips } from '@/shared/ui/Badges'
 import { Modal } from '@/shared/ui/Modal'
 import { UserPicker } from '@/shared/ui/UserPicker'
+import { HistorySection } from './requirements/HistorySection'
 
 const TYPES: RequirementType[] = [
   'FUNCTIONAL', 'NON_FUNCTIONAL', 'BUSINESS_RULE', 'INTERFACE', 'DATA', 'REPORT', 'SECURITY', 'COMPLIANCE',
@@ -526,6 +527,9 @@ export function RequirementDetail() {
             </Btn>
             {createLink.isError && <p className="text-sm text-crit mt-1">Could not create link.</p>}
           </section>
+
+          {/* VYB-0941: revisions and status changes, and a comparison of any two revisions */}
+          <HistorySection requirementId={id} />
 
           {/* Comments */}
           <section className="border-b border-line pb-6">

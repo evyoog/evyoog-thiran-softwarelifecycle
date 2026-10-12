@@ -235,6 +235,37 @@ export interface AcceptanceCriterion {
   text: string
 }
 
+/**
+ * VYB-0941: one row of a requirement's timeline. A REVISION carries the whole snapshot of that revision (so any two can be
+ * compared); a STATUS_CHANGE carries the move and its reason. A person no longer known has a null name.
+ */
+export interface RequirementHistoryEntry {
+  kind: 'REVISION' | 'STATUS_CHANGE'
+  at: string
+  actorId?: string | null
+  actorName?: string | null
+  reason?: string | null
+  revision?: number | null
+  title?: string | null
+  statement?: string | null
+  type?: string | null
+  priority?: string | null
+  capabilityId?: string | null
+  capabilityName?: string | null
+  statusAtRevision?: string | null
+  fromStatus?: string | null
+  toStatus?: string | null
+}
+
+export interface RequirementHistory {
+  requirementId: string
+  currentRevision: number
+  currentStatus: string
+  /** True when the requirement's creation is no longer on the live audit log, so older status changes may be missing. */
+  statusHistoryMayBeIncomplete: boolean
+  entries: RequirementHistoryEntry[]
+}
+
 export interface RequirementComment {
   id: string
   authorId: string
@@ -1920,6 +1951,7 @@ export const api = {
 
   // Lifecycle history and live authoring signals
   lifecycle: (requirementId: string) => request<LifecycleStage[]>(`/requirements/${requirementId}/lifecycle`),
+  requirementHistory: (requirementId: string) => request<RequirementHistory>(`/requirements/${requirementId}/history`),
   lifecycleSpine: () => request<{ stage: string; count: number }[]>('/requirements/lifecycle-spine'),
   authoringSignals: (body: { statement: string; criteriaCount: number; hasCapability: boolean; hasUpstream: boolean }) =>
     request<AuthoringSignals>('/requirements/authoring-signals', { method: 'POST', body: JSON.stringify(body) }),

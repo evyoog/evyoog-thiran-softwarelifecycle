@@ -344,7 +344,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0938 | 6 | AI governance | One review endpoint for every AI proposal; nothing reaches briefs or requirements without it [M; F30] | DONE on dev for brief elaboration, rewrite and test-case suggestions (import candidates and document analysis not moved; 6 domain, 21 integration and 7 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0939 | 6 | AI governance | Persist model, prompt version and token counts; budgets per period; usage screen [M; F29, F30] | DONE on dev: one ledger row per model call (purpose, prompt version, model, reported tokens, outcome; no user, no text), token budgets per UTC day and month that refuse calls with a reason, Analytics "AI usage" tab, Administration budget card (17 domain, 7 integration and 8 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
 | VYB-0940 | 6 | AI governance | Move network calls out of database transactions; resumable extraction [M; F31] | DONE on dev: AI extraction saves each finished step and a failed one is continued; trace proposals, candidate checks, enrichment, requirement-revision embedding, model-backed rescans and attachment upload no longer call the network inside a transaction; a guard refuses it in tests and logs it in production (32 domain unit, 9 integration, 5 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S8 |
-| VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | TODO | S9 |
+| VYB-0941 | 6 | Traceability, review and versioning depth | Revision history and text diff on the requirement detail [M; F18] | DONE on dev: a History section on the requirement detail with revisions and status changes on one timeline and a word-level comparison of any two revisions (7 integration and 14 frontend new tests; checked in a browser against mocked data; commit only, no PR yet) | S9 |
 | VYB-0942 | 6 | Traceability, review and versioning depth | Fork a new version of an approved requirement, linked to its change request [M; F18] | TODO | S9 |
 | VYB-0943 | 6 | Traceability, review and versioning depth | Trace UI: create links to tests, design, release and defects; requirement by release and by defect matrices; impact item lists [L; F19] | TODO | S9 |
 | VYB-0944 | 6 | Traceability, review and versioning depth | Review rounds: restore the UI or retire the backend, per decision [M; F17] | TODO | S9 |
@@ -5443,6 +5443,30 @@ Phase 6 Sprint 8. Branch `dev`. **46 new tests**: `NetworkCallGuardTest` 8, `Res
 - No screen polls a running extraction; it says "reload in a minute".
 - The F31 text is not in the repository, so "resumable" is as I read the register row with your answer.
 - Testcontainers and the GitHub CI run are unchecked; local Postgres only.
+
+## Session 93 — VYB-0941 (F18): revision history and text diff on the requirement detail
+
+Phase 6 Sprint 9. Branch `dev`. **21 new tests**: `RequirementHistoryIT` 7 (real PostgreSQL, HTTP with real tokens), `revisionDiff.test.ts` 14. The finding text F18 is not in the repository; scope is the register row. Description: `docs/04-workflows/requirement-history.md`, decision D34. Something to see: **a requirement's detail page, History section**.
+
+**Decisions with the product owner this session.** (1) **The list shows revisions plus status changes**, merged. (2) **The diff compares any two revisions, word by word.** (3) **It is a History section on the page** (not a drawer).
+
+**What I found first.** `requirement_revision` already holds one immutable row per create and per material edit, but nothing read it: no endpoint, no screen. A status change does not make a revision; it is only on the audit log (`requirement.transitioned`), which is partitioned and archived by retention.
+
+**Backend.** No migration. `RequirementHistoryService.historyOf` (revisions joined to the person and the capability name, status changes from the audit log, merged newest first, and `statusHistoryMayBeIncomplete`). `GET /api/v1/requirements/{id}/history`. OpenAPI and `schema.d.ts` regenerated.
+
+**Frontend.** `features/requirements/HistorySection` on the detail page: newest six rows and "Show all", what each revision changed, a status row with the two status badges and the reason, a From and a To picker (default: the revision before the latest and the latest), the statement compared word by word (added underlined, removed struck through, each labelled for screen readers, with a legend and counts), the other fields as old then new. `revisionDiff.ts` is pure and tested.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Read by any signed-in person, as the requirement itself is. (2) Newest first, status change above the revision at the same instant. (3) Six rows collapsed. (4) The comparison covers title, statement, type, priority and capability, because those are what a revision snapshots. (5) Whitespace changes count as changes but not as words. (6) A comparison larger than four million token pairs shows old as removed and new as added. (7) A person no longer on record is said so in words.
+
+**Behaviour changes to know.** None to existing behaviour: one new read endpoint and one new section.
+
+**Evidence.** The integration tests prove: create, two edits and a submission give four rows newest first with the whole snapshot of each; each row names who and the capability by name; a save that changes nothing adds no row; a rejection keeps its reason and a status change is not a revision; a requirement with no creation on the audit log says its status history may be incomplete; 404 and 401. The diff functions are tested for identical text, a changed word, counts, reconstructing both texts from the segments, empty sides, the size cap, and whitespace. Rendered in Chromium against mocked responses (dark): five rows, the statement diff with the removed word struck through and the added words underlined, the field changes, the note, and the From picker changing the comparison to revision 1.
+
+**Not done / to know**
+- **Rationale, acceptance criteria, links, attachments and comments are not in a revision**, so a change to them is not on the timeline and not in the comparison. Snapshotting them is a data-model change I did not make.
+- **Status changes older than the audit retention may be missing**; the screen says so when the creation is no longer on the live log. Revisions are never archived.
+- No restore, no fork of an approved requirement (VYB-0942), no paging, no export.
+- Changing the audit action the status changes are read by to another name failed `RequirementHistoryIT` AC1, then restored; the revision join and the sort were not mutated. Testcontainers and the GitHub CI run are unchecked; local Postgres only.
 
 ---
 

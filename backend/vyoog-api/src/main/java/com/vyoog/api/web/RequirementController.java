@@ -22,6 +22,7 @@ import com.vyoog.requirements.LifecycleHistoryService;
 import com.vyoog.requirements.QualityScoreService;
 import com.vyoog.requirements.Placement;
 import com.vyoog.requirements.Requirement;
+import com.vyoog.requirements.RequirementHistoryService;
 import com.vyoog.requirements.RequirementRepository;
 import com.vyoog.requirements.RequirementService;
 import com.vyoog.requirements.RequirementSimilarityService;
@@ -62,6 +63,7 @@ public class RequirementController {
     private final IdempotencyService idempotency;
     private final ChangeRequestService changeRequests;
     private final LifecycleHistoryService lifecycleHistory;
+    private final RequirementHistoryService historyService;
     private final QualityScoreService qualityScore;
     private final GapPreviewService gapPreview;
     private final RequirementRewriteAdvisor rewriteAdvisor;
@@ -80,7 +82,9 @@ public class RequirementController {
                                   ChangeRequestService changeRequests, LifecycleHistoryService lifecycleHistory,
                                   QualityScoreService qualityScore, GapPreviewService gapPreview,
                                   RequirementRewriteAdvisor rewriteAdvisor, TestCaseSuggestionService testCaseSuggestions,
-                                  PrincipalGuard guard, AiProposalService proposals, ObjectMapper json) {
+                                  PrincipalGuard guard, AiProposalService proposals, ObjectMapper json,
+                                  RequirementHistoryService historyService) {
+        this.historyService = historyService;
         this.requirements = requirements;
         this.service = service;
         this.acceptanceCriteria = acceptanceCriteria;
@@ -354,6 +358,16 @@ public class RequirementController {
     @PatchMapping("/acceptance-criteria/{criterionId}")
     public CriterionView editCriterion(@PathVariable UUID criterionId, @RequestBody AddCriterion body) {
         return toView(acceptanceCriteria.edit(criterionId, body.text()));
+    }
+
+    /**
+     * VYB-0941 (F18): the revisions and status changes of one requirement, newest first. Each revision carries the whole snapshot
+     * (title, statement, type, priority, capability, the status then), so the screen can compare any two. Read by any signed-in
+     * person, like the requirement itself.
+     */
+    @GetMapping("/{id}/history")
+    public RequirementHistoryService.History history(@PathVariable UUID id) {
+        return historyService.historyOf(id);
     }
 
     public record LifecycleStageView(String stage, String actorId, String occurredAt) {}

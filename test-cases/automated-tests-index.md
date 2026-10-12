@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 981 tests cover 61 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1002 tests cover 62 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1167,3 +1167,27 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` aSavedStepThatCannotBeReadBackIsMadeAgainNeverGuessed (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableAnalysisTest.java`)
 - `AC8` theStepsOfThisBatchAreHandedToThePipelineAndSuccessCompletesTheExtraction (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
 - `AC9` aSecondRequestWhileOneIsRunningIsRefusedAndNothingIsCalled (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ResumableExtractionTest.java`)
+
+## VYB-0941: Revision history and text diff on the requirement detail [M; F18]
+
+- `AC1` theTimelineHoldsEveryRevisionAndEveryStatusChangeNewestFirstWithTheWholeSnapshot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC10` aVeryLargeComparisonIsShownAsReplacedInsteadOfFreezingThePage (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC10` anEmptyOldTextIsAllAddedAndAnEmptyNewTextIsAllRemoved (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC10` changedWhitespaceAloneIsStillAChangeSoTheTextReadsAsWritten (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC11` revisionsAreTheRevisionRowsOldestFirstAndStatusMovesAreLeftOut (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC12` aMovedCapabilityIsShownByItsNameAndAMissingOneIsSaidInWords (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC12` eachRevisionNamesTheFieldsItChangedAgainstThePreviousOne (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC13` theDefaultComparisonIsTheRevisionBeforeTheLatestAndTheLatest (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC14` theListIsCollapsedToTheNewestRowsUntilShowAll (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC15` aPersonIsNamedOrTheirAbsenceIsSaidInWords (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC15` aStatusMoveReadsFromTo (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC2` eachRowNamesWhoDidItAndTheCapabilityTheRequirementWasIn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC3` aSaveThatChangesNothingMakesNoRevisionSoItIsNotInTheHistory (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC4` aRejectionKeepsItsReasonAndAStatusChangeIsNotARevision (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC5` aRequirementWhoseCreationIsNotOnTheAuditLogSaysItsStatusHistoryMayBeIncomplete (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC6` anUnknownRequirementIsA404AndAnAnonymousCallerIsA401 (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC7` theHistoryIsReadOnlyAndTheRevisionsItShowsAreTheOnesTheDatabaseKeeps (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RequirementHistoryIT.java`)
+- `AC8` aChangedWordIsOneRemovalAndOneAdditionInReadingOrder (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC8` identicalTextHasNoChange (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC9` addedAndRemovedWordsAreCounted (`frontend/src/features/requirements/revisionDiff.test.ts`)
+- `AC9` joiningTheSegmentsOfTheSameAndAddedGivesTheNewTextAndOfSameAndRemovedTheOld (`frontend/src/features/requirements/revisionDiff.test.ts`)

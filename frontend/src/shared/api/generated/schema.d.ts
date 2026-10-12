@@ -347,7 +347,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["history_1"];
+        get: operations["history_2"];
         put?: never;
         post: operations["generate_1"];
         delete?: never;
@@ -2251,7 +2251,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["history"];
+        get: operations["history_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2621,6 +2621,22 @@ export interface paths {
         };
         get?: never;
         put: operations["reorderCriteria"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/requirements/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["history"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -5033,6 +5049,27 @@ export interface components {
             /** Format: int32 */
             requirementsInScope?: number;
         };
+        Entry: {
+            /** Format: uuid */
+            actorId?: string;
+            actorName?: string;
+            /** Format: date-time */
+            at?: string;
+            /** Format: uuid */
+            capabilityId?: string;
+            capabilityName?: string;
+            fromStatus?: string;
+            kind?: string;
+            priority?: string;
+            reason?: string;
+            /** Format: int32 */
+            revision?: number;
+            statement?: string;
+            statusAtRevision?: string;
+            title?: string;
+            toStatus?: string;
+            type?: string;
+        };
         EnvironmentSummaryView: {
             buildLabel?: string;
             deployedAt?: string;
@@ -5176,6 +5213,15 @@ export interface components {
         GraphView: {
             edges?: components["schemas"]["GraphEdgeView"][];
             nodes?: components["schemas"]["GraphNodeView"][];
+        };
+        History: {
+            /** Format: int32 */
+            currentRevision?: number;
+            currentStatus?: string;
+            entries?: components["schemas"]["Entry"][];
+            /** Format: uuid */
+            requirementId?: string;
+            statusHistoryMayBeIncomplete?: boolean;
         };
         HopView: {
             id?: string;
@@ -6973,7 +7019,7 @@ export interface operations {
             };
         };
     };
-    history_1: {
+    history_2: {
         parameters: {
             query?: {
                 applicationId?: string;
@@ -10174,7 +10220,7 @@ export interface operations {
             };
         };
     };
-    history: {
+    history_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -10866,6 +10912,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CriterionView"][];
+                };
+            };
+        };
+    };
+    history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["History"];
                 };
             };
         };

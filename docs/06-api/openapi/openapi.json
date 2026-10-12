@@ -2064,6 +2064,60 @@
         },
         "type" : "object"
       },
+      "Entry" : {
+        "properties" : {
+          "actorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "actorName" : {
+            "type" : "string"
+          },
+          "at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "capabilityId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "capabilityName" : {
+            "type" : "string"
+          },
+          "fromStatus" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "revision" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "statement" : {
+            "type" : "string"
+          },
+          "statusAtRevision" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "toStatus" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "EnvironmentSummaryView" : {
         "properties" : {
           "buildLabel" : {
@@ -2471,6 +2525,31 @@
               "$ref" : "#/components/schemas/GraphNodeView"
             },
             "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "History" : {
+        "properties" : {
+          "currentRevision" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "currentStatus" : {
+            "type" : "string"
+          },
+          "entries" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Entry"
+            },
+            "type" : "array"
+          },
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "statusHistoryMayBeIncomplete" : {
+            "type" : "boolean"
           }
         },
         "type" : "object"
@@ -6729,7 +6808,7 @@
     },
     "/api/v1/briefs" : {
       "get" : {
-        "operationId" : "history_1",
+        "operationId" : "history_2",
         "parameters" : [ {
           "in" : "query",
           "name" : "applicationId",
@@ -10833,7 +10912,7 @@
     },
     "/api/v1/releases/{id}/history" : {
       "get" : {
-        "operationId" : "history",
+        "operationId" : "history_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -11794,6 +11873,33 @@
                     "$ref" : "#/components/schemas/CriterionView"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "requirement-controller" ]
+      }
+    },
+    "/api/v1/requirements/{id}/history" : {
+      "get" : {
+        "operationId" : "history",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/History"
                 }
               }
             },

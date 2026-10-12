@@ -5,4 +5,5 @@
 - [`release-state-machine.md`](release-state-machine.md) — a release's states, the scope lock, and the configurable readiness gates (VYB-0928).
 - [`defect-lifecycle.md`](defect-lifecycle.md) — a defect's states, who may move it, assignment, links and comments (VYB-0931).
 - [`ai-proposal-review.md`](ai-proposal-review.md) — how an AI suggestion becomes a requirement, a test case or brief text: only by a person's decision (VYB-0938).
+- [`requirement-history.md`](requirement-history.md) — a requirement's revisions and status changes on one timeline, and the word-level comparison of any two revisions (VYB-0941).
 - [`../08-architecture/development-process.md`](../08-architecture/development-process.md) — how Vyoog itself is built.
