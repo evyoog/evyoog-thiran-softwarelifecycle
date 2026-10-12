@@ -868,6 +868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/design/edges/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteEdge"];
+        options?: never;
+        head?: never;
+        patch: operations["updateEdge"];
+        trace?: never;
+    };
     "/api/v1/design/flows": {
         parameters: {
             query?: never;
@@ -927,6 +943,22 @@ export interface paths {
         put?: never;
         post: operations["generate"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/design/flows/{id}/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveLayout"];
+        post?: never;
+        delete: operations["resetLayout"];
         options?: never;
         head?: never;
         patch?: never;
@@ -993,7 +1025,7 @@ export interface paths {
         delete: operations["deleteNode"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["updateNode"];
         trace?: never;
     };
     "/api/v1/design/nodes/{nodeId}/requirements/{requirementId}": {
@@ -5357,6 +5389,10 @@ export interface components {
             revision?: number;
         };
         JsonNode: Record<string, never>;
+        LayoutResult: {
+            /** Format: int32 */
+            count?: number;
+        };
         LifecycleSpineView: {
             /** Format: int64 */
             count?: number;
@@ -5492,6 +5528,10 @@ export interface components {
             label?: string;
             note?: string;
             requirementIds?: string[];
+            /** Format: int32 */
+            x?: number;
+            /** Format: int32 */
+            y?: number;
         };
         NoisyDetectorView: {
             disabled?: boolean;
@@ -5743,6 +5783,13 @@ export interface components {
             displayName?: string;
             email?: string;
             id?: string;
+        };
+        PlacementBody: {
+            nodeId: string;
+            /** Format: int32 */
+            x?: number;
+            /** Format: int32 */
+            y?: number;
         };
         PresenceView: {
             key?: string;
@@ -6147,6 +6194,9 @@ export interface components {
             /** Format: int32 */
             verificationsRecorded?: number;
         };
+        SaveLayout: {
+            placements: components["schemas"]["PlacementBody"][];
+        };
         SaveView: {
             capabilityId?: string;
             name: string;
@@ -6550,10 +6600,18 @@ export interface components {
             description?: string;
             name: string;
         };
+        UpdateEdge: {
+            label?: string;
+        };
         UpdateGate: {
             enabled?: boolean;
             /** Format: int32 */
             threshold?: number;
+        };
+        UpdateNode: {
+            kind: string;
+            label: string;
+            note?: string;
         };
         UpdateProduct: {
             lifecycleStatus?: string;
@@ -8103,6 +8161,52 @@ export interface operations {
             };
         };
     };
+    deleteEdge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateEdge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEdge"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EdgeView"];
+                };
+            };
+        };
+    };
     flowFor: {
         parameters: {
             query: {
@@ -8239,6 +8343,54 @@ export interface operations {
             };
         };
     };
+    saveLayout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveLayout"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LayoutResult"];
+                };
+            };
+        };
+    };
+    resetLayout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LayoutResult"];
+                };
+            };
+        };
+    };
     nodes: {
         parameters: {
             query?: never;
@@ -8348,6 +8500,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    updateNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNode"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NodeView"];
+                };
             };
         };
     };

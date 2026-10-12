@@ -2842,6 +2842,15 @@
       "JsonNode" : {
         "type" : "object"
       },
+      "LayoutResult" : {
+        "properties" : {
+          "count" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "LifecycleSpineView" : {
         "properties" : {
           "count" : {
@@ -3230,6 +3239,14 @@
               "type" : "string"
             },
             "type" : "array"
+          },
+          "x" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "y" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -3909,6 +3926,23 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "PlacementBody" : {
+        "properties" : {
+          "nodeId" : {
+            "type" : "string"
+          },
+          "x" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "y" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "nodeId" ],
         "type" : "object"
       },
       "PresenceView" : {
@@ -5028,6 +5062,18 @@
         },
         "type" : "object"
       },
+      "SaveLayout" : {
+        "properties" : {
+          "placements" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PlacementBody"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "placements" ],
+        "type" : "object"
+      },
       "SaveView" : {
         "properties" : {
           "capabilityId" : {
@@ -6140,6 +6186,14 @@
         "required" : [ "name" ],
         "type" : "object"
       },
+      "UpdateEdge" : {
+        "properties" : {
+          "label" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "UpdateGate" : {
         "properties" : {
           "enabled" : {
@@ -6150,6 +6204,21 @@
             "type" : "integer"
           }
         },
+        "type" : "object"
+      },
+      "UpdateNode" : {
+        "properties" : {
+          "kind" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "kind", "label" ],
         "type" : "object"
       },
       "UpdateProduct" : {
@@ -8370,6 +8439,61 @@
         "tags" : [ "design-controller" ]
       }
     },
+    "/api/v1/design/edges/{id}" : {
+      "delete" : {
+        "operationId" : "deleteEdge",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "design-controller" ]
+      },
+      "patch" : {
+        "operationId" : "updateEdge",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateEdge"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EdgeView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "design-controller" ]
+      }
+    },
     "/api/v1/design/flows" : {
       "get" : {
         "operationId" : "flowFor",
@@ -8542,6 +8666,68 @@
         "tags" : [ "design-controller" ]
       }
     },
+    "/api/v1/design/flows/{id}/layout" : {
+      "delete" : {
+        "operationId" : "resetLayout",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LayoutResult"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "design-controller" ]
+      },
+      "put" : {
+        "operationId" : "saveLayout",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveLayout"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LayoutResult"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "design-controller" ]
+      }
+    },
     "/api/v1/design/flows/{id}/nodes" : {
       "get" : {
         "operationId" : "nodes",
@@ -8678,6 +8864,41 @@
         } ],
         "responses" : {
           "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "design-controller" ]
+      },
+      "patch" : {
+        "operationId" : "updateNode",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateNode"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NodeView"
+                }
+              }
+            },
             "description" : "OK"
           }
         },

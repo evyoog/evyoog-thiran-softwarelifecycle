@@ -140,3 +140,37 @@ describe('VYB-0826 — a step\'s test-case coverage badge', () => {
     expect(testCoverage([], {})).toEqual({ tested: 0, total: 0, full: false })
   })
 })
+
+describe('VYB-0945 — a dragged layout', () => {
+  const placedNode = (id: string, x?: number, y?: number): DesignNode => ({
+    id, flowId: 'f1', kind: 'step', label: id, requirementIds: [id], x, y,
+  })
+
+  it('VYB0945_AC6_aSavedPlaceIsWhereTheStepIsDrawn', () => {
+    const nodes = [placedNode('a', 400, 300), placedNode('b', 50, 70)]
+    const { positions } = layout(nodes, [{ fromNode: 'a', toNode: 'b' }])
+    expect(positions.get('a')).toEqual({ x: 400, y: 300 })
+    expect(positions.get('b')).toEqual({ x: 50, y: 70 })
+  })
+
+  it('VYB0945_AC6_aStepWithNoSavedPlaceIsLaidOutBelowEverythingPlacedNotOnTopOfIt', () => {
+    const nodes = [placedNode('a', 400, 300), placedNode('b', 50, 70), placedNode('new')]
+    const { positions } = layout(nodes, [])
+    const fresh = positions.get('new')!
+    expect(fresh.y).toBeGreaterThan(300 + 52)
+  })
+
+  it('VYB0945_AC6_withNoSavedPlacesTheAutomaticLayoutIsUnchanged', () => {
+    const nodes = [placedNode('a'), placedNode('b')]
+    const auto = layout(nodes, [{ fromNode: 'a', toNode: 'b' }])
+    expect(auto.positions.get('a')).toEqual({ x: 30, y: 30 })
+    expect(auto.positions.get('b')!.x).toBeGreaterThan(30)
+  })
+
+  it('VYB0945_AC6_theDrawingGrowsToHoldAStepDraggedOutward', () => {
+    const nodes = [placedNode('a', 30, 30), placedNode('b', 2000, 900)]
+    const { width, height } = layout(nodes, [])
+    expect(width).toBeGreaterThanOrEqual(2000 + 150)
+    expect(height).toBeGreaterThanOrEqual(900 + 52)
+  })
+})

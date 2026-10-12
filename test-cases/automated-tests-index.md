@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1050 tests cover 65 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1077 tests cover 66 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1248,3 +1248,33 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` anOpenOldRoundNoLongerCreatesAnyTaskAndTheTwoKindsAreGone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewRetirementIT.java`)
 - `AC8` aDismissalOfAnOldRoundTaskIsHistoryAndBreaksNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewRetirementIT.java`)
 - `AC9` theSodRuleIsRetiredItsOpenFindingsResolvedAndItsHistoryKept (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ReviewRetirementIT.java`)
+
+## VYB-0945: Design: edit node and edge, rename, drag layout, PNG and PDF export [M; F20]
+
+- `AC1` aBlankOrTooLongLabelIsRefusedAndNothingChanges (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC1` aStepCanBeRenamedReKindedAndReNotedAndTheChangeIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC1` aStepSnapsToTheGridAndNeverLeavesTheDiagram (`frontend/src/features/design/placement.test.ts`)
+- `AC10` badRequestsAreRefusedWithAReason (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC10` whoMayEditOverHttpAnAuthorDoesAViewerAndAnUnknownPersonDoNotAndAnyoneMayRead (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC2` aPipelineMilestoneMayBeRenamedButKeepsItsKindAndNoStepBecomesOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC2` aSmallMovementIsAClickNotADrag (`frontend/src/features/design/placement.test.ts`)
+- `AC3` aStepWithNoDrawnPositionIsLeftOutRatherThanInvented (`frontend/src/features/design/placement.test.ts`)
+- `AC3` anEdgeCanBeRelabelledAndItsLabelCleared (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC3` theFirstDropSavesEveryStepWhereItIsDrawnWithTheMovedOneAtItsNewPlace (`frontend/src/features/design/placement.test.ts`)
+- `AC4` everyCrossReferenceOffsetPointsAtItsObject (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC4` removingAnEdgeLeavesBothStepsAndIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC4` somethingThatIsNotAJpegIsRefused (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC4` theDocumentIsOneImagePageTheSizeOfTheDiagram (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC4` theImageStreamIsTheJpegByteForByteAndItsLengthIsRight (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC5` aHugeDiagramIsScaledToFitAPageAndNeverCut (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC5` aLargeDiagramIsDrawnAtALowerScaleRatherThanFailing (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC5` aSavedLayoutIsKeptOnTheStepsAndAuditedAsOneAction (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC5` fileNamesAreSafeAndDated (`frontend/src/features/design/diagramFile.test.ts`)
+- `AC6` aLayoutThatIsWrongInAnyWayIsRefusedWholeAndMovesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC6` aSavedPlaceIsWhereTheStepIsDrawn (`frontend/src/features/Design.test.ts`)
+- `AC6` aStepWithNoSavedPlaceIsLaidOutBelowEverythingPlacedNotOnTopOfIt (`frontend/src/features/Design.test.ts`)
+- `AC6` theDrawingGrowsToHoldAStepDraggedOutward (`frontend/src/features/Design.test.ts`)
+- `AC6` withNoSavedPlacesTheAutomaticLayoutIsUnchanged (`frontend/src/features/Design.test.ts`)
+- `AC7` resettingForgetsEveryPlaceAndKeepsEverythingElse (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC8` theDatabaseRefusesAHalfPlacedStepAndAPlaceOutsideTheRange (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)
+- `AC9` generatingAgainKeepsADraggedLayoutAndLeavesNewStepsUnplaced (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DesignEditingIT.java`)

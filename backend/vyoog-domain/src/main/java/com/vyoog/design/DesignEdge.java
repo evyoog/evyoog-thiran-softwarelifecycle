@@ -37,4 +37,7 @@ public class DesignEdge {
     public UUID getFromNode() { return fromNode; }
     public UUID getToNode() { return toNode; }
     public String getLabel() { return label; }
+
+    /** VYB-0945: an edge's label is the one thing about it that can change; to join other nodes, delete it and add another. */
+    public void relabel(String label) { this.label = label; }
 }

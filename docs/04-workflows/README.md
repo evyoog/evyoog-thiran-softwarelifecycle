@@ -9,4 +9,5 @@
 - [`requirement-versions.md`](requirement-versions.md) — a new version of an approved requirement is a new requirement forked for an approved change request; approving it supersedes the original (VYB-0942).
 - [`trace-ui.md`](trace-ui.md) — linking a requirement to tests, design, a release and defects by picking; the requirement-by-release and requirement-by-defect matrices; the items behind a change request's impact counts (VYB-0943).
 - [`review-rounds-retired.md`](review-rounds-retired.md) — review rounds are retired: what went, what stays as history, and where a requirement's review and approval stages now come from (VYB-0944).
+- [`design-editing.md`](design-editing.md) — editing a step or connection, dragging a shared layout, and exporting the diagram as SVG, PNG or PDF (VYB-0945).
 - [`../08-architecture/development-process.md`](../08-architecture/development-process.md) — how Vyoog itself is built.

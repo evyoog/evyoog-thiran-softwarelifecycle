@@ -124,6 +124,11 @@ class AccessPolicyTest {
         Map.entry("DesignController#deleteNode", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DesignController#link", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("DesignController#unlink", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#updateNode", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#saveLayout", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#resetLayout", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#updateEdge", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("DesignController#deleteEdge", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("BriefController#generate", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         // VYB-0938: drafting elaborations is generating a brief's input; the review reads (GET) are open to any signed-in person and not listed here.
         // Deciding a proposal is guarded in the handler by the rule of the proposal's kind (see AiProposalController#decide).

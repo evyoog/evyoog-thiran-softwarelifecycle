@@ -79,6 +79,105 @@ public class DesignService {
         return edge;
     }
 
+    private static boolean isMilestone(NodeKind kind) {
+        return kind == NodeKind.testing || kind == NodeKind.deployment;
+    }
+
+    private static String cleanLabel(String label) {
+        String l = label == null ? "" : label.strip();
+        if (l.isEmpty()) throw new IllegalArgumentException("A step needs a label");
+        if (l.length() > 200) throw new IllegalArgumentException("A step's label is at most 200 characters");
+        return l;
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.strip();
+    }
+
+    /**
+     * VYB-0945: rename a step or change its kind or note. The two pipeline milestones (Testing, Deployment) that a generate run
+     * keeps one of per flow may be renamed or noted but never change kind, and no other step may become one: generate finds
+     * them by kind, and "Testing" reads real evidence rather than a person's say-so.
+     */
+    @Transactional
+    public DesignNode updateNode(UUID nodeId, NodeKind kind, String label, String note, UUID actor) {
+        DesignNode node = nodes.findById(nodeId).orElseThrow(NoSuchElementException::new);
+        if (isMilestone(node.getKind()) != isMilestone(kind) || (isMilestone(kind) && kind != node.getKind())) {
+            throw new IllegalStateException(isMilestone(node.getKind())
+                ? "The " + node.getKind() + " milestone keeps its kind"
+                : "A step cannot be made a " + kind + " milestone");
+        }
+        Map<String, Object> before = Map.of("kind", node.getKind().name(), "label", node.getLabel(), "note", node.getNote() == null ? "" : node.getNote());
+        String newLabel = cleanLabel(label);
+        String newNote = blankToNull(note);
+        node.edit(kind, newLabel, newNote);
+        nodes.save(node);
+        audit.record(actor, "design.node_edited", "DESIGN_NODE", nodeId, before,
+            Map.of("kind", kind.name(), "label", newLabel, "note", newNote == null ? "" : newNote));
+        return node;
+    }
+
+    /** One step's saved place. */
+    public record Placement(UUID nodeId, int x, int y) {}
+
+    /**
+     * VYB-0945: saves where steps were dragged to, as one audited action however many moved. Every step must belong to this
+     * flow, and a place is a whole-number position inside the diagram's range; anything else refuses the whole save.
+     */
+    @Transactional
+    public int saveLayout(UUID flowId, List<Placement> placements, UUID actor) {
+        flows.findById(flowId).orElseThrow(NoSuchElementException::new);
+        if (placements == null || placements.isEmpty()) throw new IllegalArgumentException("Nothing to save");
+        Map<UUID, DesignNode> inFlow = new LinkedHashMap<>();
+        nodes.findAllByFlowId(flowId).forEach(n -> inFlow.put(n.getId(), n));
+        Set<UUID> seen = new HashSet<>();
+        for (Placement p : placements) {
+            if (!inFlow.containsKey(p.nodeId())) throw new IllegalArgumentException("A step in this layout is not in this flow");
+            if (!seen.add(p.nodeId())) throw new IllegalArgumentException("A step appears twice in this layout");
+            if (p.x() < 0 || p.x() > 100_000 || p.y() < 0 || p.y() > 100_000) {
+                throw new IllegalArgumentException("A position must be between 0 and 100000");
+            }
+        }
+        for (Placement p : placements) {
+            inFlow.get(p.nodeId()).placeAt(p.x(), p.y());
+        }
+        nodes.saveAll(inFlow.values().stream().filter(n -> seen.contains(n.getId())).toList());
+        audit.record(actor, "design.layout_saved", "DESIGN_FLOW", flowId, null, Map.of("moved", placements.size()));
+        return placements.size();
+    }
+
+    /** VYB-0945: forgets every saved place, so the automatic layout draws the flow again. Returns how many steps had one. */
+    @Transactional
+    public int resetLayout(UUID flowId, UUID actor) {
+        flows.findById(flowId).orElseThrow(NoSuchElementException::new);
+        int cleared = jdbc.update("UPDATE design_node SET x = NULL, y = NULL WHERE flow_id = ? AND x IS NOT NULL", flowId);
+        audit.record(actor, "design.layout_reset", "DESIGN_FLOW", flowId, null, Map.of("cleared", cleared));
+        return cleared;
+    }
+
+    /** VYB-0945: an edge's label is optional and may be cleared. */
+    @Transactional
+    public DesignEdge relabelEdge(UUID edgeId, String label, UUID actor) {
+        DesignEdge edge = edges.findById(edgeId).orElseThrow(NoSuchElementException::new);
+        String before = edge.getLabel() == null ? "" : edge.getLabel();
+        String after = blankToNull(label);
+        if (after != null && after.length() > 100) throw new IllegalArgumentException("An edge's label is at most 100 characters");
+        edge.relabel(after);
+        edges.save(edge);
+        audit.record(actor, "design.edge_relabelled", "DESIGN_EDGE", edgeId, Map.of("label", before),
+            Map.of("label", after == null ? "" : after));
+        return edge;
+    }
+
+    /** VYB-0945: removes the edge only; both steps stay. */
+    @Transactional
+    public void deleteEdge(UUID edgeId, UUID actor) {
+        DesignEdge edge = edges.findById(edgeId).orElseThrow(NoSuchElementException::new);
+        edges.delete(edge);
+        audit.record(actor, "design.edge_deleted", "DESIGN_EDGE", edgeId, null,
+            Map.of("flowId", edge.getFlowId().toString(), "from", edge.getFromNode().toString(), "to", edge.getToNode().toString()));
+    }
+
     /** What a generate run did, so the caller can say it rather than guess. */
     public record Generated(int nodesCreated, int edgesCreated, int skippedAlreadyDrawn) {}
 

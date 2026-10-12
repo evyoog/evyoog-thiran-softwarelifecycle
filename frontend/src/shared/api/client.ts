@@ -1506,6 +1506,9 @@ export interface DesignNode {
   label: string
   note?: string
   requirementIds: string[]
+  /** VYB-0945: a place a person dragged the step to; absent means the automatic layout places it. */
+  x?: number | null
+  y?: number | null
 }
 
 export interface DesignEdge {
@@ -2474,6 +2477,15 @@ export const api = {
   addDesignEdge: (flowId: string, body: { fromNode: string; toNode: string; label?: string }) =>
     request<DesignEdge>(`/design/flows/${flowId}/edges`, { method: 'POST', body: JSON.stringify(body) }),
   deleteDesignNode: (id: string) => request<void>(`/design/nodes/${id}`, { method: 'DELETE' }),
+  // VYB-0945: edit a step, edit or remove an edge, save and forget a dragged layout.
+  updateDesignNode: (id: string, body: { kind: DesignNodeKind; label: string; note?: string }) =>
+    request<DesignNode>(`/design/nodes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  updateDesignEdge: (id: string, body: { label?: string }) =>
+    request<DesignEdge>(`/design/edges/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteDesignEdge: (id: string) => request<void>(`/design/edges/${id}`, { method: 'DELETE' }),
+  saveDesignLayout: (flowId: string, placements: { nodeId: string; x: number; y: number }[]) =>
+    request<{ count: number }>(`/design/flows/${flowId}/layout`, { method: 'PUT', body: JSON.stringify({ placements }) }),
+  resetDesignLayout: (flowId: string) => request<{ count: number }>(`/design/flows/${flowId}/layout`, { method: 'DELETE' }),
   linkDesignRequirement: (nodeId: string, requirementId: string) =>
     request<void>(`/design/nodes/${nodeId}/requirements/${requirementId}`, { method: 'PUT' }),
   unlinkDesignRequirement: (nodeId: string, requirementId: string) =>

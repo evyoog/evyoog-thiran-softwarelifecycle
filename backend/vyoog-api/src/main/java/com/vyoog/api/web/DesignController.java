@@ -37,10 +37,17 @@ public class DesignController {
     }
 
     public record FlowView(String id, String applicationId) {}
-    public record NodeView(String id, String flowId, String kind, String label, String note, List<String> requirementIds) {}
+    public record NodeView(String id, String flowId, String kind, String label, String note, List<String> requirementIds,
+                           Integer x, Integer y) {}
     public record EdgeView(String id, String flowId, String fromNode, String toNode, String label) {}
     public record CreateNode(@NotBlank String kind, @NotBlank String label, String note) {}
     public record CreateEdge(@NotBlank String fromNode, @NotBlank String toNode, String label) {}
+
+    public record UpdateNode(@NotBlank String kind, @NotBlank String label, String note) {}
+    public record UpdateEdge(String label) {}
+    public record PlacementBody(@NotBlank String nodeId, int x, int y) {}
+    public record SaveLayout(@jakarta.validation.constraints.NotEmpty List<PlacementBody> placements) {}
+    public record LayoutResult(int count) {}
 
     private FlowView toView(DesignFlow f) {
         return new FlowView(f.getId().toString(), f.getApplicationId().toString());
@@ -48,7 +55,7 @@ public class DesignController {
 
     private NodeView toView(DesignNode n) {
         List<String> reqIds = service.requirementsFor(n.getId()).stream().map(UUID::toString).toList();
-        return new NodeView(n.getId().toString(), n.getFlowId().toString(), n.getKind().name(), n.getLabel(), n.getNote(), reqIds);
+        return new NodeView(n.getId().toString(), n.getFlowId().toString(), n.getKind().name(), n.getLabel(), n.getNote(), reqIds, n.getX(), n.getY());
     }
 
     private static EdgeView toView(DesignEdge e) {
@@ -109,6 +116,44 @@ public class DesignController {
     public EdgeView addEdge(@PathVariable UUID id, @RequestBody CreateEdge body, @AuthenticationPrincipal Jwt jwt) {
         return toView(service.addEdge(id, UUID.fromString(body.fromNode()), UUID.fromString(body.toNode()),
             body.label(), currentUserId(jwt)));
+    }
+
+    /** VYB-0945: rename a step, change its kind or its note. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @PatchMapping("/nodes/{id}")
+    public NodeView updateNode(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid UpdateNode body,
+                               @AuthenticationPrincipal Jwt jwt) {
+        return toView(service.updateNode(id, NodeKind.valueOf(body.kind()), body.label(), body.note(), currentUserId(jwt)));
+    }
+
+    /** VYB-0945: saves where steps were dragged to (one audited action); unplaced steps keep the automatic layout. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @PutMapping("/flows/{id}/layout")
+    public LayoutResult saveLayout(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid SaveLayout body,
+                                   @AuthenticationPrincipal Jwt jwt) {
+        return new LayoutResult(service.saveLayout(id, body.placements().stream()
+            .map(p -> new DesignService.Placement(UUID.fromString(p.nodeId()), p.x(), p.y())).toList(), currentUserId(jwt)));
+    }
+
+    /** VYB-0945: forgets every saved place; the automatic layout draws the flow again. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @DeleteMapping("/flows/{id}/layout")
+    public LayoutResult resetLayout(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return new LayoutResult(service.resetLayout(id, currentUserId(jwt)));
+    }
+
+    /** VYB-0945: change an edge's label (blank clears it). */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @PatchMapping("/edges/{id}")
+    public EdgeView updateEdge(@PathVariable UUID id, @RequestBody UpdateEdge body, @AuthenticationPrincipal Jwt jwt) {
+        return toView(service.relabelEdge(id, body.label(), currentUserId(jwt)));
+    }
+
+    /** VYB-0945: remove an edge; both steps stay. */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @DeleteMapping("/edges/{id}")
+    public void deleteEdge(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        service.deleteEdge(id, currentUserId(jwt));
     }
 
     @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)

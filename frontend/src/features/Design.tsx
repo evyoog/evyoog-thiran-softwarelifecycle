@@ -1,10 +1,12 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Download, Wand2 } from 'lucide-react'
+import { Plus, Download, Wand2, RotateCcw } from 'lucide-react'
 import { api, type DesignFlowProgress, type DesignNode, type DesignNodeKind, type Requirement } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
 import { RelatedGraph } from './design/RelatedGraph'
+import { exportFileName, exportPdfFile, exportPngFile, exportSvgFile } from './design/diagramFile'
+import { dragTarget, movedEnough, placementsFor } from './design/placement'
 import { UndoToast } from '@/shared/ui/UndoToast'
 import { Modal } from '@/shared/ui/Modal'
 import { resolveApplicationFromCapability } from '@/shared/ui/CapabilityPicker'
@@ -74,7 +76,25 @@ export function layout(nodes: DesignNode[], edges: { fromNode: string; toNode: s
     ids.forEach((id, row) => positions.set(id, { x: col * COL_WIDTH + 30, y: row * ROW_HEIGHT + 30 }))
   })
   const maxRows = Math.max(1, ...Array.from(columns.values()).map((ids) => ids.length));
-  return { positions, width: (maxCol + 1) * COL_WIDTH + NODE_W, height: maxRows * ROW_HEIGHT + NODE_H }
+
+  // VYB-0945: a step a person dragged keeps the place saved for it. Steps with none (added or generated since)
+  // are laid out as before but in a band below everything placed, so they never land on top of a saved step.
+  const placed = nodes.filter((n) => n.x != null && n.y != null)
+  if (placed.length === 0) {
+    return { positions, width: (maxCol + 1) * COL_WIDTH + NODE_W, height: maxRows * ROW_HEIGHT + NODE_H }
+  }
+  const bandTop = Math.max(...placed.map((n) => n.y as number)) + NODE_H + 40
+  const placedPositions = new Map<string, { x: number; y: number }>()
+  positions.forEach((pos, id) => placedPositions.set(id, { x: pos.x, y: pos.y - 30 + bandTop }))
+  placed.forEach((n) => placedPositions.set(n.id, { x: n.x as number, y: n.y as number }))
+  return { positions: placedPositions, ...extent(placedPositions) }
+}
+
+/** The drawing's size: the furthest step plus a margin, so a step dragged outward makes the diagram grow rather than clip. */
+export function extent(positions: Map<string, { x: number; y: number }>) {
+  let maxX = 0, maxY = 0
+  positions.forEach((p) => { if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y })
+  return { width: maxX + NODE_W + 30, height: maxY + NODE_H + 30 }
 }
 
 type ReqStatusMap = Record<string, string>
@@ -261,6 +281,14 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
   const [selectedNode, setSelectedNode] = useState<string>('')
   const [showAdd, setShowAdd] = useState(false)
   const [undo, setUndo] = useState<{ nodeId: string; message: string } | null>(null)
+  // VYB-0945: an edge can be selected like a step; one or the other, never both.
+  const [selectedEdge, setSelectedEdge] = useState<string>('')
+  // The step being dragged, drawn where the pointer has taken it until the save comes back.
+  const [override, setOverride] = useState<{ id: string; x: number; y: number } | null>(null)
+  const dragRef = useRef<{ id: string; offX: number; offY: number; startX: number; startY: number; moved: boolean } | null>(null)
+  const [askReset, setAskReset] = useState(false)
+  const [exporting, setExporting] = useState<'' | 'png' | 'pdf'>('')
+  const [exportError, setExportError] = useState('')
 
   const { data: flow, isLoading: loadingFlow, isError: noFlow } = useQuery({
     queryKey: ['design-flow', applicationId], queryFn: () => api.designFlowFor(applicationId), retry: false,
@@ -332,16 +360,39 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
     onSuccess: invalidateFlow,
   })
 
-  const exportSvg = () => {
+  // VYB-0945: the exports are the drawing as seen, with a solid background and a font that exists outside the app.
+  const baseName = exportFileName(applicationId, 'svg').replace(/\.svg$/, '')
+  const exportSvg = () => { if (svgRef.current) exportSvgFile(svgRef.current, `${baseName}.svg`) }
+  const exportRaster = async (kind: 'png' | 'pdf') => {
     if (!svgRef.current) return
-    const serializer = new XMLSerializer()
-    const source = serializer.serializeToString(svgRef.current)
-    const blob = new Blob([`<?xml version="1.0" encoding="UTF-8"?>\n${source}`], { type: 'image/svg+xml' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `${applicationId}-workflow.svg`; a.click()
-    URL.revokeObjectURL(url)
+    setExportError(''); setExporting(kind)
+    try {
+      if (kind === 'png') await exportPngFile(svgRef.current, `${baseName}.png`)
+      else await exportPdfFile(svgRef.current, `${baseName}.pdf`)
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : 'The export failed.')
+    } finally {
+      setExporting('')
+    }
   }
+
+  // VYB-0945: saved on the steps, so everyone sees the same picture. The server decides who may; its refusal is shown.
+  const saveLayout = useMutation({
+    mutationFn: (placements: { nodeId: string; x: number; y: number }[]) => api.saveDesignLayout(flow!.id, placements),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['design-nodes', flow?.id] })
+      setOverride(null)
+    },
+    onError: () => setOverride(null),
+  })
+  const resetLayout = useMutation({
+    mutationFn: () => api.resetDesignLayout(flow!.id),
+    onSuccess: () => { setAskReset(false); void qc.invalidateQueries({ queryKey: ['design-nodes', flow?.id] }) },
+  })
+  const deleteEdge = useMutation({
+    mutationFn: (id: string) => api.deleteDesignEdge(id),
+    onSuccess: () => { setSelectedEdge(''); invalidateFlow() },
+  })
 
   if (loadingFlow) return <p className="eyebrow">Loading…</p>
   if (noFlow || !flow) {
@@ -358,11 +409,51 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
     )
   }
 
-  const { positions, width, height } = layout(nodes ?? [], edges ?? [])
-  const selected = nodes?.find((n) => n.id === selectedNode);
+  const auto = layout(nodes ?? [], edges ?? [])
+  const positions = override ? new Map(auto.positions).set(override.id, { x: override.x, y: override.y }) : auto.positions
+  const { width, height } = override ? extent(positions) : auto
+  const selected = nodes?.find((n) => n.id === selectedNode)
+  const selectedEdgeObj = (edges ?? []).find((e) => e.id === selectedEdge)
+  const hasSavedLayout = (nodes ?? []).some((n) => n.x != null)
+
+  const svgPoint = (clientX: number, clientY: number) => {
+    const svg = svgRef.current
+    const m = svg?.getScreenCTM()
+    if (!svg || !m) return { x: clientX, y: clientY }
+    const pt = svg.createSVGPoint()
+    pt.x = clientX; pt.y = clientY
+    const r = pt.matrixTransform(m.inverse())
+    return { x: r.x, y: r.y }
+  }
+  const onNodeDown = (e: React.PointerEvent<SVGGElement>, id: string) => {
+    if (e.button !== 0) return
+    const at = positions.get(id)
+    if (!at) return
+    const p = svgPoint(e.clientX, e.clientY)
+    dragRef.current = { id, offX: p.x - at.x, offY: p.y - at.y, startX: e.clientX, startY: e.clientY, moved: false }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+  const onNodeMove = (e: React.PointerEvent<SVGGElement>) => {
+    const d = dragRef.current
+    if (!d) return
+    if (!d.moved && movedEnough(d.startX, d.startY, e.clientX, e.clientY)) d.moved = true
+    if (!d.moved) return
+    const p = svgPoint(e.clientX, e.clientY)
+    setOverride({ id: d.id, ...dragTarget(p.x, p.y, d.offX, d.offY) })
+  }
+  const onNodeUp = (e: React.PointerEvent<SVGGElement>) => {
+    const d = dragRef.current
+    dragRef.current = null
+    if (!d) return
+    if (!d.moved) { setSelectedEdge(''); setSelectedNode(d.id); return }
+    const p = svgPoint(e.clientX, e.clientY)
+    const t = dragTarget(p.x, p.y, d.offX, d.offY)
+    setOverride({ id: d.id, ...t })
+    saveLayout.mutate(placementsFor((nodes ?? []).map((n) => n.id), auto.positions, { id: d.id, ...t }))
+  }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 320px' : '1fr', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: selected || selectedEdgeObj ? '1fr 320px' : '1fr', gap: 16 }}>
       <div>
         {focusNotDrawn && (
           <p className="hint" style={{ marginBottom: 8, color: 'var(--high)' }}>
@@ -378,7 +469,25 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
           >
             <Wand2 /> {generate.isPending ? 'Generating…' : 'Generate from requirements'}
           </button>
-          <button className="btn" onClick={exportSvg}><Download /> Export SVG</button>
+          <button className="btn" onClick={exportSvg} disabled={!nodes?.length}><Download /> SVG</button>
+          <button className="btn" onClick={() => void exportRaster('png')} disabled={!nodes?.length || !!exporting}>
+            <Download /> {exporting === 'png' ? 'Making PNG…' : 'PNG'}
+          </button>
+          <button className="btn" onClick={() => void exportRaster('pdf')} disabled={!nodes?.length || !!exporting}>
+            <Download /> {exporting === 'pdf' ? 'Making PDF…' : 'PDF'}
+          </button>
+          {hasSavedLayout && !askReset && (
+            <button className="btn" onClick={() => setAskReset(true)} title="Forget where steps were dragged to and lay the diagram out automatically">
+              <RotateCcw /> Reset layout
+            </button>
+          )}
+          {askReset && (
+            <span className="hint" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+              Forget the saved layout for everyone?
+              <button className="btn" disabled={resetLayout.isPending} onClick={() => resetLayout.mutate()}>Reset</button>
+              <button className="btn" onClick={() => setAskReset(false)}>Keep</button>
+            </span>
+          )}
           {/* Principle 8: what it did, in the numbers it actually did it in — including
               the requirements it left alone because they were already on the diagram. */}
           {generate.data && (
@@ -389,22 +498,34 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
             </span>
           )}
           {generate.isError && <span className="err-text">Could not generate the diagram.</span>}
+          {saveLayout.isError && <span className="err-text" role="alert">Could not save that position — you may not be allowed to change the layout.</span>}
+          {resetLayout.isError && <span className="err-text" role="alert">Could not reset the layout.</span>}
+          {exportError && <span className="err-text" role="alert">{exportError}</span>}
         </div>
         {(!nodes || nodes.length === 0) ? (
           <Empty title="No steps yet" desc="Add the first one above." />
         ) : (
+          <>
+          <p className="hint muted" style={{ margin: '0 0 6px' }}>Drag a step to move it; click a step or a connection to edit it.</p>
           <div className="card" style={{ overflow: 'auto', padding: 0 }}>
-            <svg ref={svgRef} width={width} height={height} style={{ display: 'block', background: '#12161F' }}>
+            <svg ref={svgRef} width={width} height={height} style={{ display: 'block', background: '#12161F', userSelect: 'none' }}>
               {(edges ?? []).map((e) => {
                 const from = positions.get(e.fromNode); const to = positions.get(e.toNode)
                 if (!from || !to) return null
                 const x1 = from.x + NODE_W, y1 = from.y + NODE_H / 2
                 const x2 = to.x, y2 = to.y + NODE_H / 2
                 const midX = (x1 + x2) / 2
+                const d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`
+                const edgeSelected = e.id === selectedEdge
                 return (
                   <g key={e.id}>
-                    <path d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
-                      fill="none" stroke={EDGE_COLOR} strokeWidth={1.5} markerEnd="url(#arrow)" />
+                    <path d={d} fill="none" stroke={edgeSelected ? LABEL_COLOR : EDGE_COLOR} strokeWidth={edgeSelected ? 2.5 : 1.5}
+                      markerEnd="url(#arrow)" />
+                    {/* A wide invisible stroke to click; not part of the picture, so the exports leave it out. */}
+                    <path d={d} fill="none" stroke="transparent" strokeWidth={14} data-screen-only="true" style={{ cursor: 'pointer' }}
+                      role="button" tabIndex={0} aria-label={`Edit the connection${e.label ? ` ${e.label}` : ''}`}
+                      onClick={() => { setSelectedNode(''); setSelectedEdge(e.id) }}
+                      onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { setSelectedNode(''); setSelectedEdge(e.id) } }} />
                     {e.label && (
                       <text x={midX} y={(y1 + y2) / 2 - 6} fill={LABEL_COLOR} fontSize={10} textAnchor="middle">
                         {e.label}
@@ -426,7 +547,11 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
                 const isSelected = n.id === selectedNode
                 const isMilestone = n.kind === 'testing' || n.kind === 'deployment'
                 return (
-                  <g key={n.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedNode(n.id)}>
+                  <g key={n.id} style={{ cursor: override?.id === n.id ? 'grabbing' : 'grab', touchAction: 'none' }}
+                    role="button" tabIndex={0} aria-label={`${n.label} (${n.kind}) — drag to move, Enter to edit`}
+                    onPointerDown={(ev) => onNodeDown(ev, n.id)} onPointerMove={onNodeMove} onPointerUp={onNodeUp}
+                    onPointerCancel={() => { dragRef.current = null; setOverride(null) }}
+                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setSelectedEdge(''); setSelectedNode(n.id) } }}>
                     {n.kind === 'decision' ? (
                       <polygon
                         points={`${pos.x + NODE_W / 2},${pos.y} ${pos.x + NODE_W},${pos.y + NODE_H / 2} ${pos.x + NODE_W / 2},${pos.y + NODE_H} ${pos.x},${pos.y + NODE_H / 2}`}
@@ -461,13 +586,26 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
               })}
             </svg>
           </div>
+          </>
         )}
       </div>
 
+      {selectedEdgeObj && !selected && (
+        <EdgeInspector
+          key={selectedEdgeObj.id} edge={selectedEdgeObj} nodes={nodes ?? []}
+          onClose={() => setSelectedEdge('')}
+          onChanged={invalidateFlow}
+          onDelete={() => deleteEdge.mutate(selectedEdgeObj.id)}
+          deleting={deleteEdge.isPending} deleteFailed={deleteEdge.isError}
+        />
+      )}
+
       {selected && (
         <NodeInspector
+          key={selected.id}
           node={selected} statuses={statuses} requirementsById={requirementsById} edges={edges ?? []} nodes={nodes ?? []}
           onClose={() => setSelectedNode('')}
+          onEdited={invalidateFlow}
           onLinked={invalidateFlow}
           onDelete={() => {
             setUndo({ nodeId: selected.id, message: `Removed "${selected.label}"` })
@@ -497,7 +635,7 @@ function DiagramTab({ applicationId, focusRequirementId }: { applicationId: stri
 
 /** VYB-0535: requirements, connections, and attach/detach controls. */
 function NodeInspector({
-  node, statuses, requirementsById, edges, nodes, onClose, onLinked, onDelete,
+  node, statuses, requirementsById, edges, nodes, onClose, onLinked, onEdited, onDelete,
 }: {
   node: DesignNode
   statuses: ReqStatusMap
@@ -506,10 +644,21 @@ function NodeInspector({
   nodes: DesignNode[]
   onClose: () => void
   onLinked: () => void
+  onEdited: () => void
   onDelete: () => void
 }) {
   const qc = useQueryClient()
   const [newReqId, setNewReqId] = useState('')
+  // VYB-0945: rename a step, change its kind or its note. The two pipeline milestones keep their kind.
+  const isMilestone = node.kind === 'testing' || node.kind === 'deployment'
+  const [editing, setEditing] = useState(false)
+  const [label, setLabel] = useState(node.label)
+  const [kind, setKind] = useState<DesignNodeKind>(node.kind)
+  const [note, setNote] = useState(node.note ?? '')
+  const edit = useMutation({
+    mutationFn: () => api.updateDesignNode(node.id, { kind, label, note: note || undefined }),
+    onSuccess: () => { setEditing(false); onEdited() },
+  })
   const link = useMutation({
     mutationFn: () => api.linkDesignRequirement(node.id, newReqId.trim()),
     onSuccess: () => { setNewReqId(''); onLinked() },
@@ -548,7 +697,36 @@ function NodeInspector({
         <strong>{node.label}</strong>
         <button className="btn" style={{ padding: 4 }} onClick={onClose}>✕</button>
       </div>
-      <div className="muted" style={{ fontSize: 11, marginBottom: 10 }}>{node.kind}{node.note ? ` · ${node.note}` : ''}</div>
+      {!editing ? (
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+          <span className="muted" style={{ fontSize: 11, flex: 1 }}>{node.kind}{node.note ? ` · ${node.note}` : ''}</span>
+          <button className="btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => setEditing(true)}>Edit</button>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 12 }}>
+          <div className="field">
+            <label className="label" htmlFor="node-label">Label</label>
+            <input id="node-label" className="input" value={label} maxLength={200} onChange={(e) => setLabel(e.target.value)} />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="node-kind">Kind</label>
+            <select id="node-kind" className="select" value={kind} disabled={isMilestone}
+              onChange={(e) => setKind(e.target.value as DesignNodeKind)}>
+              {(isMilestone ? [node.kind] : KINDS.filter((k) => k !== 'testing' && k !== 'deployment')).map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+            {isMilestone && <p className="hint muted">A pipeline milestone keeps its kind; it reads real test and deployment records.</p>}
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="node-note">Note (optional)</label>
+            <input id="node-note" className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          {edit.isError && <p className="err-text" role="alert">Could not save that change — you may not be allowed to edit steps.</p>}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="btn pri" disabled={!label.trim() || edit.isPending} onClick={() => edit.mutate()}>Save</button>
+            <button className="btn" onClick={() => { setEditing(false); setLabel(node.label); setKind(node.kind); setNote(node.note ?? '') }}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="eyebrow" style={{ marginBottom: 4 }}>Requirements</div>
       {node.requirementIds.length === 0 && <p className="hint muted">None linked — this is why it renders as a problem.</p>}
@@ -614,6 +792,46 @@ function NodeInspector({
       ))}
 
       <button className="btn" style={{ marginTop: 14, width: '100%' }} onClick={onDelete}>Delete this step</button>
+    </div>
+  )
+}
+
+/** VYB-0945: a connection's label, and removing it. To join other steps, delete it and add another. */
+function EdgeInspector({
+  edge, nodes, onClose, onChanged, onDelete, deleting, deleteFailed,
+}: {
+  edge: { id: string; fromNode: string; toNode: string; label?: string }
+  nodes: DesignNode[]
+  onClose: () => void
+  onChanged: () => void
+  onDelete: () => void
+  deleting: boolean
+  deleteFailed: boolean
+}) {
+  const [label, setLabel] = useState(edge.label ?? '')
+  const name = (id: string) => nodes.find((n) => n.id === id)?.label ?? id.slice(0, 8)
+  const save = useMutation({
+    mutationFn: () => api.updateDesignEdge(edge.id, { label }),
+    onSuccess: onChanged,
+  })
+  return (
+    <div className="card" style={{ alignSelf: 'start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <strong>Connection</strong>
+        <button className="btn" style={{ padding: 4 }} onClick={onClose} aria-label="Close">✕</button>
+      </div>
+      <div className="muted" style={{ fontSize: 11, margin: '4px 0 10px' }}>{name(edge.fromNode)} → {name(edge.toNode)}</div>
+      <div className="field">
+        <label className="label" htmlFor="edge-label">Label (optional)</label>
+        <input id="edge-label" className="input" value={label} maxLength={100} onChange={(e) => setLabel(e.target.value)} />
+      </div>
+      {save.isError && <p className="err-text" role="alert">Could not save that label — you may not be allowed to edit connections.</p>}
+      {deleteFailed && <p className="err-text" role="alert">Could not remove the connection.</p>}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button className="btn pri" disabled={label === (edge.label ?? '') || save.isPending} onClick={() => save.mutate()}>Save label</button>
+        <button className="btn" disabled={deleting} onClick={onDelete}>Remove connection</button>
+      </div>
+      <p className="hint muted" style={{ marginTop: 10 }}>Both steps stay. To join different steps, remove this and add another.</p>
     </div>
   )
 }
