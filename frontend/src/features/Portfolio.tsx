@@ -303,7 +303,7 @@ export function Portfolio() {
       {tab === 'hierarchy' && (
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 1fr', gap: 16, marginTop: 10 }}>
           <div>
-            <h4 className="section-h">Product</h4>
+            <h2 className="section-h">Product</h2>
             {(products ?? []).filter((p) => !p.archived).length === 0 && <Empty title="No products yet" desc="Create one from the Dashboard tab." />}
             {(products ?? []).filter((p) => !p.archived).map((p) => (
               <div
@@ -489,7 +489,7 @@ function GlossarySection({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
-        <h4 className="section-h">Terms</h4>
+        <h2 className="section-h">Terms</h2>
         {isLoading && <p className="eyebrow">Loading…</p>}
         {terms && terms.length === 0 && <Empty title="No terms yet" desc="Add the first one below." />}
         {terms?.map((t) => (
@@ -528,7 +528,7 @@ function GlossarySection({
       </div>
 
       <div>
-        <h4 className="section-h">Conflicts</h4>
+        <h2 className="section-h">Conflicts</h2>
         {conflicts && conflicts.length === 0 && (
           <Empty title="No conflicts" desc="Every application that uses a term agrees with the canonical definition, or doesn't override it." />
         )}
@@ -651,7 +651,7 @@ function Column({
 
   return (
     <div>
-      <h4 className="section-h">{title}</h4>
+      <h2 className="section-h">{title}</h2>
       {disabled ? (
         <Empty title={disabledHint ?? 'Unavailable'} desc="" />
       ) : (

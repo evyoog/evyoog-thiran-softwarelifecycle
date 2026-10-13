@@ -917,7 +917,7 @@ function CoverageTab({ applicationId }: { applicationId: string }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
-        <h4 className="section-h">Requirements with no design ({uncovered?.length ?? 0})</h4>
+        <h2 className="section-h">Requirements with no design ({uncovered?.length ?? 0})</h2>
         {uncovered && uncovered.length === 0 && <Empty title="Every requirement has a design node" desc="" />}
         {uncovered?.map((r) => (
           <div key={r.id} className="list-item">
@@ -927,7 +927,7 @@ function CoverageTab({ applicationId }: { applicationId: string }) {
         ))}
       </div>
       <div>
-        <h4 className="section-h">Design nobody asked for ({orphans?.length ?? 0})</h4>
+        <h2 className="section-h">Design nobody asked for ({orphans?.length ?? 0})</h2>
         {orphans && orphans.length === 0 && <Empty title="Every step traces to a requirement" desc="" />}
         {orphans?.map((n) => (
           <div key={n.id} className="list-item">

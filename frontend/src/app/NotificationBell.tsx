@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react'
 import { api } from '@/shared/api/client'
 import { Modal } from '@/shared/ui/Modal'
 import { announce } from '@/shared/ui/Announcer'
+import { useLocale } from '@/shared/i18n/LocaleProvider'
 
 /**
  * VYB-0355: the inbox itself — built alongside its own backend in an earlier session
@@ -17,6 +18,7 @@ import { announce } from '@/shared/ui/Announcer'
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const qc = useQueryClient()
+  const { t, fmt } = useLocale()
   const { data: unread } = useQuery({ queryKey: ['unread-count'], queryFn: api.unreadNotificationCount })
   const { data: inbox } = useQuery({ queryKey: ['notifications'], queryFn: api.notifications, enabled: open })
 
@@ -24,9 +26,9 @@ export function NotificationBell() {
     return api.subscribeToNotifications((event) => {
       void qc.invalidateQueries({ queryKey: ['unread-count'] })
       void qc.invalidateQueries({ queryKey: ['notifications'] })
-      announce(event.title || 'New notification')
+      announce(event.title || t('bell.new'))
     })
-  }, [qc])
+  }, [qc, t])
 
   const markRead = useMutation({
     mutationFn: (id: string) => api.markNotificationRead(id),
@@ -38,11 +40,12 @@ export function NotificationBell() {
 
   return (
     <>
-      <button className="btn" style={{ padding: 5, position: 'relative' }} title="Notifications" onClick={() => setOpen(true)}>
-        <Bell />
+      <button className="btn" style={{ padding: 5, position: 'relative' }} title={t('bell.title')} aria-label={t('bell.title')} onClick={() => setOpen(true)}>
+        <Bell aria-hidden="true" />
         {!!unread && unread > 0 && (
           <span
             className="mono"
+            aria-label={t('bell.unread', { count: unread })}
             style={{
               position: 'absolute', top: -4, right: -4, background: 'var(--crit)', color: '#fff',
               borderRadius: 8, fontSize: 9, padding: '1px 4px', minWidth: 14, textAlign: 'center',
@@ -53,9 +56,9 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <Modal onClose={() => setOpen(false)} title="Notifications">
-          <h3>Notifications</h3>
-          {inbox && inbox.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>Nothing here.</p>}
+        <Modal onClose={() => setOpen(false)} title={t('bell.title')}>
+          <h3>{t('bell.title')}</h3>
+          {inbox && inbox.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>{t('bell.empty')}</p>}
           {inbox?.map((n) => (
             <div
               key={n.id} className="list-item" style={{ alignItems: 'flex-start', opacity: n.read ? 0.6 : 1 }}
@@ -66,9 +69,9 @@ export function NotificationBell() {
                   {n.occurrenceCount > 1 && <span className="badge">×{n.occurrenceCount}</span>}
                 </div>
                 {n.subtitle && <div className="muted" style={{ fontSize: 11.5 }}>{n.subtitle}</div>}
-                <div className="mono muted" style={{ fontSize: 10 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                <div className="mono muted" style={{ fontSize: 10 }}>{fmt.dateTime(n.createdAt)}</div>
               </div>
-              {!n.read && <button className="btn" style={{ padding: 4 }} onClick={() => markRead.mutate(n.id)}>Mark read</button>}
+              {!n.read && <button className="btn" style={{ padding: 4 }} onClick={() => markRead.mutate(n.id)}>{t('bell.markRead')}</button>}
             </div>
           ))}
         </Modal>

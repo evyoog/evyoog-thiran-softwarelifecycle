@@ -91,7 +91,7 @@ body {
 .btn svg { width: 14px; height: 14px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px; }
 .empty { padding: 44px 20px; text-align: center; border: 1px dashed var(--line-2); border-radius: 10px; }
-.empty h4 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--tx-2); }
+.empty h2, .empty h4 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--tx-2); }
 .empty p { font-size: 12px; color: var(--tx-3); margin: 0 auto; max-width: 46ch; line-height: 1.55; }
 .ph { padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
 .ph-t { font-family: 'Source Serif 4', serif; font-size: 25px; font-weight: 700; margin: 3px 0 0; }
@@ -838,7 +838,7 @@ body {
   display: flex; align-items: center; justify-content: center; color: var(--tx-3);
 }
 .bg-empty .ring svg { width: 23px; height: 23px; }
-.bg-empty h4 { font-family: var(--f-ui); font-size: 15px; font-weight: 600; margin: 0; color: var(--tx-2); }
+.bg-empty h2, .bg-empty h4 { font-family: var(--f-ui); font-size: 15px; font-weight: 600; margin: 0; color: var(--tx-2); }
 .bg-empty p { font-size: 12.5px; color: var(--tx-3); max-width: 44ch; margin: 0; line-height: 1.55; }
 
 /* ============================================================
@@ -1822,7 +1822,7 @@ body {
   display: flex; align-items: center; justify-content: center; color: var(--tx-3);
 }
 .bg-empty .ring svg { width: 23px; height: 23px; }
-.bg-empty h4 { font-family: var(--f-ui); font-size: 15px; font-weight: 600; margin: 0; color: var(--tx-2); }
+.bg-empty h2, .bg-empty h4 { font-family: var(--f-ui); font-size: 15px; font-weight: 600; margin: 0; color: var(--tx-2); }
 .bg-empty p { font-size: 12.5px; color: var(--tx-3); max-width: 44ch; margin: 0; line-height: 1.55; }
 
 /* ============================================================
@@ -2436,3 +2436,16 @@ body {
 .badge.ai-bud-over { background: var(--crit-dim); color: var(--crit); border-color: var(--crit-bd); }
 .ai-bar { height: 8px; border-radius: 4px; background: var(--panel-3); border: 1px solid var(--line-2); overflow: hidden; min-width: 80px; }
 .ai-bar > span { display: block; height: 100%; background: var(--info); }
+
+/* VYB-0958 (D45): keyboard access. A skip link that appears on focus, and one visible focus ring for everything that can take focus
+   (the controls that removed their outline relied on a border colour change alone, which is too faint to find). */
+.skip-link { position: absolute; left: 8px; top: -48px; z-index: 200; padding: 8px 14px; border-radius: 6px; background: var(--brand);
+  color: var(--on-brand); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: 8px; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible, .auth-field-row input:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.content:focus { outline: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

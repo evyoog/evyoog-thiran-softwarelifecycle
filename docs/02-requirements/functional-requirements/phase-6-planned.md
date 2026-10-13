@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 43, PARTIAL 1, TODO 11.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 44, PARTIAL 1, TODO 10.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -161,7 +161,6 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0955 | 6 | Reporting, notifications and release to pilot | Notifications: review, approval, release, test failure and mention events; email and chat channels; user preferences [M; F21] | TODO | S12 |
-| VYB-0958 | 6 | Reporting, notifications and release to pilot | Locale layer and first translated screens; code splitting and accessibility pass [M; F38, F42] | TODO | S12 |
 | VYB-0959 | 6 | Reporting, notifications and release to pilot | Pilot onboarding of one real team, load and recovery rehearsal [S; F11] | TODO | S12 |
 
 ## S12,105: Reporting, notifications and release to pilot
@@ -175,3 +174,9 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0957 | 6 | Reporting, notifications and release to pilot | Import: downloadable template, re-enable Word and ReqIF with validation [M; F25] | DONE on dev, started ahead of Sprint 11 at the product owner's request: the Import queue takes one Requirements file read by its content: Excel, ODS, CSV, a Word table, or ReqIF (`.reqif`, `.reqifz`), all through the same deterministic reader, nothing guessed (Type and Priority required, no defaults); a ReqIF keeps its identifiers and its relations become links and is placed in the application chosen. A file is checked on choosing it, every problem listed by row; a whole-file problem blocks the upload (enforced on the server), a row's does not and arrives unticked. Excel and Word templates download from the screen. Found and fixed: a commit's Depends On links failed silently unless something had flushed first. No migration. `ImportFileValidator`, `ImportTemplateService`, `DocxSheetReader`, `ReqIfSheetReader`, `docs/04-workflows/import-formats.md`, D44. `ImportFormatsIT` 7, `ImportFormatsTest` 14, `fileCheck.test.ts` 6 (commit only, no PR yet) | S12,106 |
+
+## S12,107: Reporting, notifications and release to pilot
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0958 | 6 | Reporting, notifications and release to pilot | Locale layer and first translated screens; code splitting and accessibility pass [M; F38, F42] | DONE on dev, started ahead of Sprint 11 at the product owner's request: a typed locale layer with no library (messages, plurals, locale dates and numbers, fallback to English, a language switcher kept in the browser) and a built-in test language; the shell, sign-in, Home and My Work moved into the catalogue, guarded by a test that fails on hard-coded text. Every screen is a lazy chunk (first load 861 kB to about 320 kB) with a build size budget and a recoverable load error. An axe-core pass over 14 screens and sign-in in both themes: 68 violations (14 serious or critical) to none (landmarks, headings, form labels, focus ring, skip link, page titles, control names). No real language shipped. No backend change. `docs/05-ui/localisation-and-accessibility.md`, D45. 18 tests (commit only, no PR yet) | S12,107 |

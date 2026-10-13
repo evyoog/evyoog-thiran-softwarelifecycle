@@ -164,7 +164,7 @@ function DocumentDetail({ id, onClose, onChanged }: { id: string; onClose: () =>
         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
           {[...byCapability.entries()].map(([capId, items], secIdx) => (
             <div key={capId} style={{ marginBottom: 16 }}>
-              <h4 className="section-h">{secIdx + 1}. {capId === 'Unplaced' ? 'Unplaced' : capId.slice(0, 8)}</h4>
+              <h2 className="section-h">{secIdx + 1}. {capId === 'Unplaced' ? 'Unplaced' : capId.slice(0, 8)}</h2>
               {items?.map((r, i) => (
                 <div key={r.id} style={{ marginBottom: 10 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{secIdx + 1}.{i + 1} {r.title} <span className="mono muted" style={{ fontSize: 10 }}>({r.key})</span></div>

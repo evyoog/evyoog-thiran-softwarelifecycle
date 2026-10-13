@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1220 tests cover 74 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1236 tests cover 75 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1445,3 +1445,22 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` aReqIfRowMissingAValueIsAProblemOnThatRowAndAHeadingOnlyObjectIsOne (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
 - `AC8` aReqIfzArchiveIsReadLikeTheFileInsideIt (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
 - `AC9` aReqIfThatIsNotWellFormedHasNoObjectsOrDeclaresAnEntityIsRefused (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+
+## VYB-0958: Locale layer and first translated screens; code splitting and accessibility pass [M; F38, F42]
+
+- `AC1` theLanguageStartsFromTheChoiceMadeBeforeThenTheBrowsersThenEnglish (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC10` noTranslatedScreenWritesEnglishStraightIntoItsMarkupOrItsLabels (`frontend/src/shared/i18n/translatedScreens.test.ts`)
+- `AC10` theGuardSeesTextAndLabelsWhenThereAreSome (`frontend/src/shared/i18n/translatedScreens.test.ts`)
+- `AC13` aLabelIsJoinedToTheControlThatFollowsItDirectlyOrInsideItsWrapper (`frontend/src/shared/a11y/labelAssociation.test.ts`)
+- `AC13` itKeepsAnIdAlreadyGivenAndLeavesAmbiguousOrAlreadyNamedControlsAlone (`frontend/src/shared/a11y/labelAssociation.test.ts`)
+- `AC14` theNumberOfFieldLabelsWithNoHtmlForDoesNotGrow (`frontend/src/shared/a11y/labelAssociation.test.ts`)
+- `AC2` aMessageFillsItsPlaceholdersAndAMissingOneStaysVisible (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC3` aCountPicksThePluralFormTheLocaleUses (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC4` aKeyBuiltFromDataThatHasNoMessageShowsItsKeyInsteadOfBreakingTheScreen (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC4` aMessageATranslationLacksIsShownInEnglishNotAsItsKey (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC5` theTestLanguageAltersEveryLetterButKeepsPlaceholdersAndPlurals (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC6` everyMessageIsNonEmptyAndEveryPluralHasOtherAndUsesCount (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC7` aTranslationCatalogueHasTheSamePlaceholdersAsTheEnglishMessage (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC8` theSwitcherOffersEnglishAndTheTestLanguageIsMarkedAsOne (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC9` datesAreFormattedByLocaleAndAnEmptyOrBadOneIsEmptyNotToday (`frontend/src/shared/i18n/i18n.test.ts`)
+- `AC9` theWeekStartsOnMondayAndNumbersGroupDigits (`frontend/src/shared/i18n/i18n.test.ts`)

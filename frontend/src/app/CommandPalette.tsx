@@ -4,10 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { Modal } from '@/shared/ui/Modal'
 import { api, type SearchResult, type SearchResultKind } from '@/shared/api/client'
 import type { NavItem } from './nav'
+import { useT } from '@/shared/i18n/LocaleProvider'
 
-const KIND_LABEL: Record<SearchResultKind, string> = {
-  REQUIREMENT: 'Requirements', CAPABILITY: 'Capabilities', GLOSSARY_TERM: 'Glossary terms', FINDING: 'Findings',
-}
 // None of these four kinds has its own deep-link route yet — each search result opens
 // the screen that owns it, not a single-record page that doesn't exist.
 const KIND_ROUTE: Record<SearchResultKind, (id: string) => string> = {
@@ -29,6 +27,7 @@ export function CommandPalette({ items }: { items: NavItem[] }) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
   const navigate = useNavigate()
+  const t = useT()
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -49,21 +48,21 @@ export function CommandPalette({ items }: { items: NavItem[] }) {
 
   const navMatches = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items
-  }, [items, query])
+    return q ? items.filter((i) => t(i.labelKey).toLowerCase().includes(q)) : items
+  }, [items, query, t])
 
   const close = () => { setOpen(false); setQuery('') }
 
   const groups = useMemo(() => {
     const g: { label: string; entries: Entry[] }[] = [
-      { label: 'Modules', entries: navMatches.map((i) => ({ key: `nav-${i.key}`, label: i.label, icon: i.icon, onSelect: () => { navigate(i.path); close() } })) },
+      { label: t('palette.modules'), entries: navMatches.map((i) => ({ key: `nav-${i.key}`, label: t(i.labelKey), icon: i.icon, onSelect: () => { navigate(i.path); close() } })) },
     ]
     if (searchResults && searchResults.length > 0) {
       const byKind = new Map<SearchResultKind, SearchResult[]>()
       for (const r of searchResults) byKind.set(r.kind, [...(byKind.get(r.kind) ?? []), r])
       for (const [kind, results] of byKind) {
         g.push({
-          label: KIND_LABEL[kind],
+          label: t(`palette.kind.${kind}`),
           entries: results.map((r) => ({
             key: `${kind}-${r.id}`, label: r.label,
             onSelect: () => { navigate(KIND_ROUTE[kind](r.id)); close() },
@@ -73,7 +72,7 @@ export function CommandPalette({ items }: { items: NavItem[] }) {
     }
     return g.filter((grp) => grp.entries.length > 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navMatches, searchResults])
+  }, [navMatches, searchResults, t])
 
   const flat = useMemo(() => groups.flatMap((g) => g.entries), [groups])
 
@@ -82,9 +81,9 @@ export function CommandPalette({ items }: { items: NavItem[] }) {
   if (!open) return null
 
   return (
-    <Modal onClose={close} title="Command palette">
+    <Modal onClose={close} title={t('palette.title')}>
       <input
-        className="input" autoFocus placeholder="Jump to a module, or search requirements/capabilities/glossary/findings…"
+        className="input" autoFocus placeholder={t('palette.placeholder')} aria-label={t('palette.placeholder')}
         style={{ width: '100%', marginBottom: 10 }}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -94,7 +93,7 @@ export function CommandPalette({ items }: { items: NavItem[] }) {
           else if (e.key === 'Enter' && flat[selected]) flat[selected].onSelect()
         }}
       />
-      {flat.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>No matches.</p>}
+      {flat.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>{t('palette.noMatches')}</p>}
       {groups.map((g) => (
         <div key={g.label} style={{ marginBottom: 10 }}>
           <div className="eyebrow" style={{ fontSize: 10, marginBottom: 4 }}>{g.label}</div>
@@ -115,7 +114,7 @@ export function CommandPalette({ items }: { items: NavItem[] }) {
           })}
         </div>
       ))}
-      <p className="hint muted" style={{ marginTop: 8, fontSize: 10.5 }}>↑↓ to move · Enter to open · Esc to close</p>
+      <p className="hint muted" style={{ marginTop: 8, fontSize: 10.5 }}>{t('palette.keys')}</p>
     </Modal>
   )
 }

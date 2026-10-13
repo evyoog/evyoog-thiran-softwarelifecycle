@@ -2,8 +2,9 @@ import { useQuery, useQueries } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { api, type RequirementStatus } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
+import { useLocale } from '@/shared/i18n/LocaleProvider'
 import {
-  STATE_CLASS, STATE_GLYPH, STATE_LABEL, blockedReason, failingGates, forwardMoves, moveLabel, readinessText, targetDateText,
+  STATE_CLASS, STATE_GLYPH, stateLabel, blockedReason, failingGates, forwardMoves, moveLabel, readinessText, targetDateText,
 } from './homeRelease'
 
 const FLOW_STAGES: RequirementStatus[] = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'APPROVED']
@@ -25,6 +26,7 @@ const FLOW_STAGES: RequirementStatus[] = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'APP
  */
 export function Home() {
   const navigate = useNavigate()
+  const { t, fmt } = useLocale()
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: api.me })
   const { data: products } = useQuery({ queryKey: ['products'], queryFn: api.products })
   const { data: requirements } = useQuery({
@@ -67,17 +69,17 @@ export function Home() {
   }
 
   const stats = [
-    { l: 'Products', v: products?.filter((p) => !p.archived).length ?? 0 },
-    { l: 'Requirements', v: total },
-    { l: 'Open gaps', v: openFindings?.totalElements ?? 0 },
-    { l: 'Approval coverage', v: `${coveragePct}%` },
+    { l: t('home.stat.products'), v: fmt.number(products?.filter((p) => !p.archived).length ?? 0) },
+    { l: t('home.stat.requirements'), v: fmt.number(total) },
+    { l: t('home.stat.gaps'), v: fmt.number(openFindings?.totalElements ?? 0) },
+    { l: t('home.stat.coverage'), v: `${fmt.number(coveragePct)}%` },
   ]
 
   return (
     <Page
-      eyebrow={me ? me.displayName : 'Loading'}
-      title="Home"
-      desc="Where the register stands right now. Every figure here is derived live — nothing is stored."
+      eyebrow={me ? me.displayName : t('home.eyebrowLoading')}
+      title={t('home.title')}
+      desc={t('home.desc')}
     >
       <div
         style={{
@@ -98,20 +100,17 @@ export function Home() {
       </div>
 
       {total === 0 ? (
-        <Empty
-          title="No requirements yet"
-          desc="Create the first one from the Requirements module to see this page come alive."
-        />
+        <Empty title={t('home.empty.title')} desc={t('home.empty.desc')} />
       ) : (
         <>
-          <h4 className="section-h">Requirement flow</h4>
+          <h2 className="section-h">{t('home.flow')}</h2>
           <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
             {FLOW_STAGES.map((stage, i) => (
               <div key={stage} className="card" style={{ flex: 1, textAlign: 'center' }}>
-                <div className="eyebrow">{stage.replace('_', ' ')}</div>
-                <div className="mono" style={{ fontSize: 22, marginTop: 6 }}>{stageCounts[i]}</div>
+                <div className="eyebrow">{t(`status.${stage}`)}</div>
+                <div className="mono" style={{ fontSize: 22, marginTop: 6 }}>{fmt.number(stageCounts[i] ?? 0)}</div>
                 {i === stuckIndex && (
-                  <div className="badge sev-high" style={{ marginTop: 6 }}>Stuck here</div>
+                  <div className="badge sev-high" style={{ marginTop: 6 }}>{t('home.stuck')}</div>
                 )}
               </div>
             ))}
@@ -121,41 +120,45 @@ export function Home() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div>
-          <h4 className="section-h">Blocking {currentRelease ? currentRelease.name : 'the current release'}</h4>
-          {releaseLoading && <p className="eyebrow">Loading…</p>}
+          <h2 className="section-h">{currentRelease ? t('home.blocking', { name: currentRelease.name }) : t('home.blockingCurrent')}</h2>
+          {releaseLoading && <p className="eyebrow">{t('common.loading')}</p>}
           {!releaseLoading && !currentRelease && (
-            <Empty title="No release being prepared" desc="Nothing is currently open or frozen. A release shows here once it is opened." />
+            <Empty title={t('home.noRelease.title')} desc={t('home.noRelease.desc')} />
           )}
           {currentRelease && (
             <>
               <p style={{ margin: '0 0 8px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span className={`badge ${STATE_CLASS[currentRelease.state]}`}>
-                  <span aria-hidden="true">{STATE_GLYPH[currentRelease.state]}</span> {STATE_LABEL[currentRelease.state]}
+                  <span aria-hidden="true">{STATE_GLYPH[currentRelease.state]}</span> {stateLabel(currentRelease.state, t)}
                 </span>
-                <span className="muted">{targetDateText(currentRelease.targetDate)}</span>
+                <span className="muted">{targetDateText(currentRelease.targetDate, t, fmt)}</span>
               </p>
               {forwardMoves(currentRelease.moves).map((m) => (
                 <div key={m.to} style={{ marginBottom: 8 }}>
                   <div role="status" style={{ fontWeight: 600, color: m.ready ? 'var(--ok)' : 'var(--crit)' }}>
-                    <span aria-hidden="true">{m.ready ? '✓' : '✕'}</span> {readinessText(m)}
+                    <span aria-hidden="true">{m.ready ? '✓' : '✕'}</span> {readinessText(m, t)}
                   </div>
                   {failingGates(m).map((g) => (
                     <div key={g.gate} className="list-item"><span style={{ flex: 1, color: 'var(--crit)' }}>{g.detail}</span></div>
                   ))}
                   {m.signatureRequired && (
-                    <div className="hint muted">{moveLabel(m)} is a sign-off: it needs step-up authentication.</div>
+                    <div className="hint muted">{t('release.signoff', { move: moveLabel(m, t) })}</div>
                   )}
                 </div>
               ))}
               {currentRelease.blocked.length === 0 ? (
-                <Empty title="Nothing blocking it" desc="Every committed requirement in this release is ready." />
+                <Empty title={t('home.nothingBlocking.title')} desc={t('home.nothingBlocking.desc')} />
               ) : (
-                <h4 className="section-h" style={{ marginTop: 10 }}>Blocked requirements</h4>
+                <h2 className="section-h" style={{ marginTop: 10 }}>{t('home.blockedRequirements')}</h2>
               )}
               {currentRelease.blocked.map((b) => (
-                <div key={b.requirementId} className="list-item" style={{ cursor: 'pointer' }} onClick={() => navigate(`/requirements/${b.requirementId}`)}>
+                <div
+                  key={b.requirementId} className="list-item" style={{ cursor: 'pointer' }} role="link" tabIndex={0}
+                  onClick={() => navigate(`/requirements/${b.requirementId}`)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/requirements/${b.requirementId}`) }}
+                >
                   <span className="mono muted" style={{ fontSize: 10 }}>{b.key}</span>
-                  <span style={{ flex: 1, color: 'var(--crit)' }}>{blockedReason(b.reason)}</span>
+                  <span style={{ flex: 1, color: 'var(--crit)' }}>{blockedReason(b.reason, t)}</span>
                 </div>
               ))}
             </>
@@ -163,13 +166,13 @@ export function Home() {
         </div>
 
         <div>
-          <h4 className="section-h">Not owned here</h4>
+          <h2 className="section-h">{t('home.notOwned')}</h2>
           {integrations?.map((i) => (
             <div key={i.key} className="list-item">
               <span className="mono" style={{ width: 70 }}>{i.key}</span>
               <span className="muted" style={{ flex: 1, fontSize: 12 }}>{i.owns}</span>
               <span style={{ fontSize: 11.5, color: i.connected ? 'var(--ok)' : 'var(--tx-3)' }}>
-                {i.connected ? 'Connected' : 'Not connected'}
+                {i.connected ? t('home.connected') : t('home.notConnected')}
               </span>
             </div>
           ))}

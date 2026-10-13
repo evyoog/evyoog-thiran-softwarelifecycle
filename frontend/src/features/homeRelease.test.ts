@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CurrentRelease, ReleaseMove } from '@/shared/api/client'
 import {
-  STATE_CLASS, STATE_GLYPH, STATE_LABEL, blockedReason, failingGates, forwardMoves, hasBlockers, moveLabel,
+  STATE_CLASS, STATE_GLYPH, blockedReason, stateLabel, failingGates, forwardMoves, hasBlockers, moveLabel,
   readinessText, targetDateText,
 } from './homeRelease'
 
@@ -20,7 +20,7 @@ const release = (over: Partial<CurrentRelease> = {}): CurrentRelease => ({
 describe('VYB-0929 Home: the release being prepared', () => {
   it('VYB0929_AC8_everyStateHasALabelAndAGlyphSoItIsNeverColourAlone', () => {
     for (const s of ['PLANNED', 'OPEN', 'FROZEN', 'RELEASED'] as const) {
-      expect(STATE_LABEL[s]).toBeTruthy()
+      expect(stateLabel(s)).toBeTruthy()
       expect(STATE_GLYPH[s]).toBeTruthy()
       expect(STATE_CLASS[s]).not.toMatch(/(^|-)ai(-|$)|amber/)
     }

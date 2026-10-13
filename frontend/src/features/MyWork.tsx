@@ -6,15 +6,18 @@ import {
   api, type AppUserView, type CompletedTask, type Task, type TaskKind,
 } from '@/shared/api/client'
 import { Page, Empty } from '@/shared/ui/Page'
+import { useLocale } from '@/shared/i18n/LocaleProvider'
+import type { MessageKey } from '@/shared/i18n/catalog.en'
 
 type Tab = 'today' | 'pipeline' | 'deployment' | 'calendar'
 
-const KIND_LABEL: Record<TaskKind, string> = {
-  AUTHOR_WORDING: 'Fix unclear wording',
-  DEVELOPER_IMPLEMENT: 'Implement',
-  DEVELOPER_REIMPLEMENT: 'Re-implement',
-  TESTER_VERIFY: 'Verify',
-  TESTER_REVERIFY: 'Re-verify',
+/** VYB-0958: the words of this screen live in the message catalogue (`mywork.*`); these maps hold only the keys. */
+const KIND_LABEL: Record<TaskKind, MessageKey> = {
+  AUTHOR_WORDING: 'mywork.kind.AUTHOR_WORDING',
+  DEVELOPER_IMPLEMENT: 'mywork.kind.DEVELOPER_IMPLEMENT',
+  DEVELOPER_REIMPLEMENT: 'mywork.kind.DEVELOPER_REIMPLEMENT',
+  TESTER_VERIFY: 'mywork.kind.TESTER_VERIFY',
+  TESTER_REVERIFY: 'mywork.kind.TESTER_REVERIFY',
 }
 
 /** The lifecycle stage each derived task belongs to — what the chip on the row shows. */
@@ -28,9 +31,9 @@ const KIND_STAGE: Record<TaskKind, Stage> = {
   TESTER_REVERIFY: 'test',
 }
 
-const STAGE_LABEL: Record<Stage, string> = {
-  author: 'Author', review: 'Review', approve: 'Approve',
-  dev: 'Develop', test: 'Verify', deploy: 'Deploy',
+const STAGE_LABEL: Record<Stage, MessageKey> = {
+  author: 'mywork.stage.author', review: 'mywork.stage.review', approve: 'mywork.stage.approve',
+  dev: 'mywork.stage.dev', test: 'mywork.stage.test', deploy: 'mywork.stage.deploy',
 }
 
 // VYB-0810: VERIFIED is gone as a status — REVIEWED (VYB-0802's manual review gate)
@@ -43,9 +46,6 @@ const STAGE_LABEL: Record<Stage, string> = {
 export const STAGES = ['DRAFT', 'IN_REVIEW', 'REVIEWED', 'NEEDS_REVISION', 'APPROVED'] as const
 const STAGE_OF_STATUS: Record<(typeof STAGES)[number], Stage> = {
   DRAFT: 'author', IN_REVIEW: 'review', REVIEWED: 'approve', NEEDS_REVISION: 'author', APPROVED: 'dev',
-}
-const STATUS_LANE_LABEL: Record<(typeof STAGES)[number], string> = {
-  DRAFT: 'Draft', IN_REVIEW: 'In review', REVIEWED: 'Reviewed', NEEDS_REVISION: 'Needs revision', APPROVED: 'Approved',
 }
 
 /**
@@ -66,6 +66,7 @@ const STATUS_LANE_LABEL: Record<(typeof STAGES)[number], string> = {
  * orange respectively.
  */
 export function MyWork() {
+  const { t } = useLocale()
   const [tab, setTab] = useState<Tab>('today')
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: api.me })
   const [viewing, setViewing] = useState<string>('')
@@ -75,19 +76,18 @@ export function MyWork() {
 
   return (
     <Page
-      title="My Work"
-      desc="Nobody creates a task in Vyoog. An approved requirement with no code link is a developer task; a requirement changed after its last passing test is a tester task. The list writes itself from the state of the chain."
+      title={t('mywork.title')}
+      desc={t('mywork.desc')}
       actions={
         <button className="btn" onClick={() => setTab('calendar')}>
-          <CalendarDays /> Calendar
+          <CalendarDays aria-hidden="true" /> {t('mywork.tab.calendar')}
         </button>
       }
     >
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-        {(['today', 'pipeline', 'deployment', 'calendar'] as Tab[]).map((t) => (
-          <button key={t} className={`btn${t === tab ? ' pri' : ''}`} onClick={() => setTab(t)}>
-            {t === 'today' ? 'Today' : t === 'pipeline' ? 'Pipeline'
-              : t === 'deployment' ? 'Deployment' : 'Calendar'}
+        {(['today', 'pipeline', 'deployment', 'calendar'] as Tab[]).map((id) => (
+          <button key={id} className={`btn${id === tab ? ' pri' : ''}`} aria-pressed={id === tab} onClick={() => setTab(id)}>
+            {t(`mywork.tab.${id}`)}
           </button>
         ))}
       </div>
@@ -124,6 +124,7 @@ function WhoStrip({ myId, selected, onSelect }: {
   selected: string
   onSelect: (id: string) => void
 }) {
+  const { t, fmt } = useLocale()
   const { data: users } = useQuery({ queryKey: ['users'], queryFn: api.users })
   const active = (users ?? []).filter((u) => u.status === 'ACTIVE').slice(0, 8)
 
@@ -139,7 +140,7 @@ function WhoStrip({ myId, selected, onSelect }: {
   if (active.length === 0) return null
 
   return (
-    <div className="who-strip">
+    <div className="who-strip" role="group" aria-label={t('mywork.who')}>
       {active.map((u: AppUserView, i) => {
         const q = counts[i]
         const open = q?.data?.filter((t) => !t.blocked).length
@@ -152,11 +153,11 @@ function WhoStrip({ myId, selected, onSelect }: {
           >
             <span className="avatar" aria-hidden="true">{initials(u.displayName)}</span>
             <span>
-              <span className="who-n">{u.displayName}{u.id === myId ? ' (you)' : ''}</span>
+              <span className="who-n">{u.id === myId ? t('mywork.whoYou', { name: u.displayName }) : u.displayName}</span>
               <span className="who-r">{u.email}</span>
             </span>
-            <span className="who-c" title={q?.isError ? 'You cannot see this person’s work' : 'Open tasks'}>
-              {q?.isError ? '—' : open ?? '·'}
+            <span className="who-c" title={q?.isError ? t('mywork.cannotSeeCount') : t('mywork.openTasks')}>
+              {q?.isError ? '—' : open === undefined ? '·' : fmt.number(open)}
             </span>
           </button>
         )
@@ -172,6 +173,7 @@ function ageInDays(since?: string): number {
 
 /** VYB-0370: overdue / today / this week / blocked. AC1 — every row states why. */
 function TodayTab({ userId, isMe }: { userId?: string; isMe: boolean }) {
+  const { t } = useLocale()
   const qc = useQueryClient()
   const tasksKey = isMe ? ['my-tasks', userId] : ['tasks-for', userId]
   const { data, isLoading, isError } = useQuery({
@@ -208,10 +210,10 @@ function TodayTab({ userId, isMe }: { userId?: string; isMe: boolean }) {
     return { blocked, overdue, today: rest.filter(isToday), week: rest.filter(isWeek) }
   }, [data])
 
-  if (isError) return <Empty title="Cannot see this person’s work" desc="Viewing somebody else's derived work needs the ADMINISTRATOR grant." />
-  if (isLoading) return <p className="eyebrow">Loading…</p>
+  if (isError) return <Empty title={t('mywork.cannotSee.title')} desc={t('mywork.cannotSee.desc')} />
+  if (isLoading) return <p className="eyebrow">{t('common.loading')}</p>
   if (data && data.length === 0 && (done ?? []).length === 0) {
-    return <Empty title="Nothing derived right now" desc="Every condition that would create a task is currently false. Tasks appear here automatically when a requirement reaches a stage this person owns." />
+    return <Empty title={t('mywork.nothing.title')} desc={t('mywork.nothing.desc')} />
   }
 
   // How long the longest-waiting task has been sitting, in whole days.
@@ -220,16 +222,16 @@ function TodayTab({ userId, isMe }: { userId?: string; isMe: boolean }) {
   return (
     <>
       <div className="q-grid">
-        <Stat cls="act" value={b.overdue.length} label="Overdue"
-          sub={b.overdue.length ? (oldest ? `oldest ${oldest} days late` : 'by condition age') : 'nothing late'} />
-        <Stat cls="mine" value={b.today.length} label="Due today" />
-        <Stat cls="mine" value={b.week.length} label="Due this week" />
-        <Stat cls="zero" value={b.blocked.length} label="Blocked"
-          sub={b.blocked.length ? 'waiting on someone else' : ''} />
-        <Stat cls="zero" value={(done ?? []).length} label="Closed today" />
+        <Stat cls="act" value={b.overdue.length} label={t('mywork.stat.overdue')}
+          sub={b.overdue.length ? (oldest ? t('mywork.stat.oldest', { count: oldest }) : t('mywork.stat.byAge')) : t('mywork.stat.nothingLate')} />
+        <Stat cls="mine" value={b.today.length} label={t('mywork.stat.today')} />
+        <Stat cls="mine" value={b.week.length} label={t('mywork.stat.week')} />
+        <Stat cls="zero" value={b.blocked.length} label={t('mywork.stat.blocked')}
+          sub={b.blocked.length ? t('mywork.stat.waiting') : ''} />
+        <Stat cls="zero" value={(done ?? []).length} label={t('mywork.stat.closed')} />
       </div>
 
-      <TaskGroup title="Overdue" colour="var(--crit)" rows={b.overdue} cls="over"
+      <TaskGroup title={t('mywork.stat.overdue')} colour="var(--crit)" rows={b.overdue} cls="over"
         onComplete={isMe ? (t) => complete.mutate(t) : undefined} />
       {/*
         VYB-0838 (D19): amber here is a deliberate, confirmed override of the
@@ -238,16 +240,16 @@ function TodayTab({ userId, isMe }: { userId?: string; isMe: boolean }) {
         --ai-coloured "Due today" group exactly as asked, not a reversion by
         accident. See docs/DECISIONS.md D19 before reusing --ai anywhere else.
       */}
-      <TaskGroup title="Due today" colour="var(--ai)" rows={b.today} cls="today"
+      <TaskGroup title={t('mywork.stat.today')} colour="var(--ai)" rows={b.today} cls="today"
         onComplete={isMe ? (t) => complete.mutate(t) : undefined} />
-      <TaskGroup title="This week" colour="var(--tx-2)" rows={b.week} cls=""
+      <TaskGroup title={t('mywork.group.week')} colour="var(--tx-2)" rows={b.week} cls=""
         onComplete={isMe ? (t) => complete.mutate(t) : undefined} />
-      <TaskGroup title="Blocked — waiting on someone else" colour="var(--tx-3)" rows={b.blocked} cls="blocked" />
+      <TaskGroup title={t('mywork.group.blocked')} colour="var(--tx-3)" rows={b.blocked} cls="blocked" />
 
       {isMe && (done ?? []).length > 0 && (
         <>
           <div className="tg-h">
-            <span className="tg-t" style={{ color: 'var(--ok)' }}>Closed today</span>
+            <span className="tg-t" style={{ color: 'var(--ok)' }}>{t('mywork.stat.closed')}</span>
             <span className="tg-n">{done!.length}</span>
             <span className="tg-line" />
           </div>
@@ -258,18 +260,17 @@ function TodayTab({ userId, isMe }: { userId?: string; isMe: boolean }) {
       )}
 
       <p className="hint muted" style={{ marginTop: 14 }}>
-        {isMe
-          ? 'Checking a task records that you dismissed it — it reopens on its own if the requirement changes again, so nothing here can go stale silently.'
-          : "Nothing here can be ticked off while viewing someone else's work."}
+        {isMe ? t('mywork.hint.mine') : t('mywork.hint.others')}
       </p>
     </>
   )
 }
 
 function Stat({ cls, value, label, sub }: { cls: string; value: number; label: string; sub?: string }) {
+  const { fmt } = useLocale()
   return (
     <div className={`q-c ${value === 0 ? 'zero' : cls}`}>
-      <span className="q-v">{value}</span>
+      <span className="q-v">{fmt.number(value)}</span>
       <span className="q-l">{label}</span>
       {sub ? <span className="q-s">{sub}</span> : null}
     </div>
@@ -279,12 +280,13 @@ function Stat({ cls, value, label, sub }: { cls: string; value: number; label: s
 function TaskGroup({ title, colour, rows, cls, onComplete }: {
   title: string; colour: string; rows: Task[]; cls: string; onComplete?: (t: Task) => void
 }) {
+  const { fmt } = useLocale()
   if (rows.length === 0) return null
   return (
     <>
       <div className="tg-h">
         <span className="tg-t" style={{ color: colour }}>{title}</span>
-        <span className="tg-n">{rows.length}</span>
+        <span className="tg-n">{fmt.number(rows.length)}</span>
         <span className="tg-line" />
       </div>
       {rows.map((t, i) => (
@@ -294,13 +296,14 @@ function TaskGroup({ title, colour, rows, cls, onComplete }: {
   )
 }
 
-function TaskRow({ t, cls, onComplete }: { t: Task; cls: string; onComplete?: (t: Task) => void }) {
+function TaskRow({ t: task, cls, onComplete }: { t: Task; cls: string; onComplete?: (t: Task) => void }) {
+  const { t } = useLocale()
   // Age, not a due date: a task has no date of its own now that Planning is gone, and
   // showing "today" for something nobody committed to a day would be inventing one.
-  const age = Math.round(ageInDays(t.since))
-  const dueText = `${age}d open`
+  const age = Math.round(ageInDays(task.since))
+  const dueText = t('mywork.task.age', { count: age })
   const dueCls = age > 7 ? 'over' : ''
-  const stage = KIND_STAGE[t.kind]
+  const stage = KIND_STAGE[task.kind]
 
   return (
     <div className={`tk-row ${cls}`}>
@@ -308,21 +311,21 @@ function TaskRow({ t, cls, onComplete }: { t: Task; cls: string; onComplete?: (t
           toggle — clicking this calls api.completeTask, which records a dismissal at
           the requirement's current revision. Absent (not disabled) for a blocked task:
           there's nothing to dismiss until whoever owes the answer actually answers. */}
-      {onComplete && !t.blocked ? (
+      {onComplete && !task.blocked ? (
         <button
-          type="button" className="tk-cb" title="Mark complete"
-          onClick={() => onComplete(t)}
+          type="button" className="tk-cb" title={t('mywork.task.complete')} aria-label={`${t('mywork.task.complete')}: ${task.objectLabel}`}
+          onClick={() => onComplete(task)}
         />
       ) : <span />}
-      <Link to={`/requirements/${t.objectId}`} className="tk-rid mono">{t.objectLabel}</Link>
+      <Link to={`/requirements/${task.objectId}`} className="tk-rid mono">{task.objectLabel}</Link>
       <span>
-        <span className="tk-act">{KIND_LABEL[t.kind]}</span>
-        <span className="tk-sub">{t.reason}</span>
+        <span className="tk-act">{t(KIND_LABEL[task.kind])}</span>
+        <span className="tk-sub">{task.reason}</span>
       </span>
-      <span className={`tk-stage st-${stage}`}>{STAGE_LABEL[stage]}</span>
+      <span className={`tk-stage st-${stage}`}>{t(STAGE_LABEL[stage])}</span>
       <span>
-        {t.blocked && (
-          <span className="badge st-draft" title={t.blockedByQuestion}>blocked</span>
+        {task.blocked && (
+          <span className="badge st-draft" title={task.blockedByQuestion}>{t('mywork.task.blocked')}</span>
         )}
       </span>
       <span className={`tk-due ${dueCls}`}>{dueText}</span>
@@ -332,17 +335,18 @@ function TaskRow({ t, cls, onComplete }: { t: Task; cls: string; onComplete?: (t
 
 /** VYB-0838 (D19): a dismissed task, shown struck through with an undo — reopen deletes the completion outright rather than requiring the underlying condition to change. */
 function DoneRow({ c, onReopen }: { c: CompletedTask; onReopen: () => void }) {
+  const { t } = useLocale()
   return (
     <div className="tk-row done">
-      <button type="button" className="tk-cb done" title="Reopen" onClick={onReopen}>✓</button>
+      <button type="button" className="tk-cb done" title={t('mywork.task.reopen')} aria-label={`${t('mywork.task.reopen')}: ${c.objectLabel}`} onClick={onReopen}>✓</button>
       <Link to={`/requirements/${c.objectId}`} className="tk-rid mono">{c.objectLabel}</Link>
       <span>
-        <span className="tk-act">{KIND_LABEL[c.kind]}</span>
-        <span className="tk-sub">Marked complete</span>
+        <span className="tk-act">{t(KIND_LABEL[c.kind])}</span>
+        <span className="tk-sub">{t('mywork.task.markedComplete')}</span>
       </span>
-      <span className={`tk-stage st-${KIND_STAGE[c.kind]}`}>{STAGE_LABEL[KIND_STAGE[c.kind]]}</span>
+      <span className={`tk-stage st-${KIND_STAGE[c.kind]}`}>{t(STAGE_LABEL[KIND_STAGE[c.kind]])}</span>
       <span />
-      <span className="tk-due">done</span>
+      <span className="tk-due">{t('mywork.task.done')}</span>
     </div>
   )
 }
@@ -355,6 +359,7 @@ const LANE_PAGE_SIZE = 50
 
 /** VYB-0371: lanes by lifecycle stage, not a sprint board. AC2 — stalled cards are marked. */
 function PipelineTab() {
+  const { t, fmt } = useLocale()
   // How many LANE_PAGE_SIZE pages are shown per lane — starts at 1 (the first 50), and
   // grows independently per lane when its own "Show more" is clicked. Each page is its
   // own query (queryKey includes the page number) rather than one query re-fetching a
@@ -380,17 +385,14 @@ function PipelineTab() {
   const { data: stalled } = useQuery({ queryKey: ['stalled'], queryFn: api.stalledRequirements })
   const stalledById = new Map((stalled ?? []).map((s) => [s.id, s]))
 
-  if (pageQueries.some((q) => q.isLoading)) return <p className="eyebrow">Loading…</p>
+  if (pageQueries.some((q) => q.isLoading)) return <p className="eyebrow">{t('common.loading')}</p>
 
   return (
     <>
       <div className="sp-note">
-        <GitBranch style={{ width: 16, height: 16, flex: '0 0 auto', color: 'var(--tx-3)' }} />
+        <GitBranch aria-hidden="true" style={{ width: 16, height: 16, flex: '0 0 auto', color: 'var(--tx-3)' }} />
         <p>
-          <b>The requirement's own lifecycle, not a sprint board.</b> Each column is a stage the requirement
-          passes through and the role that owns it. A card sitting in one column past its configured threshold
-          is marked stalled — that is the number worth watching, because a requirement can sit in Development
-          for six weeks while its tickets look busy.
+          <b>{t('mywork.pipeline.noteLead')}</b> {t('mywork.pipeline.noteBody')}
         </p>
       </div>
       <div className="lanes">
@@ -412,13 +414,13 @@ function PipelineTab() {
             <div className="lane" key={status}>
               <div className="lane-h">
                 <span className={`tk-stage st-${STAGE_OF_STATUS[status]}`} style={{ justifySelf: 'auto' }}>
-                  {STAGE_LABEL[STAGE_OF_STATUS[status]]}
+                  {t(STAGE_LABEL[STAGE_OF_STATUS[status]])}
                 </span>
-                <span className="lane-t">{STATUS_LANE_LABEL[status]}</span>
-                <span className="lane-n">{total}</span>
+                <span className="lane-t">{t(`status.${status}`)}</span>
+                <span className="lane-n">{fmt.number(total)}</span>
               </div>
               <div className="lane-b">
-                {cards.length === 0 && <span className="hint muted" style={{ fontSize: 10.5 }}>Nothing here.</span>}
+                {cards.length === 0 && <span className="hint muted" style={{ fontSize: 10.5 }}>{t('mywork.pipeline.empty')}</span>}
                 {cards.map((r) => {
                   const stall = stalledById.get(r.id)
                   return (
@@ -426,10 +428,10 @@ function PipelineTab() {
                       <span className="lc-id">{r.key}</span>
                       <div className="lc-t">{r.title}</div>
                       <div className="lc-f">
-                        <span className="lc-age">{r.priority.toLowerCase()}</span>
+                        <span className="lc-age">{t(`priority.${r.priority}`)}</span>
                         {stall && (
-                          <span className="lc-age old" title={`Threshold is ${stall.thresholdDays} days`}>
-                            {Math.round(stall.daysInStage)}d in stage
+                          <span className="lc-age old" title={t('mywork.pipeline.threshold', { count: stall.thresholdDays })}>
+                            {t('mywork.pipeline.inStage', { count: Math.round(stall.daysInStage) })}
                           </span>
                         )}
                       </div>
@@ -443,7 +445,7 @@ function PipelineTab() {
                     style={{ padding: '4px 2px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                     onClick={() => setPagesShown((p) => ({ ...p, [status]: shownPages + 1 }))}
                   >
-                    Show {Math.min(LANE_PAGE_SIZE, remaining)} more ({remaining} left)
+                    {t('mywork.pipeline.showMore', { shown: fmt.number(Math.min(LANE_PAGE_SIZE, remaining)), left: fmt.number(remaining) })}
                   </button>
                 )}
               </div>
@@ -463,29 +465,26 @@ function PipelineTab() {
  * this requirement, verified at this revision, is present in this build.
  */
 function DeploymentTab() {
+  const { t, fmt } = useLocale()
   const { data: envs, isLoading } = useQuery({
     queryKey: ['environment-summaries'], queryFn: api.environmentSummaries,
   })
   const { data: recent } = useQuery({ queryKey: ['recent-deployments'], queryFn: () => api.recentDeployments(8) })
   const { data: blocked } = useQuery({ queryKey: ['blocked-from-release'], queryFn: () => api.blockedFromRelease(20) })
 
-  if (isLoading) return <p className="eyebrow">Loading…</p>
+  if (isLoading) return <p className="eyebrow">{t('common.loading')}</p>
 
   return (
     <>
       <div className="sp-note">
-        <Rocket style={{ width: 16, height: 16, flex: '0 0 auto', color: 'var(--tx-3)' }} />
+        <Rocket aria-hidden="true" style={{ width: 16, height: 16, flex: '0 0 auto', color: 'var(--tx-3)' }} />
         <p>
-          <b>Which requirements are actually in which environment.</b> Build numbers and deployment events
-          arrive from CI/CD — hatched, because Vyoog displays them and does not own them. What Vyoog owns is
-          the link: this requirement, verified at this revision, is present in this build. That is the last
-          segment of the traceability chain.
+          <b>{t('mywork.deploy.noteLead')}</b> {t('mywork.deploy.noteBody')}
         </p>
       </div>
 
       {envs && envs.length === 0 && (
-        <Empty title="No environments registered"
-          desc="Environments and deployments arrive from CI/CD. Until something posts a build, there is nothing to show here." />
+        <Empty title={t('mywork.deploy.noEnvs.title')} desc={t('mywork.deploy.noEnvs.desc')} />
       )}
 
       <div className="env-strip">
@@ -493,8 +492,8 @@ function DeploymentTab() {
           <div className={`env${i === (envs?.length ?? 0) - 1 && e.buildLabel ? ' live' : ''}`} key={e.id}>
             <div className="env-l">{e.name}</div>
             {/* Principle 8: never deployed renders as "not connected", not as 0. */}
-            <div className="env-v">{e.buildLabel ? e.requirementCount.toLocaleString() : '—'}</div>
-            <div className="env-b">{e.buildLabel ? `build ${e.buildLabel}` : 'not connected'}</div>
+            <div className="env-v">{e.buildLabel ? fmt.number(e.requirementCount) : '—'}</div>
+            <div className="env-b">{e.buildLabel ? t('mywork.deploy.build', { label: e.buildLabel }) : t('mywork.deploy.notConnected')}</div>
           </div>
         ))}
       </div>
@@ -502,11 +501,11 @@ function DeploymentTab() {
       <div className="row" style={{ alignItems: 'stretch', gap: 12 }}>
         <div className="card" style={{ flex: '1.3 1 0', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-            <h4 className="section-h" style={{ margin: 0 }}>Recent deployments</h4>
+            <h2 className="section-h" style={{ margin: 0 }}>{t('mywork.deploy.recent')}</h2>
             <span className="sp" />
-            <span className="hint muted">from CI/CD</span>
+            <span className="hint muted">{t('mywork.deploy.fromCi')}</span>
           </div>
-          {(recent ?? []).length === 0 && <p className="hint muted">Nothing deployed yet.</p>}
+          {(recent ?? []).length === 0 && <p className="hint muted">{t('mywork.deploy.none')}</p>}
           {(recent ?? []).map((d) => (
             <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '84px 92px 1fr auto', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--line)' }}>
               <span className="tk-rid mono">{d.buildLabel}</span>
@@ -514,12 +513,10 @@ function DeploymentTab() {
                 {d.environmentName}
               </span>
               <span style={{ fontSize: 11.5, color: d.succeeded ? 'var(--tx-2)' : 'var(--crit)' }}>
-                {d.succeeded
-                  ? `${d.requirementCount} requirement${d.requirementCount === 1 ? '' : 's'} in this build`
-                  : 'Build failed — not promoted'}
+                {d.succeeded ? t('mywork.deploy.inBuild', { count: d.requirementCount }) : t('mywork.deploy.failed')}
               </span>
               <span className="hint muted" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                {new Date(d.deployedAt).toLocaleString()}
+                {fmt.dateTime(d.deployedAt)}
               </span>
             </div>
           ))}
@@ -527,12 +524,12 @@ function DeploymentTab() {
 
         <div className="card" style={{ flex: '1 1 0', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-            <h4 className="section-h" style={{ margin: 0 }}>Blocked from release</h4>
+            <h2 className="section-h" style={{ margin: 0 }}>{t('mywork.deploy.blocked')}</h2>
             <span className="sp" />
-            <span className="badge pr-critical">{blocked?.length ?? 0}</span>
+            <span className="badge pr-critical">{fmt.number(blocked?.length ?? 0)}</span>
           </div>
           {(blocked ?? []).length === 0 && (
-            <p className="hint muted">Nothing approved is missing a passing test at its current revision.</p>
+            <p className="hint muted">{t('mywork.deploy.noneBlocked')}</p>
           )}
           {(blocked ?? []).map((r) => (
             <div key={r.requirementId} style={{ padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
@@ -549,12 +546,12 @@ function DeploymentTab() {
 type CalKind = 'task' | 'rev' | 'rel' | 'dep' | 'risk'
 type CalEvent = { date: Date; label: string; kind: CalKind }
 
-const LEGEND: { kind: CalKind; colour: string; label: string }[] = [
-  { kind: 'task', colour: 'var(--tx-3)', label: 'My task due' },
-  { kind: 'rev', colour: 'var(--info)', label: 'Clarification due' },
-  { kind: 'rel', colour: 'var(--brand)', label: 'Release milestone' },
-  { kind: 'dep', colour: 'var(--ok)', label: 'Deployment' },
-  { kind: 'risk', colour: 'var(--crit)', label: 'Overdue' },
+const LEGEND: { kind: CalKind; colour: string }[] = [
+  { kind: 'task', colour: 'var(--tx-3)' },
+  { kind: 'rev', colour: 'var(--info)' },
+  { kind: 'rel', colour: 'var(--brand)' },
+  { kind: 'dep', colour: 'var(--ok)' },
+  { kind: 'risk', colour: 'var(--crit)' },
 ]
 
 function sameDay(a: Date, b: Date) {
@@ -568,6 +565,7 @@ function sameDay(a: Date, b: Date) {
  * date of its own now that Planning is gone.
  */
 function CalendarTab() {
+  const { t, fmt } = useLocale()
   const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d })
 
   const { data: releases } = useQuery({ queryKey: ['releases'], queryFn: api.releases })
@@ -577,16 +575,16 @@ function CalendarTab() {
   const events = useMemo<CalEvent[]>(() => {
     const out: CalEvent[] = []
     for (const r of releases ?? []) {
-      if (r.targetDate) out.push({ date: new Date(r.targetDate), label: `${r.name} target`, kind: 'rel' })
+      if (r.targetDate) out.push({ date: new Date(r.targetDate), label: t('mywork.cal.releaseTarget', { name: r.name }), kind: 'rel' })
     }
     for (const c of clarifications ?? []) {
-      if (c.dueAt) out.push({ date: new Date(c.dueAt), label: `Clarification due`, kind: 'rev' })
+      if (c.dueAt) out.push({ date: new Date(c.dueAt), label: t('mywork.cal.clarification'), kind: 'rev' })
     }
     for (const d of deployments ?? []) {
-      out.push({ date: new Date(d.deployedAt), label: `${d.buildLabel} → ${d.environmentName}`, kind: 'dep' })
+      out.push({ date: new Date(d.deployedAt), label: t('mywork.cal.deployment', { build: d.buildLabel, env: d.environmentName }), kind: 'dep' })
     }
     return out
-  }, [releases, clarifications, deployments])
+  }, [releases, clarifications, deployments, t])
 
   // Monday-first, the way the prototype's grid reads.
   const lead = (month.getDay() + 6) % 7
@@ -609,18 +607,18 @@ function CalendarTab() {
   return (
     <>
       <div className="row" style={{ marginBottom: 12, alignItems: 'center' }}>
-        <button className="btn" onClick={() => shift(-1)} aria-label="Previous month">◂</button>
-        <span style={{ fontFamily: 'var(--f-serif)', fontSize: 19, fontWeight: 700 }}>
-          {month.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+        <button className="btn" onClick={() => shift(-1)} aria-label={t('mywork.cal.prev')}>◂</button>
+        <span style={{ fontFamily: 'var(--f-serif)', fontSize: 19, fontWeight: 700 }} aria-live="polite">
+          {fmt.monthYear(month)}
         </span>
-        <button className="btn" onClick={() => shift(1)} aria-label="Next month">▸</button>
+        <button className="btn" onClick={() => shift(1)} aria-label={t('mywork.cal.next')}>▸</button>
         <span className="sp" />
-        <button className="btn" onClick={() => { const d = new Date(); d.setDate(1); setMonth(d) }}>Today</button>
+        <button className="btn" onClick={() => { const d = new Date(); d.setDate(1); setMonth(d) }}>{t('mywork.cal.today')}</button>
       </div>
 
       <div className="cal">
         <div className="cal-hd">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <span key={d}>{d}</span>)}
+          {[0, 1, 2, 3, 4, 5, 6].map((d) => <span key={d}>{fmt.weekdayShort(d)}</span>)}
         </div>
         <div className="cal-g">
           {cells.map(({ date, inMonth }, i) => {
@@ -633,13 +631,13 @@ function CalendarTab() {
                 className={`cal-d${inMonth ? '' : ' off'}${weekend ? ' we' : ''}${sameDay(date, today) ? ' now' : ''}`}
               >
                 <span className="cal-n">
-                  {date.getDate()}{sameDay(date, today) ? ' · today' : ''}
+                  {sameDay(date, today) ? t('mywork.cal.todayMark', { day: date.getDate() }) : date.getDate()}
                 </span>
                 {inMonth && shown.map((e, n) => (
                   <span key={n} className={`cal-ev ev-${e.kind}`} title={e.label}>{e.label}</span>
                 ))}
                 {inMonth && dayEvents.length > 3 && (
-                  <span className="cal-more">+{dayEvents.length - 3} more</span>
+                  <span className="cal-more">{t('mywork.cal.more', { count: dayEvents.length - 3 })}</span>
                 )}
               </div>
             )
@@ -649,13 +647,10 @@ function CalendarTab() {
 
       <div className="cal-legend">
         {LEGEND.map((l) => (
-          <span key={l.kind}><i style={{ background: l.colour }} />{l.label}</span>
+          <span key={l.kind}><i aria-hidden="true" style={{ background: l.colour }} />{t(`mywork.cal.legend.${l.kind}`)}</span>
         ))}
       </div>
-      <p className="hint muted" style={{ marginTop: 10 }}>
-        Only dates this product actually holds are plotted — a release target, a review close, a clarification
-        deadline, a deployment, and the due date Planning resolved for each task. Nothing here is invented.
-      </p>
+      <p className="hint muted" style={{ marginTop: 10 }}>{t('mywork.cal.hint')}</p>
     </>
   )
 }

@@ -176,7 +176,7 @@ function TeamCard({ team }: { team: Team }) {
   return (
     <div className="card" style={{ marginBottom: 12, padding: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <h4 className="section-h" style={{ margin: 0 }}>{team.name}</h4>
+        <h2 className="section-h" style={{ margin: 0 }}>{team.name}</h2>
         {/* Principle 8: an unled team is stated, not left to look like a configured one. */}
         {members && leads.length === 0 && (
           <span className="hint muted">no lead — anyone can assign to these people</span>
@@ -806,7 +806,7 @@ function SecurityTab() {
     <>
       {sections.map((s) => (
         <div key={s.title} style={{ marginBottom: 16 }}>
-          <h4 className="section-h">{s.title}</h4>
+          <h2 className="section-h">{s.title}</h2>
           {s.items.length === 0 && <Empty title="Nothing here" desc="No open findings for this check right now." />}
           {s.items.map((f) => (
             <div key={f.id} className="card" style={{ marginBottom: 8, borderColor: 'var(--crit-bd)' }}>
@@ -819,7 +819,7 @@ function SecurityTab() {
         </div>
       ))}
       <div>
-        <h4 className="section-h">Expiring external grants (next 14 days)</h4>
+        <h2 className="section-h">Expiring external grants (next 14 days)</h2>
         {data.expiringExternalGrants.length === 0 && <Empty title="None expiring soon" desc="Nothing to renew or revoke right now." />}
         {data.expiringExternalGrants.map((g) => (
           <div key={g.grantId} className="list-item">
@@ -905,7 +905,7 @@ function AuditPartitionsPanel() {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <h4 className="section-h">Retention: partitions</h4>
+        <h2 className="section-h">Retention: partitions</h2>
         <button className="btn" disabled={archive.isPending} onClick={() => archive.mutate()}>
           Archive eligible partitions now
         </button>
@@ -1260,7 +1260,7 @@ function SettingsTab() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
-        <h4 className="section-h">Requirement key prefix</h4>
+        <h2 className="section-h">Requirement key prefix</h2>
         <p className="hint muted" style={{ fontSize: 11.5 }}>Changing this only affects keys allocated from now on — existing keys are untouched.</p>
         <div style={{ display: 'flex', gap: 8 }}>
           <input className="input" placeholder={data.reqKeyPrefix} value={prefix} onChange={(e) => setPrefix(e.target.value)} />
@@ -1269,7 +1269,7 @@ function SettingsTab() {
           </button>
         </div>
 
-        <h4 className="section-h" style={{ marginTop: 20 }}>Stage stall thresholds (days)</h4>
+        <h2 className="section-h" style={{ marginTop: 20 }}>Stage stall thresholds (days)</h2>
         {Object.entries(data.stageStallThresholdDays).map(([status, days]) => (
           <div key={status} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
             <span className="mono muted" style={{ width: 90 }}>{status}</span>
@@ -1291,7 +1291,7 @@ function SettingsTab() {
           </div>
         ))}
 
-        <h4 className="section-h" style={{ marginTop: 20 }}>Deployment</h4>
+        <h2 className="section-h" style={{ marginTop: 20 }}>Deployment</h2>
         {data.suspended ? (
           <div className="card" style={{ borderColor: 'var(--crit-bd)' }}>
             <strong style={{ color: 'var(--crit)' }}>Suspended</strong>
@@ -1307,7 +1307,7 @@ function SettingsTab() {
       </div>
 
       <div>
-        <h4 className="section-h">Export</h4>
+        <h2 className="section-h">Export</h2>
         <p className="hint muted" style={{ fontSize: 11.5 }}>
           Every table, as rows, in one JSON manifest. Attachment metadata is included; the underlying binary
           content lives in object storage, not this file — use the full bundle below to get both together.
@@ -1324,7 +1324,7 @@ function SettingsTab() {
           </p>
         )}
 
-        <h4 className="section-h" style={{ marginTop: 20 }}>Other thresholds</h4>
+        <h2 className="section-h" style={{ marginTop: 20 }}>Other thresholds</h2>
         <EditableField label="Max external grant duration" unit="days" value={data.maxExternalGrantDays}
           onSave={(raw) => setMaxGrant.mutate(Number(raw))} pending={setMaxGrant.isPending} />
         <EditableField label="Stale service-account key age" unit="days" value={data.staleKeyAgeDays}
@@ -1353,7 +1353,7 @@ function SettingsTab() {
             "delete a tenant" out of scope (there's exactly one tenant here) — this is
             the real substance instead: an irreversible wipe of every row this
             deployment owns, for operational use, not multi-tenant lifecycle. */}
-        <h4 className="section-h" style={{ marginTop: 20, color: 'var(--crit)' }}>Hard reset</h4>
+        <h2 className="section-h" style={{ marginTop: 20, color: 'var(--crit)' }}>Hard reset</h2>
         <p className="hint muted" style={{ fontSize: 11.5 }}>
           Irreversible. Wipes every row this application owns — requirements, findings, reviews, everything —
           except the audit trail (append-only, and this action is recorded in it) and this settings row itself.

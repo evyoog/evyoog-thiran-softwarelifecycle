@@ -1,27 +1,38 @@
+import { lazy, type ComponentType } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { AuthScreen } from './AuthScreen'
 import { Shell } from './Shell'
-import { Home } from '@/features/Home'
-import { MyWork } from '@/features/MyWork'
-import { Portfolio } from '@/features/Portfolio'
-import { Requirements } from '@/features/Requirements'
-import { RequirementNew } from '@/features/RequirementNew'
-import { RequirementDetail } from '@/features/RequirementDetail'
-import { ImportQueue } from '@/features/ImportQueue'
-import { Documents } from '@/features/Documents'
-import { BoardPage } from '@/features/board/BoardPage'
-import { CoverageMatrixPage } from '@/features/CoverageMatrixPage'
-import { DefectMatrixPage } from '@/features/trace/DefectMatrixPage'
-import { ReleaseMatrixPage } from '@/features/trace/ReleaseMatrixPage'
-import { TraceGraphPage } from '@/features/TraceGraphPage'
-import { Design } from '@/features/Design'
-import { Analytics } from '@/features/Analytics'
-import { Quality } from '@/features/Quality'
-import { Compliance } from '@/features/Compliance'
-import { Delivery } from '@/features/Delivery'
-import { Releases } from '@/features/Releases'
-import { Admin } from '@/features/Admin'
+
+/**
+ * VYB-0958: each screen is its own chunk, fetched when its route is first opened, so the first page load carries the shell and the
+ * one screen asked for rather than every screen. The shell stays in the main bundle (the menu must paint at once); a screen shows a
+ * loading note inside it while its chunk arrives (see Shell).
+ */
+function page<M extends Record<string, unknown>>(load: () => Promise<M>, name: keyof M & string) {
+  return lazy(async () => ({ default: (await load())[name] as ComponentType }))
+}
+
+const Home = page(() => import('@/features/Home'), 'Home')
+const MyWork = page(() => import('@/features/MyWork'), 'MyWork')
+const Portfolio = page(() => import('@/features/Portfolio'), 'Portfolio')
+const Requirements = page(() => import('@/features/Requirements'), 'Requirements')
+const RequirementNew = page(() => import('@/features/RequirementNew'), 'RequirementNew')
+const RequirementDetail = page(() => import('@/features/RequirementDetail'), 'RequirementDetail')
+const ImportQueue = page(() => import('@/features/ImportQueue'), 'ImportQueue')
+const Documents = page(() => import('@/features/Documents'), 'Documents')
+const BoardPage = page(() => import('@/features/board/BoardPage'), 'BoardPage')
+const CoverageMatrixPage = page(() => import('@/features/CoverageMatrixPage'), 'CoverageMatrixPage')
+const DefectMatrixPage = page(() => import('@/features/trace/DefectMatrixPage'), 'DefectMatrixPage')
+const ReleaseMatrixPage = page(() => import('@/features/trace/ReleaseMatrixPage'), 'ReleaseMatrixPage')
+const TraceGraphPage = page(() => import('@/features/TraceGraphPage'), 'TraceGraphPage')
+const Design = page(() => import('@/features/Design'), 'Design')
+const Analytics = page(() => import('@/features/Analytics'), 'Analytics')
+const Quality = page(() => import('@/features/Quality'), 'Quality')
+const Compliance = page(() => import('@/features/Compliance'), 'Compliance')
+const Delivery = page(() => import('@/features/Delivery'), 'Delivery')
+const Releases = page(() => import('@/features/Releases'), 'Releases')
+const Admin = page(() => import('@/features/Admin'), 'Admin')
 
 // Local-dev-only escape hatch (VITE_SKIP_AUTH=true in frontend/.env, gitignored,
 // never in .env.production). Vyoog otherwise never renders as signed-in without a

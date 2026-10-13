@@ -213,15 +213,15 @@ export function ImportQueue() {
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Upload a document</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select className="select" value={productId} onChange={(e) => { setProductId(e.target.value); setApplicationId('') }}>
+          <select className="select" aria-label="Product" value={productId} onChange={(e) => { setProductId(e.target.value); setApplicationId('') }}>
             <option value="">Product…</option>
             {products?.filter((p) => !p.archived).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <select className="select" value={applicationId} onChange={(e) => setApplicationId(e.target.value)} disabled={!productId}>
+          <select className="select" aria-label="Application" value={applicationId} onChange={(e) => setApplicationId(e.target.value)} disabled={!productId}>
             <option value="">Application…</option>
             {applications?.filter((a) => !a.archived).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <select className="select" value={kind} onChange={(e) => { setKind(e.target.value as UploadKind); setFile(null) }}>
+          <select className="select" aria-label="File kind" value={kind} onChange={(e) => { setKind(e.target.value as UploadKind); setFile(null) }}>
             {UPLOAD_KINDS.map((k) => <option key={k} value={k}>{KIND_LABELS[k]}</option>)}
           </select>
           <input type="file" accept={KIND_ACCEPTS[kind]} aria-label="Requirements file" onChange={(e) => { setUploadError(null); setFile(e.target.files?.[0] ?? null) }} />

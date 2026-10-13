@@ -28,7 +28,8 @@ go through `shared` only — mirror the backend's module discipline and enforce 
 - **TanStack Query** for all server state. No Redux. Local UI state is `useState`.
 - **Optimistic updates with rollback** for grid edits and check-offs. Every mutation
   registers its inverse so the undo toast is real.
-- Route-level code splitting; the grid and the design canvas are lazy.
+- Route-level code splitting: every screen is a lazy chunk, and the build fails past a size budget (VYB-0958; `localisation-and-accessibility.md`).
+- Text a person reads goes through the message catalogue (`t('key')`), never straight into markup, and dates and numbers through the locale formatters; a form field's label carries `htmlFor` (VYB-0958).
 - **Virtualise** the grid. Target 50,000 rows without degradation.
 - Accessibility: keyboard navigation through the grid, focus traps in modals, visible
   focus rings, `aria-live` for toasts, colour never the sole signal — the coverage pips

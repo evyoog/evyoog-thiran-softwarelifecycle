@@ -97,7 +97,7 @@ export function DefectDetailPanel({ defectId, me, onClose }: { defectId: string;
       {panel === 'assign' && <AssignForm d={d} onDone={done} onError={fail} />}
       {panel === 'links' && <LinksForm data={data} onDone={done} onError={fail} />}
 
-      <h4 className="section-h" style={{ marginTop: 12 }}>History</h4>
+      <h2 className="section-h" style={{ marginTop: 12 }}>History</h2>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         <li className="hint muted">Raised {new Date(d.raisedAt).toLocaleString()}</li>
         {data.transitions.map((t) => (
@@ -236,7 +236,7 @@ function Comments({ defectId, canComment }: { defectId: string; canComment: bool
   })
   return (
     <div>
-      <h4 className="section-h" style={{ marginTop: 12 }}>Comments</h4>
+      <h2 className="section-h" style={{ marginTop: 12 }}>Comments</h2>
       {data && data.length === 0 && <p className="hint muted">No comments yet.</p>}
       {data?.map((c) => (
         <div key={c.id} className="list-item" style={{ display: 'block' }}>

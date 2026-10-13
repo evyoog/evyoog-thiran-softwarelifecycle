@@ -613,34 +613,35 @@ export function Requirements() {
                   </tr>
                   {/* VYB-0170–0180: the per-column filter row — text-contains for title, exact match for the rest. */}
                   <tr role="row" className="filters">
-                    <th />
+                    <th><span className="sr-only">Row filters</span></th>
                     {visibleCols.map((c) => (
                       <th key={c.key}>
                         {c.key === 'title' && (
-                          <input className="input" style={{ fontSize: 11, padding: '3px 6px', width: '100%' }} placeholder="Contains…"
+                          <input className="input" aria-label="Filter requirements by title" style={{ fontSize: 11, padding: '3px 6px', width: '100%' }} placeholder="Contains…"
                             value={titleSearch} onChange={(e) => { setTitleSearch(e.target.value); setPage(0) }} />
                         )}
                         {c.key === 'status' && (
-                          <select className="select" style={{ fontSize: 11, padding: '3px 4px', minWidth: 0, width: '100%' }} value={status}
+                          <select className="select" aria-label="Filter by status" style={{ fontSize: 11, padding: '3px 4px', minWidth: 0, width: '100%' }} value={status}
                             onChange={(e) => { setStatus(e.target.value as RequirementStatus | ''); setSavedView(null); setPage(0) }}>
                             <option value="">All</option>
                             {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                           </select>
                         )}
                         {c.key === 'priority' && (
-                          <select className="select" style={{ fontSize: 11, padding: '3px 4px', minWidth: 0, width: '100%' }} value={priority}
+                          <select className="select" aria-label="Filter by priority" style={{ fontSize: 11, padding: '3px 4px', minWidth: 0, width: '100%' }} value={priority}
                             onChange={(e) => { setPriority(e.target.value as RequirementPriority | ''); setSavedView(null); setPage(0) }}>
                             <option value="">All</option>
                             {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
                           </select>
                         )}
                         {c.key === 'type' && (
-                          <select className="select" style={{ fontSize: 11, padding: '3px 4px', minWidth: 0, width: '100%' }} value={type}
+                          <select className="select" aria-label="Filter by type" style={{ fontSize: 11, padding: '3px 4px', minWidth: 0, width: '100%' }} value={type}
                             onChange={(e) => { setType(e.target.value as RequirementType | ''); setPage(0) }}>
                             <option value="">All</option>
                             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                           </select>
                         )}
+                        {!['title', 'status', 'priority', 'type'].includes(c.key) && <span className="sr-only">{c.label}</span>}
                       </th>
                     ))}
                   </tr>

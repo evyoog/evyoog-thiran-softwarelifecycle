@@ -159,7 +159,7 @@ function ScopeTab({ releaseId, state }: { releaseId: string; state: ReleaseState
         </div>
       )}
 
-      <h4 className="section-h">Committed requirements</h4>
+      <h2 className="section-h">Committed requirements</h2>
       {lock && <p className="hint muted" role="status">{lock}</p>}
       {scope && scope.length === 0 && <Empty title="Nothing committed yet" desc={locked ? 'This release has nothing committed.' : 'Find requirements below and commit them.'} />}
       {scope?.map((i) => (
@@ -190,7 +190,7 @@ function ScopeTab({ releaseId, state }: { releaseId: string; state: ReleaseState
 
       {!locked && (
         <section style={{ marginTop: 18 }} aria-label="Commit requirements">
-          <h4 className="section-h">Add requirements</h4>
+          <h2 className="section-h">Add requirements</h2>
           <RequirementPicker releaseId={releaseId} selection={selection} onChange={(s) => { setSelection(s); setOutcome(undefined) }} />
           <div className="row" style={{ marginTop: 12 }}>
             <div className="field" style={{ flex: 3 }}>
@@ -298,7 +298,7 @@ function BaselinesTab({ releaseId }: { releaseId: string }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
-        <h4 className="section-h">Freeze a baseline</h4>
+        <h2 className="section-h">Freeze a baseline</h2>
         <p className="hint muted">Requires step-up authentication — this environment may not have a step-up flow configured yet.</p>
         <div className="field">
           <label className="label">Name</label>
@@ -315,7 +315,7 @@ function BaselinesTab({ releaseId }: { releaseId: string }) {
           <p className="err-text">Could not freeze — this usually means step-up authentication was required and not achieved.</p>
         )}
 
-        <h4 className="section-h" style={{ marginTop: 20 }}>Compare two baselines</h4>
+        <h2 className="section-h" style={{ marginTop: 20 }}>Compare two baselines</h2>
         <div className="row">
           <select className="select" value={compareA} onChange={(e) => setCompareA(e.target.value)}>
             <option value="">— from —</option>
@@ -343,7 +343,7 @@ function BaselinesTab({ releaseId }: { releaseId: string }) {
       </div>
 
       <div>
-        <h4 className="section-h">All baselines</h4>
+        <h2 className="section-h">All baselines</h2>
         {baselines && baselines.length === 0 && <Empty title="No baselines frozen yet" desc="" />}
         {baselines?.map((b) => (
           <div key={b.id} className="list-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
@@ -475,7 +475,7 @@ function DeploymentTab() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
       <div>
-        <h4 className="section-h">Environments</h4>
+        <h2 className="section-h">Environments</h2>
         {environments && environments.length === 0 && <Empty title="No environments yet" desc="Add one below." />}
         {environments?.map((e) => (
           <div key={e.id} className="list-item" style={{ cursor: 'pointer', borderColor: e.id === selectedEnv ? 'var(--brand)' : undefined }}
@@ -491,7 +491,7 @@ function DeploymentTab() {
         </div>
       </div>
       <div>
-        <h4 className="section-h">Builds</h4>
+        <h2 className="section-h">Builds</h2>
         <p className="hint muted">Build labels are borrowed from CI — ingested via the service-account-only endpoint, never entered here.</p>
         {selectedEnv && deployments && deployments.length === 0 && <Empty title="No deployments recorded" desc="" />}
         {deployments?.map((d) => (
@@ -504,7 +504,7 @@ function DeploymentTab() {
         ))}
       </div>
       <div>
-        <h4 className="section-h">Requirements present</h4>
+        <h2 className="section-h">Requirements present</h2>
         {selectedDeployment && presence && presence.length === 0 && <Empty title="None derived from code links" desc="No commit in this build carried a Requirement trailer." />}
         {presence?.map((p) => (
           <div key={p.requirementId} className="list-item">
@@ -559,7 +559,7 @@ function NotesTab({ releaseId }: { releaseId: string }) {
       {capabilities.length === 0 && data.held.length === 0 && <Empty title="Nothing committed to this release" desc="" />}
       {capabilities.map((cap) => (
         <div key={cap} style={{ marginBottom: 16 }}>
-          <h4 className="section-h">{cap}</h4>
+          <h2 className="section-h">{cap}</h2>
           {data.approvedByCapability[cap].map((item) => (
             <div key={item.requirementId} className="list-item">
               <span className="mono muted" style={{ fontSize: 10 }}>{item.key}</span>

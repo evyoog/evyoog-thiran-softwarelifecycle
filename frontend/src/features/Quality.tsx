@@ -113,7 +113,7 @@ function VerificationTab() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <h4 className="section-h" style={{ marginBottom: 0 }}>Unverified — approved, no passing test at the current revision</h4>
+        <h2 className="section-h" style={{ marginBottom: 0 }}>Unverified — approved, no passing test at the current revision</h2>
         <button className="btn pri" style={{ fontSize: 11 }} disabled={selected.size === 0} onClick={() => setShowBulk(true)}>
           Generate for selected ({selected.size})
         </button>
@@ -131,7 +131,7 @@ function VerificationTab() {
       ))}
 
       <div style={{ marginTop: 20 }}>
-        <h4 className="section-h">Stale evidence — passed once, but against an earlier revision</h4>
+        <h2 className="section-h">Stale evidence — passed once, but against an earlier revision</h2>
         {stale && stale.length === 0 && <Empty title="No stale evidence" desc="Nothing needs re-verifying." />}
         {stale?.map((r) => (
           <div key={r.id} className="list-item">

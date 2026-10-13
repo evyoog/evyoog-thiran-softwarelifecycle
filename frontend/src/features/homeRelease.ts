@@ -1,4 +1,5 @@
 import type { CurrentRelease, ReleaseMove, ReleaseState } from '@/shared/api/client'
+import { createFormatters, tEn, type Formatters, type Translator } from '@/shared/i18n/i18n'
 
 /**
  * VYB-0929: the logic of the Home screen's "blocking the release" panel, kept out of the component so it can be
@@ -7,10 +8,14 @@ import type { CurrentRelease, ReleaseMove, ReleaseState } from '@/shared/api/cli
  *
  * A state is a label and a glyph as well as a colour, never amber (amber means AI). Absence is said in words ("no
  * target date", "nothing blocking it"), never blank or zero.
+ *
+ * VYB-0958: every sentence here comes from the message catalogue. The functions take the translator (English when none is given) and
+ * never build a sentence from pieces, because other languages order the pieces differently.
  */
 
-export const STATE_LABEL: Record<ReleaseState, string> = {
-  PLANNED: 'Planned', OPEN: 'Open', FROZEN: 'Frozen', RELEASED: 'Released',
+/** A release state as a person reads it. */
+export function stateLabel(state: ReleaseState, t: Translator = tEn): string {
+  return t(`release.state.${state}`)
 }
 
 export const STATE_GLYPH: Record<ReleaseState, string> = {
@@ -23,13 +28,15 @@ export const STATE_CLASS: Record<ReleaseState, string> = {
 }
 
 /** What the person would call the move: Open, Freeze, Release, Reopen. */
-export function moveLabel(move: ReleaseMove): string {
-  switch (move.to) {
-    case 'OPEN': return move.needsReason ? 'Reopen' : 'Open'
-    case 'FROZEN': return 'Freeze'
-    case 'RELEASED': return 'Release'
-    default: return 'Plan'
-  }
+export function moveLabel(move: ReleaseMove, t: Translator = tEn): string {
+  return t(`release.move.${moveKey(move)}`)
+}
+
+/** PLANNED, OPEN, REOPEN (an open that needs a reason), FROZEN or RELEASED: the key the move's words hang from. */
+function moveKey(move: ReleaseMove): 'PLANNED' | 'OPEN' | 'REOPEN' | 'FROZEN' | 'RELEASED' {
+  if (move.to === 'OPEN') return move.needsReason ? 'REOPEN' : 'OPEN'
+  if (move.to === 'FROZEN' || move.to === 'RELEASED') return move.to
+  return 'PLANNED'
 }
 
 /** The moves that are guarded by readiness gates: the forward ones. A reopen has no gates and is not "what blocks the release". */
@@ -42,28 +49,22 @@ export function failingGates(move: ReleaseMove) {
 }
 
 /** "Ready to freeze" or "Not ready to freeze: 2 checks failing". */
-export function readinessText(move: ReleaseMove): string {
-  const verb = moveLabel(move).toLowerCase()
-  if (move.ready) return `Ready to ${verb}`
-  const n = failingGates(move).length
-  return `Not ready to ${verb}: ${n} check${n === 1 ? '' : 's'} failing`
+export function readinessText(move: ReleaseMove, t: Translator = tEn): string {
+  if (move.ready) return t(`release.ready.${moveKey(move)}`)
+  return t(`release.notReady.${moveKey(move)}`, { count: failingGates(move).length })
 }
 
-const REASON_LABEL: Record<string, string> = {
-  unverified: 'Not verified', conflicting: 'In conflict', unowned: 'No owner',
-}
+const KNOWN_REASONS = ['unverified', 'conflicting', 'unowned'] as const
 
 /** The blocked-item reason in words; an unknown reason is shown as the server sent it, never dropped. */
-export function blockedReason(reason: string): string {
-  return REASON_LABEL[reason] ?? reason
+export function blockedReason(reason: string, t: Translator = tEn): string {
+  return (KNOWN_REASONS as readonly string[]).includes(reason) ? t(`release.reason.${reason as (typeof KNOWN_REASONS)[number]}`) : reason
 }
 
 /** The release's own planned date: set by a person here, never inferred, and never borrowed. */
-export function targetDateText(iso: string | undefined): string {
-  if (!iso) return 'no target date'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return 'no target date'
-  return `target ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+export function targetDateText(iso: string | undefined, t: Translator = tEn, fmt: Formatters = createFormatters('en')): string {
+  const date = fmt.date(iso)
+  return date ? t('release.target', { date }) : t('release.noTarget')
 }
 
 /** Whether there is anything to show beyond "all clear": a failing gate on a forward move, or a blocked requirement. */

@@ -80,7 +80,7 @@ export function CoverageMatrixPage() {
             </table>
           </div>
 
-          <h4 className="section-h">Per-test totals</h4>
+          <h2 className="section-h">Per-test totals</h2>
           <div className="tbl-wrap">
             <table className="tbl" role="grid" aria-rowcount={matrix.testTotals.length} aria-colcount={4} onKeyDown={totalsGrid.onKeyDown}>
               <thead><tr role="row"><th>Test</th><th>Verified</th><th>Linked, not run</th><th>Suspect</th></tr></thead>

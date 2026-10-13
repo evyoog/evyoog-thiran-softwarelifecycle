@@ -1,8 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import {
   AlertCircle, Eye, EyeOff, GitBranch, ListChecks, Loader2, LogIn, Lock, ScrollText, ShieldCheck, User,
 } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { useT } from '@/shared/i18n/LocaleProvider'
+import { LocaleSwitcher } from '@/shared/i18n/LocaleSwitcher'
+import type { MessageKey } from '@/shared/i18n/catalog.en'
 
 /**
  * VYB-0048b: a username/password sign-in screen, styled after vyg-pms's own login
@@ -20,9 +23,11 @@ import { useAuth } from '@/auth/AuthProvider'
  */
 export function AuthScreen() {
   const auth = useAuth()
+  const t = useT()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  useEffect(() => { document.title = `${t('auth.signIn')} · Vyoog` }, [t])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -42,34 +47,33 @@ export function AuthScreen() {
         <div className="auth-wordmark">Vyoog<span className="dot">.</span></div>
 
         <div>
-          <p className="auth-tagline">Every requirement, traced to the evidence that verified it.</p>
-          <p className="auth-sub">
-            Need → requirement → design → code → test — one real chain, not a status field anyone can set by hand.
-          </p>
+          <p className="auth-tagline">{t('auth.tagline')}</p>
+          <p className="auth-sub">{t('auth.sub')}</p>
           <div className="auth-chips">
             {FEATURES.map(({ icon: Icon, label }) => (
               <span key={label} className="auth-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <Icon size={11} /> {label}
+                <Icon size={11} /> {t(label)}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="auth-footer">© {new Date().getFullYear()} Vyoog Information Pvt Ltd</div>
+        <div className="auth-footer">{t('auth.footer', { year: String(new Date().getFullYear()) })}</div>
       </div>
 
-      <div className="auth-panel">
+      <main className="auth-panel">
         <div style={{ width: '100%', maxWidth: 400 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}><LocaleSwitcher compact /></div>
           <div className="auth-mobile-mark">
             <span className="sb-logo" style={{ fontSize: 20 }}>Vyoog</span>
           </div>
 
           <div className="auth-card">
-            <h1>Welcome back</h1>
-            <p className="auth-lede">Sign in with your Vyoog account.</p>
+            <h1>{t('auth.welcome')}</h1>
+            <p className="auth-lede">{t('auth.lede')}</p>
 
             {auth.error && (
-              <div className="auth-error">
+              <div className="auth-error" role="alert">
                 <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span>{auth.error}</span>
               </div>
@@ -77,26 +81,26 @@ export function AuthScreen() {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Username</label>
+                <label className="label" htmlFor="auth-username">{t('auth.username')}</label>
                 <div className="auth-field-row">
-                  <User size={15} />
+                  <User size={15} aria-hidden="true" />
                   <input
-                    type="text" autoComplete="username" autoFocus placeholder="your username"
+                    id="auth-username" type="text" autoComplete="username" autoFocus placeholder={t('auth.usernamePlaceholder')}
                     value={username} onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Password</label>
+                <label className="label" htmlFor="auth-password">{t('auth.password')}</label>
                 <div className="auth-field-row">
-                  <Lock size={15} />
+                  <Lock size={15} aria-hidden="true" />
                   <input
-                    type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="••••••••"
+                    id="auth-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="••••••••"
                     value={password} onChange={(e) => setPassword(e.target.value)}
                   />
-                  <button type="button" className="auth-eye" tabIndex={-1} onClick={() => setShowPassword((v) => !v)}>
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  <button type="button" className="auth-eye" aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)}>
+                    {showPassword ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
                   </button>
                 </div>
               </div>
@@ -106,24 +110,24 @@ export function AuthScreen() {
                 disabled={!username.trim() || !password || auth.isLoading}
               >
                 {auth.isLoading
-                  ? <><Loader2 className="auth-spin" size={15} /> Signing in…</>
-                  : <><LogIn size={15} /> Sign in</>}
+                  ? <><Loader2 className="auth-spin" size={15} aria-hidden="true" /> {t('auth.signingIn')}</>
+                  : <><LogIn size={15} aria-hidden="true" /> {t('auth.signIn')}</>}
               </button>
             </form>
           </div>
 
-          <p className="auth-note">Authenticated against the shared eVyoog Keycloak realm.</p>
+          <p className="auth-note">{t('auth.note')}</p>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
 
-const FEATURES = [
-  { icon: GitBranch, label: 'Trace links' },
-  { icon: ListChecks, label: 'Verification predicate' },
-  { icon: ScrollText, label: 'Audit trail' },
-  { icon: ShieldCheck, label: 'Detection sweeps' },
+const FEATURES: { icon: typeof GitBranch; label: MessageKey }[] = [
+  { icon: GitBranch, label: 'auth.feature.trace' },
+  { icon: ListChecks, label: 'auth.feature.verification' },
+  { icon: ScrollText, label: 'auth.feature.audit' },
+  { icon: ShieldCheck, label: 'auth.feature.detection' },
 ]
 
 const SHAPES = [

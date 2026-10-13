@@ -375,7 +375,7 @@ function BriefsTab() {
 
           <div className="bg-sec">Target</div>
           <div className="field">
-            <select className="select" value={target} onChange={(e) => setTarget(e.target.value as BriefTarget)}>
+            <select className="select" aria-label="Target tool" value={target} onChange={(e) => setTarget(e.target.value as BriefTarget)}>
               {TARGETS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
             <span className="hint">{TARGETS.find((t) => t.value === target)?.note}</span>
@@ -506,7 +506,7 @@ function BriefsTab() {
             ) : (
               <div className="bg-empty">
                 <span className="ring"><Code2 /></span>
-                <h4>No brief generated yet</h4>
+                <h2>No brief generated yet</h2>
                 <p>
                   Pick an application on the left, tick the capabilities you want, and generate.
                   Leaving every capability unticked produces an app-wide brief.

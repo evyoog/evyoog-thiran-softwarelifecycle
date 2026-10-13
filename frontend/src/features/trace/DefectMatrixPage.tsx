@@ -71,7 +71,7 @@ export function DefectMatrixPage() {
       )}
       {matrix && (
         <>
-          <h4 className="section-h">Defects with no requirement{includeClosed ? '' : ' (open)'}</h4>
+          <h2 className="section-h">Defects with no requirement{includeClosed ? '' : ' (open)'}</h2>
           {matrix.untraced.length === 0
             ? <p className="hint muted">None: every defect is linked to a requirement.</p>
             : (
