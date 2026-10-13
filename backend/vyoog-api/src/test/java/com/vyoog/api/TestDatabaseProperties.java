@@ -24,6 +24,10 @@ public final class TestDatabaseProperties {
         setIfAbsent("spring.datasource.url", db.url());
         setIfAbsent("spring.datasource.username", db.user());
         setIfAbsent("spring.datasource.password", db.password());
+        // VYB-0955: every distinct test context keeps its own connection pool open for the whole run, and the pool defaults to holding
+        // all 20 connections idle. With five contexts that is the database's limit of 100, and the next context failed to start
+        // ("too many clients"). Idle connections are kept to 2 per context; the maximum is unchanged, so concurrency is.
+        setIfAbsent("spring.datasource.hikari.minimum-idle", "2");
         fakeUnlessSet("vyoog.keycloak.ropc-client-secret", "KEYCLOAK_ROPC_CLIENT_SECRET");
         fakeUnlessSet("vyoog.internal.impersonation-client-secret", "KEYCLOAK_IMPERSONATION_CLIENT_SECRET");
         fakeUnlessSet("vyoog.internal.sso-shared-secret", "INTERNAL_SSO_SHARED_SECRET");
