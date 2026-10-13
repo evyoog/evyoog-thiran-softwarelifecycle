@@ -1,5 +1,6 @@
 package com.vyoog.evidence;
 
+import com.vyoog.notify.NotificationEvents;
 import com.vyoog.platform.audit.AuditService;
 import com.vyoog.requirements.Requirement;
 import com.vyoog.requirements.RequirementRepository;
@@ -33,16 +34,18 @@ public class VerificationService {
     private final RequirementRepository requirements;
     private final TraceLinkRepository links;
     private final AuditService audit;
+    private final NotificationEvents events;
 
     public VerificationService(TestCaseRepository testCases, TestRunRepository testRuns,
                                 VerificationRepository verifications, RequirementRepository requirements,
-                                TraceLinkRepository links, AuditService audit) {
+                                TraceLinkRepository links, AuditService audit, NotificationEvents events) {
         this.testCases = testCases;
         this.testRuns = testRuns;
         this.verifications = verifications;
         this.requirements = requirements;
         this.links = links;
         this.audit = audit;
+        this.events = events;
     }
 
     /** VYB-0311 AC3: the same build+source reuses the same run rather than duplicating it. */
@@ -81,6 +84,10 @@ public class VerificationService {
             verifications.save(new Verification(r.getId(), r.getRevision(), testCase.getId(), run.getId(), in.result()));
             verifiedKeys.add(r.getKey());
             ensureVerifiesLink(testCase.getId(), r.getId());
+            // VYB-0955: a failure tells the requirement's author (chat gets one post per run, however many fail).
+            if (in.result() == VerificationResult.FAIL) {
+                events.testFailed(r.getId(), testCase.getTitle() != null ? testCase.getTitle() : in.testKey(), run.getBuildLabel(), run.getId(), null);
+            }
         }
 
         audit.recordService("evidence.ingested", "TEST_CASE", testCase.getId(),

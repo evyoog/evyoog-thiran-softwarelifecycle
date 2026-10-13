@@ -5,6 +5,7 @@ import { api } from '@/shared/api/client'
 import { Modal } from '@/shared/ui/Modal'
 import { announce } from '@/shared/ui/Announcer'
 import { useLocale } from '@/shared/i18n/LocaleProvider'
+import { NotificationPreferences } from './NotificationPreferences'
 
 /**
  * VYB-0355: the inbox itself — built alongside its own backend in an earlier session
@@ -17,6 +18,7 @@ import { useLocale } from '@/shared/i18n/LocaleProvider'
  */
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const qc = useQueryClient()
   const { t, fmt } = useLocale()
   const { data: unread } = useQuery({ queryKey: ['unread-count'], queryFn: api.unreadNotificationCount })
@@ -56,24 +58,31 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <Modal onClose={() => setOpen(false)} title={t('bell.title')}>
-          <h3>{t('bell.title')}</h3>
-          {inbox && inbox.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>{t('bell.empty')}</p>}
-          {inbox?.map((n) => (
-            <div
-              key={n.id} className="list-item" style={{ alignItems: 'flex-start', opacity: n.read ? 0.6 : 1 }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <strong style={{ fontSize: 12.5 }}>{n.title}</strong>
-                  {n.occurrenceCount > 1 && <span className="badge">×{n.occurrenceCount}</span>}
+        <Modal onClose={() => { setOpen(false); setChoosing(false) }} title={choosing ? t('bell.preferences') : t('bell.title')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ flex: 1, margin: 0 }}>{choosing ? t('bell.preferences') : t('bell.title')}</h3>
+            <button className="btn" onClick={() => setChoosing(!choosing)}>{choosing ? t('bell.backToInbox') : t('bell.preferences')}</button>
+          </div>
+          {choosing ? <NotificationPreferences /> : (
+            <>
+            {inbox && inbox.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>{t('bell.empty')}</p>}
+            {inbox?.map((n) => (
+              <div
+                key={n.id} className="list-item" style={{ alignItems: 'flex-start', opacity: n.read ? 0.6 : 1 }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <strong style={{ fontSize: 12.5 }}>{n.title}</strong>
+                    {n.occurrenceCount > 1 && <span className="badge">×{n.occurrenceCount}</span>}
+                  </div>
+                  {n.subtitle && <div className="muted" style={{ fontSize: 11.5 }}>{n.subtitle}</div>}
+                  <div className="mono muted" style={{ fontSize: 10 }}>{fmt.dateTime(n.createdAt)}</div>
                 </div>
-                {n.subtitle && <div className="muted" style={{ fontSize: 11.5 }}>{n.subtitle}</div>}
-                <div className="mono muted" style={{ fontSize: 10 }}>{fmt.dateTime(n.createdAt)}</div>
+                {!n.read && <button className="btn" style={{ padding: 4 }} onClick={() => markRead.mutate(n.id)}>{t('bell.markRead')}</button>}
               </div>
-              {!n.read && <button className="btn" style={{ padding: 4 }} onClick={() => markRead.mutate(n.id)}>{t('bell.markRead')}</button>}
-            </div>
-          ))}
+            ))}
+            </>
+          )}
         </Modal>
       )}
     </>

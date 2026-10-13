@@ -1,5 +1,6 @@
 package com.vyoog.api.scheduling;
 
+import com.vyoog.api.notify.NotificationDeliveryService;
 import com.vyoog.api.notify.NotificationRelayService;
 import com.vyoog.clarification.ClarificationService;
 import com.vyoog.detection.DetectionSweepService;
@@ -37,10 +38,12 @@ public class ScheduledJobs {
     private final ClarificationService clarifications;
     private final PurgeService purge;
     private final ReadinessSnapshotService readinessSnapshots;
+    private final NotificationDeliveryService deliveries;
 
     public ScheduledJobs(SchedulerLock locks, NotificationRelayService relay, DetectionSweepService sweep,
                          AuditRetentionService auditRetention, ClarificationService clarifications,
-                         PurgeService purge, ReadinessSnapshotService readinessSnapshots) {
+                         PurgeService purge, ReadinessSnapshotService readinessSnapshots,
+                         NotificationDeliveryService deliveries) {
         this.locks = locks;
         this.relay = relay;
         this.sweep = sweep;
@@ -48,6 +51,7 @@ public class ScheduledJobs {
         this.clarifications = clarifications;
         this.purge = purge;
         this.readinessSnapshots = readinessSnapshots;
+        this.deliveries = deliveries;
     }
 
     /** VYB-0791: outbox to live SSE connections, every 2 seconds. */
@@ -78,6 +82,18 @@ public class ScheduledJobs {
     @Scheduled(cron = "0 0 3 * * *")
     public void purgeExpiredRecords() {
         locks.runExclusive("purge-expired-records", Duration.ofHours(1), NIGHTLY_MIN_HOLD, purge::purgeExpired);
+    }
+
+    /** VYB-0955: email and chat out of the notification queue, every 30 seconds. */
+    @Scheduled(fixedDelay = 30000, initialDelay = 30000)
+    public void notificationDelivery() {
+        locks.runExclusive("notification-delivery", Duration.ofMinutes(5), Duration.ZERO, deliveries::deliver);
+    }
+
+    /** VYB-0955: 03:45 removal of sent and failed notification deliveries older than 30 days. */
+    @Scheduled(cron = "0 45 3 * * *")
+    public void notificationDeliveryPurge() {
+        locks.runExclusive("notification-delivery-purge", Duration.ofHours(1), NIGHTLY_MIN_HOLD, deliveries::purgeOld);
     }
 
     /** VYB-0956: 03:15 (UTC) record of each release's readiness for the trend; one row per release per day. */

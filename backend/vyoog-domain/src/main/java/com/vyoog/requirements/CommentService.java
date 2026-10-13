@@ -2,6 +2,7 @@ package com.vyoog.requirements;
 
 import com.vyoog.identity.AppUser;
 import com.vyoog.identity.AppUserRepository;
+import com.vyoog.notify.NotificationEvents;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -21,12 +22,14 @@ public class CommentService {
     private final RequirementCommentRepository comments;
     private final RequirementRepository requirements;
     private final AppUserRepository users;
+    private final NotificationEvents events;
 
     public CommentService(RequirementCommentRepository comments, RequirementRepository requirements,
-                           AppUserRepository users) {
+                           AppUserRepository users, NotificationEvents events) {
         this.comments = comments;
         this.requirements = requirements;
         this.users = users;
+        this.events = events;
     }
 
     public record CommentWithMentions(RequirementComment comment, List<UUID> mentionedUserIds) {}
@@ -37,7 +40,10 @@ public class CommentService {
             throw new NoSuchElementException("No such requirement: " + requirementId);
         }
         RequirementComment saved = comments.save(new RequirementComment(requirementId, authorId, body));
-        return new CommentWithMentions(saved, resolveMentions(body));
+        List<UUID> mentioned = resolveMentions(body);
+        // VYB-0955: a mention tells the person mentioned (not the author, if they mentioned themselves).
+        events.mentioned(requirementId, authorId, body, mentioned);
+        return new CommentWithMentions(saved, mentioned);
     }
 
     public List<RequirementComment> list(UUID requirementId) {

@@ -17,6 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
  * caveat: a relay actually delivering these onward doesn't exist), and coalesced with
  * whatever's already open of the same kind within the digest window (AC1 of 0357 —
  * ten of the same kind of thing become one item, not ten).
+ *
+ * <p>VYB-0955 (D47): the person's own choices apply. A kind they have switched off for the inbox leaves no inbox row, and one they
+ * have switched on for email (urgent kinds are on by default) is queued for email in the same transaction, when email is set up.
+ * Neither choice affects the other, and neither affects what My Work derives.
  */
 @Service
 public class NotificationService {
@@ -25,13 +29,20 @@ public class NotificationService {
     private final OutboxEventRepository outbox;
     private final ObjectMapper json;
     private final JdbcTemplate jdbc;
+    private final NotificationPreferenceService preferences;
+    private final NotificationDeliveryQueue deliveries;
+    private final NotifyProperties properties;
 
     public NotificationService(NotificationRepository notifications, OutboxEventRepository outbox,
-                                ObjectMapper json, JdbcTemplate jdbc) {
+                                ObjectMapper json, JdbcTemplate jdbc, NotificationPreferenceService preferences,
+                                NotificationDeliveryQueue deliveries, NotifyProperties properties) {
         this.notifications = notifications;
         this.outbox = outbox;
         this.json = json;
         this.jdbc = jdbc;
+        this.preferences = preferences;
+        this.deliveries = deliveries;
+        this.properties = properties;
     }
 
     private int digestWindowMinutes() {
@@ -47,22 +58,33 @@ public class NotificationService {
     public void notify(UUID userId, String tone, String kind, String title, String subtitle, String link) {
         if (userId == null) return; // routing to an unknown actor is a no-op, not an error
 
-        Instant windowStart = Instant.now().minus(Duration.ofMinutes(digestWindowMinutes()));
-        var existing = notifications.findFirstByUserIdAndKindAndReadAtIsNullAndCreatedAtAfterOrderByCreatedAtDesc(
-            userId, kind, windowStart);
+        UUID notificationId = null;
+        if (preferences.wants(userId, kind, NotificationChannel.INBOX)) {
+            Instant windowStart = Instant.now().minus(Duration.ofMinutes(digestWindowMinutes()));
+            var existing = notifications.findFirstByUserIdAndKindAndReadAtIsNullAndCreatedAtAfterOrderByCreatedAtDesc(
+                userId, kind, windowStart);
 
-        if (existing.isPresent()) {
-            Notification n = existing.get();
-            n.coalesce(title, subtitle, link);
-            notifications.save(n);
-        } else {
-            notifications.save(new Notification(userId, tone, kind, title, subtitle, link));
+            if (existing.isPresent()) {
+                Notification n = existing.get();
+                n.coalesce(title, subtitle, link);
+                notifications.save(n);
+                notificationId = n.getId();
+            } else {
+                Notification fresh = new Notification(userId, tone, kind, title, subtitle, link);
+                notifications.save(fresh);
+                notificationId = fresh.getId();
+            }
+
+            // VYB-0356 AC1: same transaction, same method — this either commits with the
+            // notification row above or rolls back with it, never one without the other.
+            outbox.save(new OutboxEvent("notification." + kind, writeOrEmpty(Map.of(
+                "userId", userId.toString(), "kind", kind, "title", title))));
         }
 
-        // VYB-0356 AC1: same transaction, same method — this either commits with the
-        // notification row above or rolls back with it, never one without the other.
-        outbox.save(new OutboxEvent("notification." + kind, writeOrEmpty(Map.of(
-            "userId", userId.toString(), "kind", kind, "title", title))));
+        if (properties.emailEnabled() && preferences.wants(userId, kind, NotificationChannel.EMAIL)) {
+            boolean urgent = NotificationKind.find(kind).map(NotificationKind::urgent).orElse(false);
+            deliveries.enqueueEmail(userId, notificationId, kind, title, subtitle, link, urgent);
+        }
     }
 
     private String writeOrEmpty(Map<String, ?> value) {

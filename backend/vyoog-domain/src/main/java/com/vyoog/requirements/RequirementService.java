@@ -2,6 +2,7 @@ package com.vyoog.requirements;
 
 import com.vyoog.brief.BriefStalenessService;
 import com.vyoog.detection.DetectionSweepService;
+import com.vyoog.notify.NotificationEvents;
 import com.vyoog.platform.audit.AuditService;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -34,6 +35,7 @@ public class RequirementService {
     private final JdbcTemplate jdbc;
     private final RequirementEnrichmentService enrichment;
     private final RequirementTransitionAuthorizer authorizer;
+    private final NotificationEvents events;
 
     public RequirementService(RequirementRepository requirements,
                                RequirementRevisionRepository revisions,
@@ -45,7 +47,8 @@ public class RequirementService {
                                QualityScoreService qualityScore,
                                JdbcTemplate jdbc,
                                RequirementEnrichmentService enrichment,
-                               RequirementTransitionAuthorizer authorizer) {
+                               RequirementTransitionAuthorizer authorizer,
+                               NotificationEvents events) {
         this.requirements = requirements;
         this.revisions = revisions;
         this.criteria = criteria;
@@ -57,6 +60,7 @@ public class RequirementService {
         this.qualityScore = qualityScore;
         this.jdbc = jdbc;
         this.authorizer = authorizer;
+        this.events = events;
     }
 
     /**
@@ -322,6 +326,8 @@ public class RequirementService {
                 Map.of("supersededById", r.getId().toString(), "supersededByKey", r.getKey()));
         }
         rescan(r.getId());
+        // VYB-0955: whoever it is now waiting on, or the author, is told; in this transaction, so a refused or rolled-back move tells nobody.
+        events.requirementMoved(r.getId(), from.name(), target.name(), reason, actorId, null);
         return r;
     }
 

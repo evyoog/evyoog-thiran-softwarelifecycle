@@ -47,7 +47,8 @@ class RequirementServiceTest {
         // actual author/SoD/role logic, not a mock standing in for it.
         service = new RequirementService(
             requirements, revisions, criteria, keys, audit, detection, briefStaleness,
-            new QualityScoreService(), jdbc, enrichment, new RequirementTransitionAuthorizer(grantResolver));
+            new QualityScoreService(), jdbc, enrichment, new RequirementTransitionAuthorizer(grantResolver),
+            mock(com.vyoog.notify.NotificationEvents.class));
         actor = UUID.randomUUID();
         lenient().when(requirements.save(any())).thenAnswer(inv -> inv.getArgument(0));
         // A sane default so tests unrelated to the acceptance-criteria override don't

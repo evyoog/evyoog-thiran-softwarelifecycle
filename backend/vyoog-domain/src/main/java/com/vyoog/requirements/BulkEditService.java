@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vyoog.identity.GrantRequiredException;
 import com.vyoog.platform.audit.AuditEvent;
 import com.vyoog.platform.audit.AuditEventRepository;
+import com.vyoog.notify.NotificationEvents;
 import com.vyoog.platform.audit.AuditService;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +37,12 @@ public class BulkEditService {
     private final ObjectMapper json;
     private final JdbcTemplate jdbc;
     private final RequirementTransitionAuthorizer authorizer;
+    private final NotificationEvents events;
 
     public BulkEditService(RequirementRepository requirements, AcceptanceCriterionRepository criteria,
                             AuditService audit, AuditEventRepository auditEvents, ObjectMapper json,
-                            JdbcTemplate jdbc, RequirementTransitionAuthorizer authorizer) {
+                            JdbcTemplate jdbc, RequirementTransitionAuthorizer authorizer,
+                            NotificationEvents events) {
         this.requirements = requirements;
         this.criteria = criteria;
         this.audit = audit;
@@ -47,6 +50,7 @@ public class BulkEditService {
         this.json = json;
         this.jdbc = jdbc;
         this.authorizer = authorizer;
+        this.events = events;
     }
 
     /**
@@ -74,6 +78,8 @@ public class BulkEditService {
         List<Map<String, Object>> beforeRows = new ArrayList<>();
         List<Map<String, Object>> afterRows = new ArrayList<>();
         List<RowOutcome> outcomes = new ArrayList<>();
+        record Moved(UUID id, RequirementStatus from, RequirementStatus to) {}
+        List<Moved> moved = new ArrayList<>();
 
         for (UUID id : ids) {
             var opt = requirements.findById(id);
@@ -102,6 +108,7 @@ public class BulkEditService {
                     r.setOwnerId(changes.ownerId());
                 }
                 requirements.save(r);
+                if (changes.status() != null && from != r.getStatus()) moved.add(new Moved(id, from, r.getStatus()));
                 beforeRows.add(before);
                 afterRows.add(snapshot(r));
                 outcomes.add(new RowOutcome(id, true, null));
@@ -114,6 +121,13 @@ public class BulkEditService {
 
         UUID batchId = UUID.randomUUID();
         audit.record(actor, ACTION, "BULK", batchId, Map.of("rows", beforeRows), Map.of("rows", afterRows));
+        if (!moved.isEmpty()) {
+            requirements.flush(); // the notification reads the rows by SQL
+            // VYB-0955: each moved requirement tells whoever it now waits on; chat gets one post for the whole batch.
+            for (Moved m : moved) {
+                events.requirementMoved(m.id(), m.from().name(), m.to().name(), changes.reason(), actor, batchId.toString());
+            }
+        }
         return new BulkResult(batchId, outcomes);
     }
 

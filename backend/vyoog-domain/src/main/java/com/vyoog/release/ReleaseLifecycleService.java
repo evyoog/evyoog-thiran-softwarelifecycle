@@ -2,6 +2,7 @@ package com.vyoog.release;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vyoog.notify.NotificationEvents;
 import com.vyoog.platform.audit.AuditService;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -51,15 +52,18 @@ public class ReleaseLifecycleService {
     private final JdbcTemplate jdbc;
     private final AuditService audit;
     private final ObjectMapper json;
+    private final NotificationEvents events;
 
     public ReleaseLifecycleService(ReleaseRepository releases, ReleaseService releaseService, ReleaseGateConfigService gateConfig,
-                                    JdbcTemplate jdbc, AuditService audit, ObjectMapper json) {
+                                    JdbcTemplate jdbc, AuditService audit, ObjectMapper json,
+                                    NotificationEvents events) {
         this.releases = releases;
         this.releaseService = releaseService;
         this.gateConfig = gateConfig;
         this.jdbc = jdbc;
         this.audit = audit;
         this.json = json;
+        this.events = events;
     }
 
     private static ReleaseGateConfigService.Transition guarded(ReleaseState from, ReleaseState to) {
@@ -153,6 +157,8 @@ public class ReleaseLifecycleService {
             after.put("authTime", signed.authTime() == null ? null : signed.authTime().toString());
         }
         audit.record(actorId, "release.transitioned", "RELEASE", releaseId, before, after);
+        // VYB-0955: the Approvers whose scope holds something committed to this release are told (the person who moved it is not).
+        events.releaseMoved(releaseId, from.name(), to.name(), cleanReason, overridden, actorId);
         return release;
     }
 

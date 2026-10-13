@@ -13,10 +13,11 @@ import { useMe } from '@/shared/useMe'
 import { useRovingGrid } from '@/shared/ui/useRovingGrid'
 import { UserPicker } from '@/shared/ui/UserPicker'
 import { ConnectorHealthTab } from './admin/ConnectorHealthTab'
+import { NotificationsTab } from './admin/NotificationsTab'
 import { AiRedactionCard } from './admin/AiRedactionCard'
 import { AiTokenBudgetCard } from './admin/AiTokenBudgetCard'
 
-type Tab = 'users' | 'teams' | 'grants' | 'roles' | 'service-accounts' | 'security' | 'audit' | 'integrations' | 'connector-health' | 'settings'
+type Tab = 'users' | 'teams' | 'grants' | 'roles' | 'service-accounts' | 'security' | 'audit' | 'integrations' | 'connector-health' | 'notifications' | 'settings'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'users', label: 'Users' },
   { key: 'teams', label: 'Teams' },
@@ -27,6 +28,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'audit', label: 'Audit log' },
   { key: 'integrations', label: 'Connected systems' },
   { key: 'connector-health', label: 'Connector health' },
+  { key: 'notifications', label: 'Notifications' },
   { key: 'settings', label: 'Settings' },
 ]
 
@@ -72,6 +74,7 @@ export function Admin() {
       {tab === 'audit' && <AuditTab />}
       {tab === 'integrations' && <IntegrationsTab />}
       {tab === 'connector-health' && <ConnectorHealthTab />}
+      {tab === 'notifications' && <NotificationsTab />}
       {tab === 'settings' && <SettingsTab />}
     </Page>
   )

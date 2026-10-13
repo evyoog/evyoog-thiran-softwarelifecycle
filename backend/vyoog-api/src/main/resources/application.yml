@@ -89,6 +89,20 @@ vyoog:
   attachments:
     # VYB-0901: largest single upload, in bytes (10 MiB). Keep <= spring.servlet.multipart.max-file-size.
     max-bytes: ${ATTACHMENT_MAX_BYTES:10485760}
+  notify:
+    # VYB-0955 (D47): how notifications leave the app. Every value is empty by default, which switches the channel off; nothing is
+    # sent and nobody is told it exists beyond the notification settings saying "not set up". The mail password and the chat webhook
+    # address are secrets: environment only. A half-set channel (a host with no sender address, say) stops the application starting.
+    public-base-url: ${PUBLIC_BASE_URL:}    # the address people open the app at; without it messages carry no link
+    email:
+      host: ${MAIL_HOST:}                   # empty switches email off
+      port: ${MAIL_PORT:587}                # STARTTLS or plain; implicit-TLS port 465 is not supported
+      username: ${MAIL_USERNAME:}
+      password: ${MAIL_PASSWORD:}
+      from: ${MAIL_FROM:}
+      starttls: ${MAIL_STARTTLS:true}
+    chat:
+      teams-webhook-url: ${NOTIFY_TEAMS_WEBHOOK_URL:}   # a Teams incoming-webhook (Workflows) address; empty switches chat off
   bootstrap:
     # VYB-0901: one-time token POST /settings/bootstrap requires as X-Bootstrap-Token.
     # Empty (the default) switches the endpoint off. Set it only while bootstrapping a new

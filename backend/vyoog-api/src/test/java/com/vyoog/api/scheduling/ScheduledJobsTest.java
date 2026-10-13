@@ -30,6 +30,7 @@ class ScheduledJobsTest {
     ClarificationService clarifications = mock(ClarificationService.class);
     PurgeService purge = mock(PurgeService.class);
     ReadinessSnapshotService snapshots = mock(ReadinessSnapshotService.class);
+    com.vyoog.api.notify.NotificationDeliveryService deliveries = mock(com.vyoog.api.notify.NotificationDeliveryService.class);
     ScheduledJobs jobs;
 
     @BeforeEach
@@ -39,7 +40,7 @@ class ScheduledJobsTest {
             ((Runnable) inv.getArgument(3)).run();
             return true;
         });
-        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge, snapshots);
+        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge, snapshots, deliveries);
     }
 
     @Test
@@ -81,6 +82,18 @@ class ScheduledJobsTest {
     }
 
     @Test
+    void VYB0955_AC9_theNotificationSenderRunsUnderItsOwnLeaseWithNoMinimumHoldAndTheCleanUpNightly() throws Exception {
+        jobs.notificationDelivery();
+        jobs.notificationDeliveryPurge();
+        verify(locks).runExclusive(eq("notification-delivery"), any(Duration.class), eq(Duration.ZERO), any());
+        verify(locks).runExclusive(eq("notification-delivery-purge"), any(Duration.class), eq(ScheduledJobs.NIGHTLY_MIN_HOLD), any());
+        verify(deliveries).deliver();
+        verify(deliveries).purgeOld();
+        assertThat(scheduled("notificationDelivery").fixedDelay()).isEqualTo(30000);
+        assertThat(scheduled("notificationDeliveryPurge").cron()).isEqualTo("0 45 3 * * *");
+    }
+
+    @Test
     void VYB0909_AC3_anInstanceThatDoesNotWinTheLeaseRunsNothing() {
         org.mockito.Mockito.doReturn(false).when(locks).runExclusive(any(), any(), any(), any());
         jobs.outboxRelay();
@@ -89,7 +102,9 @@ class ScheduledJobsTest {
         jobs.clarificationEscalation();
         jobs.purgeExpiredRecords();
         jobs.readinessSnapshot();
-        org.mockito.Mockito.verifyNoInteractions(relay, sweep, audit, clarifications, purge, snapshots);
+        jobs.notificationDelivery();
+        jobs.notificationDeliveryPurge();
+        org.mockito.Mockito.verifyNoInteractions(relay, sweep, audit, clarifications, purge, snapshots, deliveries);
     }
 
     @Test

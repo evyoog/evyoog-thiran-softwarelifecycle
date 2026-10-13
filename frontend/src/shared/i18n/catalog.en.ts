@@ -61,6 +61,8 @@ export const en = {
   'bell.empty': 'Nothing here.',
   'bell.markRead': 'Mark read',
   'bell.new': 'New notification',
+  'bell.preferences': 'Preferences',
+  'bell.backToInbox': 'Back to the inbox',
 
   // ---- command palette
   'palette.title': 'Command palette',

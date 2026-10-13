@@ -7,7 +7,12 @@ import com.vyoog.api.config.RequiresAccess;
 import com.vyoog.api.notify.NotificationSseRegistry;
 import com.vyoog.identity.UserProvisioningService;
 import com.vyoog.notify.Notification;
+import com.vyoog.notify.NotificationChannel;
+import com.vyoog.notify.NotificationPreferenceService;
 import com.vyoog.notify.NotificationService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.MediaType;
@@ -24,12 +29,14 @@ public class NotificationController {
     private final NotificationService notifications;
     private final UserProvisioningService provisioning;
     private final NotificationSseRegistry sse;
+    private final NotificationPreferenceService preferences;
 
     public NotificationController(NotificationService notifications, UserProvisioningService provisioning,
-                                   NotificationSseRegistry sse) {
+                                   NotificationSseRegistry sse, NotificationPreferenceService preferences) {
         this.notifications = notifications;
         this.provisioning = provisioning;
         this.sse = sse;
+        this.preferences = preferences;
     }
 
     private UUID currentUserId(Jwt jwt) {
@@ -61,6 +68,43 @@ public class NotificationController {
     @PostMapping("/{id}/read")
     public void markRead(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         notifications.markRead(id, currentUserId(jwt));
+    }
+
+    public record NotificationPreferenceKindView(String kind, String label, String group, String description, boolean urgent,
+                                     boolean inbox, boolean email, boolean inboxIsDefault, boolean emailIsDefault) {}
+    public record NotificationPreferencesView(boolean emailAvailable, List<NotificationPreferenceKindView> kinds) {}
+    public record NotificationPreferenceChange(@NotBlank String kind, @NotBlank String channel, Boolean enabled) {}
+    public record SetNotificationPreferences(@NotNull List<NotificationPreferenceChange> changes) {}
+
+    private static NotificationPreferencesView toView(NotificationPreferenceService.View v) {
+        return new NotificationPreferencesView(v.emailAvailable(), v.kinds().stream().map(k -> new NotificationPreferenceKindView(k.kind(), k.label(), k.group(),
+            k.description(), k.urgent(), k.inbox(), k.email(), k.inboxIsDefault(), k.emailIsDefault())).toList());
+    }
+
+    /** VYB-0955: the caller's own choices, with the default each kind has. */
+    @GetMapping("/preferences")
+    public NotificationPreferencesView myPreferences(@AuthenticationPrincipal Jwt jwt) {
+        return toView(preferences.view(currentUserId(jwt)));
+    }
+
+    /**
+     * VYB-0955: the caller changes their own choices (never anyone else's). {@code enabled} null puts a kind back to its default.
+     * Only INBOX and EMAIL can be chosen; chat is an administrator's setting.
+     */
+    @RequiresAccess(value = AccessRule.PERSON)
+    @PutMapping("/preferences")
+    public NotificationPreferencesView setMyPreferences(@RequestBody @Valid SetNotificationPreferences body, @AuthenticationPrincipal Jwt jwt) {
+        UUID me = currentUserId(jwt);
+        List<NotificationPreferenceService.Change> changes = body.changes().stream().map(c -> {
+            NotificationChannel channel;
+            try {
+                channel = NotificationChannel.valueOf(c.channel());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("No such channel: " + c.channel());
+            }
+            return new NotificationPreferenceService.Change(c.kind(), channel, c.enabled());
+        }).toList();
+        return toView(preferences.change(me, changes, me));
     }
 
     /**

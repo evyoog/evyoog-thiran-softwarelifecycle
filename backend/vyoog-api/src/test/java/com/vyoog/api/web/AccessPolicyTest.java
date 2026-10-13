@@ -86,6 +86,10 @@ class AccessPolicyTest {
         Map.entry("ApplicationController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("CapabilityController#create", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("CapabilityController#update", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        // VYB-0955 (D47): a person's own notification choices are theirs to change; the channel settings are the administrator's
+        Map.entry("NotificationController#setMyPreferences", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
+        Map.entry("NotificationSettingsController#setChatKinds", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        Map.entry("NotificationSettingsController#test", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("RiskController#create", new Expected(AccessRule.RISK, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("RiskController#update", new Expected(AccessRule.RISK, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("RiskController#changeStatus", new Expected(AccessRule.RISK, RequiresAccess.Scope.ANYWHERE)),

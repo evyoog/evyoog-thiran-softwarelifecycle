@@ -203,7 +203,7 @@ and `defect.test_case_id`, `test_run_id`, `release_id`
 `baseline_item`, `variant`, `variant_applicability`, `environment`, `deployment`,
 `deployment_requirement`, `release_note`
 
-**Collaboration** — `clarification` (§7.4.7), `notification`, `inbox_item`
+**Collaboration** — `clarification` (§7.4.7), `notification`, `inbox_item`; `notification_preference` (a person's explicit choice per kind and channel, INBOX or EMAIL; no row means the kind's default), `notification_chat_kind` (the kinds an administrator posts to the team chat channel), `notification_delivery` (the queue email and chat go out through; VYB-0955, see [`../../04-workflows/notifications.md`](../../04-workflows/notifications.md))
 
 **Platform** — `audit_event`, `integration_connection`, `outbox_event`; `ai_proposal` (VYB-0938, see [`../../04-workflows/ai-proposal-review.md`](../../04-workflows/ai-proposal-review.md)); `ai_call` (VYB-0939, one row per model call, no user and no text; see [`../../08-architecture/backend-architecture/ai-usage-and-budgets.md`](../../08-architecture/backend-architecture/ai-usage-and-budgets.md)); `app_config.ai_token_budget_daily` and `ai_token_budget_monthly` (VYB-0939); `app_config.ai_redaction_disabled` (VYB-0937, see [`../../08-architecture/security/ai-redaction.md`](../../08-architecture/security/ai-redaction.md))
 

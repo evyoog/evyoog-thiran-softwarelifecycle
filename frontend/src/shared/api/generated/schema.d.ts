@@ -2132,6 +2132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["myPreferences"];
+        put: operations["setMyPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/stream": {
         parameters: {
             query?: never;
@@ -2395,7 +2411,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["current_1"];
+        get: operations["current_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3582,6 +3598,54 @@ export interface paths {
         get?: never;
         put: operations["setNoisyDetectorDismissalCeiling"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["current_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/notifications/chat-kinds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setChatKinds"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/notifications/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["test"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5936,6 +6000,56 @@ export interface components {
             requirementId?: string;
             title?: string;
         };
+        NotificationChannelStats: {
+            /** Format: int32 */
+            failedLast24h?: number;
+            lastError?: string;
+            /** Format: int32 */
+            pending?: number;
+            /** Format: int32 */
+            sentLast24h?: number;
+        };
+        NotificationChatKindView: {
+            enabled?: boolean;
+            group?: string;
+            kind?: string;
+            label?: string;
+        };
+        NotificationPreferenceChange: {
+            channel: string;
+            enabled?: boolean;
+            kind: string;
+        };
+        NotificationPreferenceKindView: {
+            description?: string;
+            email?: boolean;
+            emailIsDefault?: boolean;
+            group?: string;
+            inbox?: boolean;
+            inboxIsDefault?: boolean;
+            kind?: string;
+            label?: string;
+            urgent?: boolean;
+        };
+        NotificationPreferencesView: {
+            emailAvailable?: boolean;
+            kinds?: components["schemas"]["NotificationPreferenceKindView"][];
+        };
+        NotificationSettingsView: {
+            chat?: components["schemas"]["NotificationChannelStats"];
+            chatConfigured?: boolean;
+            chatKinds?: components["schemas"]["NotificationChatKindView"][];
+            email?: components["schemas"]["NotificationChannelStats"];
+            emailConfigured?: boolean;
+            linksConfigured?: boolean;
+        };
+        NotificationTestRequest: {
+            channel: string;
+        };
+        NotificationTestResultView: {
+            detail?: string;
+            ok?: boolean;
+        };
         NotificationView: {
             createdAt?: string;
             id?: string;
@@ -6727,6 +6841,12 @@ export interface components {
         };
         SetModel: {
             model?: string;
+        };
+        SetNotificationChatKinds: {
+            kinds?: string[];
+        };
+        SetNotificationPreferences: {
+            changes: components["schemas"]["NotificationPreferenceChange"][];
         };
         SetPrefix: {
             prefix?: string;
@@ -10905,6 +11025,50 @@ export interface operations {
             };
         };
     };
+    myPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesView"];
+                };
+            };
+        };
+    };
+    setMyPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetNotificationPreferences"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesView"];
+                };
+            };
+        };
+    };
     stream: {
         parameters: {
             query?: never;
@@ -11331,7 +11495,7 @@ export interface operations {
             };
         };
     };
-    current_1: {
+    current_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -13400,6 +13564,74 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    current_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationSettingsView"];
+                };
+            };
+        };
+    };
+    setChatKinds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetNotificationChatKinds"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationSettingsView"];
+                };
+            };
+        };
+    };
+    test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationTestRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationTestResultView"];
+                };
             };
         };
     };

@@ -35,6 +35,7 @@ class BulkEditGuardTest {
     @Mock AuditEventRepository auditEvents;
     @Mock JdbcTemplate jdbc;
     @Mock GrantResolver grantResolver;
+    @Mock com.vyoog.notify.NotificationEvents events;
 
     BulkEditService service;
     UUID actor;       // the author of every fixture requirement in this file
@@ -44,7 +45,7 @@ class BulkEditGuardTest {
     void setUp() {
         service = new BulkEditService(
             requirements, criteria, audit, auditEvents, new ObjectMapper(), jdbc,
-            new RequirementTransitionAuthorizer(grantResolver));
+            new RequirementTransitionAuthorizer(grantResolver), events);
         actor = UUID.randomUUID();
         decisionMaker = UUID.randomUUID();
         lenient().when(requirements.save(any())).thenAnswer(inv -> inv.getArgument(0));

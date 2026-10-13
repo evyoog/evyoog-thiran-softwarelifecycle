@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1239 tests cover 76 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1286 tests cover 77 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1388,6 +1388,56 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` onlyAnAdministratorOrTheTeamsLeadSeesTheControls (`frontend/src/features/board/boardModel.test.ts`)
 - `AC8` columnsReorderAndTheLastOneStays (`frontend/src/features/board/boardModel.test.ts`)
 - `AC8` onlyAnAdministratorChangesTheDefaultAndNobodyDeletesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+
+## VYB-0955: Notifications: review, approval, release, test failure and mention events; email and chat channels; user preferences [M; F21]
+
+- `AC1` aSubmissionTellsTheReviewersWhereItSitsAndNobodyElse (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC1` everyKindHasAUniqueKeyAndWordsAPersonCanReadAndTheKeysTheProducersAlreadyUseAreKept (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationKindTest.java`)
+- `AC1` onlyEventKindsThatAreNotPersonalCanGoToChat (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationKindTest.java`)
+- `AC1` theDefaultIsInboxForEveryKindAndEmailOnlyForTheUrgentOnes (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationKindTest.java`)
+- `AC10` aManualRunThatEndsWithAFailedCaseTellsTheAuthorOfTheRequirementItTestedAndNotTheTester (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC10` anUrgentKindIsEmailedByDefaultOnceWithTheWordsAndALinkAndNotAgain (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC11` aPersonWhoSwitchedEmailOffForAKindIsNotEmailedAndOneWhoSwitchedItOnForAQuietKindGetsItInADigest (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC12` aSecondUrgentOneOfTheSameKindInTheWindowWaitsForTheDigestAndIsNotLost (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC13` aMessageTheMailServerRefusesIsRecordedAsFailedTriedAgainAndLeftFailedAfterTheLastTry (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC14` aSubjectIsOneLineWithTheProductNameAndIsCutShort (`backend/vyoog-api/src/test/java/com/vyoog/api/notify/NotificationDeliveryServiceTest.java`)
+- `AC14` aTitleWithALineBreakCannotAddAHeaderAndEmailGoesToOnePersonOnly (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC15` aPersonWithNoEmailAddressIsRecordedAsAFailureNotSilentlyDropped (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC16` chatGetsOnePostPerEventOnlyForTheKindsTheAdministratorSwitchedOnAndNoReasonOrCommentText (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC17` everyFailingTestInOneRunIsOnePostToChat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC18` aChannelThatAnswersWithAnErrorIsRecordedAndTheAddressNeverAppearsInTheError (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC18` anAddressInAnotherFormIsStillCutBackToItsHostAndALineBreakIsFlattened (`backend/vyoog-api/src/test/java/com/vyoog/api/notify/NotificationDeliveryServiceTest.java`)
+- `AC18` theChatAddressAndTheMailPasswordAreRemovedFromAnErrorWhereverTheyAppear (`backend/vyoog-api/src/test/java/com/vyoog/api/notify/NotificationDeliveryServiceTest.java`)
+- `AC19` sentAndFailedRowsOlderThanThirtyDaysAreRemovedAndPendingOnesNever (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC2` aKindSwitchedOffForTheInboxLeavesNoInboxRowAndNoLiveEvent (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationServiceTest.java`)
+- `AC2` aReviewedRequirementTellsTheApproversAndNeverAsksItsAuthorToDecide (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC20` aRolledBackChangeQueuesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationDeliveryIT.java`)
+- `AC21` everyKindIsListedWithItsDefaultInboxOnForAllAndEmailOnForTheUrgentOnes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC22` aChoiceIsKeptPerKindAndChannelAndCanBePutBackToItsDefaultAndIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC23` aPersonChoosesOnlyForThemselvesAndOnlyInboxOrEmailAndOnlyKindsThatExist (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC24` theSettingsSayWhetherEachChannelIsSetUpAndNeverShowTheAddressOrTheMailPassword (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC25` theAdministratorChoosesWhichKindsGoToChatAndItIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC26` onlyAnAdministratorMayReadOrChangeTheChannelSettingsOrSendATest (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC27` anAdministratorCanSendATestToEachChannelAndSeeItArrive (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationPreferencesIT.java`)
+- `AC28` kindsAreGroupedInTheOrderTheGroupsFirstAppearAndKeepTheirOwnOrder (`frontend/src/app/notificationPrefs.test.ts`)
+- `AC28` theSaveButtonOnlyWakesWhenTheChosenKindsReallyDifferFromTheSavedOnes (`frontend/src/app/notificationPrefs.test.ts`)
+- `AC28` togglingAKindMakesANewSetAndLeavesTheSavedOneAlone (`frontend/src/app/notificationPrefs.test.ts`)
+- `AC3` aKindSwitchedOnForEmailIsQueuedWhenEmailIsSetUpAndUrgentKindsAreQueuedAsUrgent (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationServiceTest.java`)
+- `AC3` aKindThatIsNotUrgentIsQueuedForTheDigest (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationServiceTest.java`)
+- `AC3` approvalRejectionAndSendingBackTellTheAuthorWithTheReasonAndNotTheActor (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC4` aChannelIsOnOnlyWhenItsOwnValuesAreSetAndALinkJoinsTheAddressWithoutADoubleSlash (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotifyPropertiesTest.java`)
+- `AC4` aHalfSetEmailChannelRefusesToStartAndSaysWhichValueIsMissing (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotifyPropertiesTest.java`)
+- `AC4` aKindTheRegistryDoesNotKnowIsNeverEmailedByDefaultSoOldCallersAreUnchanged (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationServiceTest.java`)
+- `AC4` aRequirementPlacedHigherUpTellsTheHoldersOfTheRoleAtAndAboveThatPlace (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC4` nothingIsQueuedForEmailWhenEmailIsNotSetUpOrThePersonDidNotAskForIt (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotificationServiceTest.java`)
+- `AC4` theChatAddressMustBeHttpsExceptOnThisMachineAndTheErrorNeverRepeatsIt (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotifyPropertiesTest.java`)
+- `AC4` withNothingSetBothChannelsAreOffAndMessagesCarryNoLink (`backend/vyoog-domain/src/test/java/com/vyoog/notify/NotifyPropertiesTest.java`)
+- `AC5` aWithdrawalBackToDraftAndARefusedMoveTellNobody (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC6` aReleaseMovingTellsTheApproversWhoseScopeHoldsSomethingCommittedToItNotTheOneWhoMovedIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC7` aFailedTestTellsTheAuthorAndAPassTellsNobody (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC8` aMentionTellsThePersonMentionedAndNotTheAuthorOfTheComment (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC9` aBulkEditMovesManyRequirementsAndEachTellsItsReviewersButChatGetsOnePostForTheBatch (`backend/vyoog-api/src/test/java/com/vyoog/api/it/NotificationEventsIT.java`)
+- `AC9` theNotificationSenderRunsUnderItsOwnLeaseWithNoMinimumHoldAndTheCleanUpNightly (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
 
 ## VYB-0956: Trend dashboards for defects, test pass rate, release readiness; xlsx and PDF export [M; F24]
 

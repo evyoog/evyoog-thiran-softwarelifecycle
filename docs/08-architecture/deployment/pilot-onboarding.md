@@ -87,7 +87,7 @@ of its own (see `pilot-rehearsals.md`):
 1. **`POST /teams` returns no id.** The caller has to list the teams and find it by name. The Teams screen does this; a script cannot do it safely if two teams share a name.
 2. **Granting a role to someone who has never signed in is only possible through `POST /users`**, and only a typed email links the row to the person later. There is no check that the email matches what Keycloak will send.
 3. **`PATCH /requirements/{id}` without `capabilityId` removes the requirement's placement.** Every client must send it back on every edit; a client that forgets orphans the requirement and loses the edit rights that came from its placement.
-4. **There is no email or chat message when it is someone's turn.** There is an in-app inbox and live stream (`/notifications`), and My Work; the dry run does not check which handovers reach the inbox. Email and chat channels are a separate, not-started row (VYB-0955), so tell the team to look at My Work.
+4. **Email and chat exist (VYB-0955) but have never been tried against a real mail server or Teams channel.** They are off until the deployment sets `MAIL_*` and `NOTIFY_TEAMS_WEBHOOK_URL`; see [`notifications-setup.md`](notifications-setup.md), and press the test buttons on Administration, Notifications before the team starts. With neither set, people are told only in the bell and My Work.
 5. **Keycloak is not rehearsed here.** The sandbox has no Keycloak; the realm, the users and the sign-in redirect are human steps and untested by this row.
 
 ## The pilot is done when

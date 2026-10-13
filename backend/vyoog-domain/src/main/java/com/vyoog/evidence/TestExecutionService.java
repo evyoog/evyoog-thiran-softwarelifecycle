@@ -2,6 +2,7 @@ package com.vyoog.evidence;
 
 import com.vyoog.attachments.AttachmentService;
 import com.vyoog.detection.DetectionSweepService;
+import com.vyoog.notify.NotificationEvents;
 import com.vyoog.platform.audit.AuditService;
 import jakarta.persistence.EntityManager;
 import java.util.LinkedHashMap;
@@ -46,11 +47,12 @@ public class TestExecutionService {
     private final AttachmentService attachments;
     private final EntityManager entityManager;
     private final DetectionSweepService detection;
+    private final NotificationEvents events;
     private final TransactionOperations tx;
 
     public TestExecutionService(JdbcTemplate jdbc, AuditService audit, TestManagementService mgmt,
                                  AttachmentService attachments, EntityManager entityManager,
-                                 DetectionSweepService detection, TransactionOperations tx) {
+                                 DetectionSweepService detection, TransactionOperations tx, NotificationEvents events) {
         this.tx = tx;
         this.entityManager = entityManager;
         this.detection = detection;
@@ -58,6 +60,7 @@ public class TestExecutionService {
         this.audit = audit;
         this.mgmt = mgmt;
         this.attachments = attachments;
+        this.events = events;
     }
 
     @Transactional
@@ -133,7 +136,8 @@ public class TestExecutionService {
         audit.record(actorId, "test-run.completed", "TEST_RUN", runId, auditMap("status", "IN_PROGRESS"),
             auditMap("status", "COMPLETED", "passed", String.valueOf(summary.passed()), "failed", String.valueOf(summary.failed()),
                 "blocked", String.valueOf(summary.blocked())));
-        recordVerifications(runId, before.cases(), actorId);
+        recordVerifications(runId, before.cases(), actorId,
+            before.run().buildLabel() != null ? before.run().buildLabel() : before.run().suiteName());
         return mgmt.getRun(runId);
     }
 
@@ -142,7 +146,7 @@ public class TestExecutionService {
      * result says; a BLOCKED case writes nothing. The test case id is kept only while the live case still exists
      * (the run's copy is a snapshot and may outlive it).
      */
-    private void recordVerifications(UUID runId, List<TestManagementService.RunCase> cases, UUID actorId) {
+    private void recordVerifications(UUID runId, List<TestManagementService.RunCase> cases, UUID actorId, String runLabel) {
         int written = 0;
         java.util.Set<UUID> touched = new java.util.LinkedHashSet<>();
         for (TestManagementService.RunCase c : cases) {
@@ -155,6 +159,10 @@ public class TestExecutionService {
                  WHERE rc.id = ?
                 """, c.result(), c.id());
             c.requirements().forEach(r -> touched.add(r.requirementId()));
+            // VYB-0955: a failed case tells the author of each requirement it tested (chat gets one post per run).
+            if ("FAIL".equals(c.result())) {
+                c.requirements().forEach(r -> events.testFailed(r.requirementId(), c.title(), runLabel, runId, actorId));
+            }
         }
         audit.record(actorId, "test-run.verifications-recorded", "TEST_RUN", runId, null,
             auditMap("verifications", String.valueOf(written), "requirements", String.valueOf(touched.size())));

@@ -1276,6 +1276,62 @@ export interface AppNotification {
   createdAt: string
 }
 
+// VYB-0955 (D47): who is told what, and how.
+
+export interface NotificationPreferenceKindView {
+  kind: string
+  label: string
+  group: string
+  description: string
+  /** Urgent kinds are emailed at once by default; the rest wait for the digest and are off for email until chosen. */
+  urgent: boolean
+  inbox: boolean
+  email: boolean
+  inboxIsDefault: boolean
+  emailIsDefault: boolean
+}
+
+export interface NotificationPreferencesView {
+  /** False when email is not set up on this deployment: the choices are kept but nothing is sent. */
+  emailAvailable: boolean
+  kinds: NotificationPreferenceKindView[]
+}
+
+export interface NotificationPreferenceChange {
+  kind: string
+  channel: 'INBOX' | 'EMAIL'
+  /** null puts the kind back to its default. */
+  enabled: boolean | null
+}
+
+export interface NotificationChatKindView {
+  kind: string
+  label: string
+  group: string
+  enabled: boolean
+}
+
+export interface NotificationChannelStats {
+  pending: number
+  sentLast24h: number
+  failedLast24h: number
+  lastError?: string
+}
+
+export interface NotificationSettingsView {
+  emailConfigured: boolean
+  chatConfigured: boolean
+  linksConfigured: boolean
+  chatKinds: NotificationChatKindView[]
+  email: NotificationChannelStats
+  chat: NotificationChannelStats
+}
+
+export interface NotificationTestResultView {
+  ok: boolean
+  detail: string
+}
+
 // ── Change requests (VYB-0390–0393) ──────────────────────────────────────────────
 
 export type ChangeRequestState = 'OPEN' | 'APPROVED' | 'REJECTED' | 'APPLIED'
@@ -2525,6 +2581,15 @@ export const api = {
   notifications: () => request<AppNotification[]>('/notifications'),
   unreadNotificationCount: () => request<number>('/notifications/unread-count'),
   markNotificationRead: (id: string) => request<void>(`/notifications/${id}/read`, { method: 'POST' }),
+  // VYB-0955: a person's own choices, and the administrator's channel settings
+  notificationPreferences: () => request<NotificationPreferencesView>('/notifications/preferences'),
+  setNotificationPreferences: (changes: NotificationPreferenceChange[]) =>
+    request<NotificationPreferencesView>('/notifications/preferences', { method: 'PUT', body: JSON.stringify({ changes }) }),
+  notificationSettings: () => request<NotificationSettingsView>('/settings/notifications'),
+  setNotificationChatKinds: (kinds: string[]) =>
+    request<NotificationSettingsView>('/settings/notifications/chat-kinds', { method: 'PUT', body: JSON.stringify({ kinds }) }),
+  testNotificationChannel: (channel: 'EMAIL' | 'CHAT') =>
+    request<NotificationTestResultView>('/settings/notifications/test', { method: 'POST', body: JSON.stringify({ channel }) }),
   // VYB-0791: not the browser's native EventSource — it can't send a custom
   // Authorization header at all, and putting the bearer token in the URL's query
   // string instead (the usual EventSource workaround) is exactly the kind of

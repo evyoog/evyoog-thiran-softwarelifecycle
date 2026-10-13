@@ -16,4 +16,5 @@
 - [`kanban-board.md`](kanban-board.md) — the Kanban board: columns are statuses, drops use the real transition rules, templates per team (VYB-0953).
 - [`trend-reports.md`](trend-reports.md) — trends for defects, pass rate and release readiness, with xlsx and PDF export (VYB-0956).
 - [`import-formats.md`](import-formats.md) — import from Excel, Word tables and ReqIF with no guessing, the check before upload, and the downloadable templates (VYB-0957).
+- [`notifications.md`](notifications.md) — who is told what and how: the inbox, email and a team chat channel, each person's choices, and how messages are sent (VYB-0955).
 - [`../08-architecture/development-process.md`](../08-architecture/development-process.md) — how Vyoog itself is built.

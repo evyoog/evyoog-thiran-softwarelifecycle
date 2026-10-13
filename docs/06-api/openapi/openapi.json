@@ -3633,6 +3633,150 @@
         },
         "type" : "object"
       },
+      "NotificationChannelStats" : {
+        "properties" : {
+          "failedLast24h" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "lastError" : {
+            "type" : "string"
+          },
+          "pending" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sentLast24h" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationChatKindView" : {
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "group" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationPreferenceChange" : {
+        "properties" : {
+          "channel" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "kind" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel", "kind" ],
+        "type" : "object"
+      },
+      "NotificationPreferenceKindView" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "emailIsDefault" : {
+            "type" : "boolean"
+          },
+          "group" : {
+            "type" : "string"
+          },
+          "inbox" : {
+            "type" : "boolean"
+          },
+          "inboxIsDefault" : {
+            "type" : "boolean"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "urgent" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationPreferencesView" : {
+        "properties" : {
+          "emailAvailable" : {
+            "type" : "boolean"
+          },
+          "kinds" : {
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationPreferenceKindView"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationSettingsView" : {
+        "properties" : {
+          "chat" : {
+            "$ref" : "#/components/schemas/NotificationChannelStats"
+          },
+          "chatConfigured" : {
+            "type" : "boolean"
+          },
+          "chatKinds" : {
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationChatKindView"
+            },
+            "type" : "array"
+          },
+          "email" : {
+            "$ref" : "#/components/schemas/NotificationChannelStats"
+          },
+          "emailConfigured" : {
+            "type" : "boolean"
+          },
+          "linksConfigured" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationTestRequest" : {
+        "properties" : {
+          "channel" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel" ],
+        "type" : "object"
+      },
+      "NotificationTestResultView" : {
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "ok" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "NotificationView" : {
         "properties" : {
           "createdAt" : {
@@ -5826,6 +5970,29 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "SetNotificationChatKinds" : {
+        "properties" : {
+          "kinds" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "SetNotificationPreferences" : {
+        "properties" : {
+          "changes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationPreferenceChange"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "changes" ],
         "type" : "object"
       },
       "SetPrefix" : {
@@ -11935,6 +12102,50 @@
         "tags" : [ "notification-controller" ]
       }
     },
+    "/api/v1/notifications/preferences" : {
+      "get" : {
+        "operationId" : "myPreferences",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotificationPreferencesView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      },
+      "put" : {
+        "operationId" : "setMyPreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetNotificationPreferences"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotificationPreferencesView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
     "/api/v1/notifications/stream" : {
       "get" : {
         "operationId" : "stream",
@@ -12461,7 +12672,7 @@
     },
     "/api/v1/releases/current" : {
       "get" : {
-        "operationId" : "current_1",
+        "operationId" : "current_2",
         "responses" : {
           "200" : {
             "content" : {
@@ -15123,6 +15334,80 @@
           }
         },
         "tags" : [ "settings-controller" ]
+      }
+    },
+    "/api/v1/settings/notifications" : {
+      "get" : {
+        "operationId" : "current_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotificationSettingsView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "notification-settings-controller" ]
+      }
+    },
+    "/api/v1/settings/notifications/chat-kinds" : {
+      "put" : {
+        "operationId" : "setChatKinds",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetNotificationChatKinds"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotificationSettingsView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "notification-settings-controller" ]
+      }
+    },
+    "/api/v1/settings/notifications/test" : {
+      "post" : {
+        "operationId" : "test",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NotificationTestRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotificationTestResultView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "notification-settings-controller" ]
       }
     },
     "/api/v1/settings/req-key-prefix" : {

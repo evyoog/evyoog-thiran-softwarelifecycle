@@ -11,6 +11,9 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-oauth2-resource-server</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
+    <!-- VYB-0955: the SMTP sender for notification email. Only the sender class is used: no Spring mail autoconfiguration is
+         switched on (spring.mail.* is never set), so nothing connects anywhere unless the notification settings say so. -->
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-mail</artifactId></dependency>
     <!-- VYB-0784 (session 16): request-level tracing — a real trace/span id per
          request, automatically correlated into every log line (including Hibernate's
          SQL logging, already at INFO) via Spring Boot's own tracing autoconfiguration.
