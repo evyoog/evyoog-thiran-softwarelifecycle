@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1286 tests cover 77 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1298 tests cover 78 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1520,3 +1520,18 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC1` aSimilarPairInDifferentApplicationsIsFoundFromEitherSideAndAnUnrelatedRequirementFindsNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DuplicateScanOneIT.java`)
 - `AC1` anInventedTeamGoesFromAnEmptyPortfolioToApprovedRequirementsAndAReleaseThroughTheRunbooksSteps (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PilotDryRunIT.java`)
 - `AC2` aSimilarPairInTheSameApplicationOrWithADeletedSideIsNotReported (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DuplicateScanOneIT.java`)
+
+## VYB-0960: Fix the two findings of the VYB-0959 rehearsal: the nightly detection sweep that does not finish at 50,000 requirements, and concurrent writes that fail with a 500 [M; from VYB-0959]
+
+- `AC1` manyWritesHandingOverTheSameSharedFindingsInDifferentOrdersNeverDeadlockAndNoFindingIsLostOrDoubled (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConcurrentFindingReconcileIT.java`)
+- `AC10` deletingChecksWhatWasFoundAboutItSoItsFindingsAreResolvedNowNotAtNight (`backend/vyoog-domain/src/test/java/com/vyoog/requirements/RequirementDeleteTest.java`)
+- `AC11` aDatabaseErrorInTheCheckRefusesTheWriteWithItsRealCauseAndAnyOtherFailureIsOnlyLogged (`backend/vyoog-domain/src/test/java/com/vyoog/requirements/RequirementDeleteTest.java`)
+- `AC12` aDeadlockOrALockTheDatabaseWouldNotWaitForIsAConflictThatSaysTryAgainAndNothingWasSaved (`backend/vyoog-api/src/test/java/com/vyoog/api/web/LockConflictResponseTest.java`)
+- `AC2` aFindingAboutAPairIsFoundAndResolvedFromEitherSideOfThePair (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConcurrentFindingReconcileIT.java`)
+- `AC3` aSweepChecksWhatChangedFindsThePairAndLeavesNothingWaiting (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+- `AC4` aSweepWithNothingNewChecksNoneOfThemAndAFreshEmbeddingIsTheOnlyThingChecked (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+- `AC5` aPairThatStoppedBeingSimilarIsResolvedWhicheverSideChanged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+- `AC6` aPassOutOfTimeChecksNothingMovesNothingAndTheNextPassCarriesOn (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+- `AC7` changingTheRulesThresholdChecksEverythingAgainUnderTheNewOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+- `AC8` aRuleThatCannotRunMovesNoPosition (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+- `AC9` deletingARequirementResolvesItsPairFindingsAtOnceFromEitherSide (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)

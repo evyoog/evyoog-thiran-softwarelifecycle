@@ -1,6 +1,6 @@
 # Detection: the nightly sweep and how writes check what they changed
 
-Added by VYB-0960 (Phase 6, Sprint 12, F43). Migration `V059__incremental_detection_sweep.sql` (`finding.related_object_id`, `detection_sweep_state`, an index on `requirement_embedding (embedded_at, requirement_id)`). Code: `IncrementalSweep`, `DetectionSweepService`, `FindingReconciler.reconcileOne`, `Detector.sweepsChangedOnly` and `ensureAvailable` (`com.vyoog.detection`). Decision: D48. Background: [`gap-detection.md`](gap-detection.md) §6.4 and the load rehearsal in [`../08-architecture/deployment/pilot-rehearsals.md`](../08-architecture/deployment/pilot-rehearsals.md).
+Added by VYB-0960 (Phase 6, Sprint 12). Migration `V059__incremental_detection_sweep.sql` (`finding.related_object_id`, `detection_sweep_state`, an index on `requirement_embedding (embedded_at, requirement_id)`). Code: `IncrementalSweep`, `DetectionSweepService`, `FindingReconciler.reconcileOne`, `Detector.sweepsChangedOnly` and `ensureAvailable` (`com.vyoog.detection`). Decision: D48. Background: [`gap-detection.md`](gap-detection.md) §6.4 and the load rehearsal in [`../08-architecture/deployment/pilot-rehearsals.md`](../08-architecture/deployment/pilot-rehearsals.md).
 
 ## The nightly sweep
 

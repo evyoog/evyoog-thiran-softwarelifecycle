@@ -10,8 +10,10 @@ Scripts for the load and recovery rehearsals (VYB-0959). Results and what they d
 Both run only against PostgreSQL on **this machine** and refuse any other host. `backup-restore.sh` creates and drops its target by name (`<database>_restored`); `pitr.sh` works in `/tmp/vyoog-pitr` (override with the second argument) on port 5439 and needs the PostgreSQL server binaries and, as root, `runuser`. Neither writes to the source. Never point them at a shared or deployed database.
 
 ```bash
-PGPASSWORD=... deployment/rehearsal/backup-restore.sh vygload50
-PGPASSWORD=... deployment/rehearsal/pitr.sh vygload50
+PGPASSWORD=... MAINTENANCE_WORK_MEM=1GB deployment/rehearsal/backup-restore.sh vygload50
+PGPASSWORD=... MAINTENANCE_WORK_MEM=1GB deployment/rehearsal/pitr.sh vygload50
 ```
+
+`MAINTENANCE_WORK_MEM` is the memory each session may use to build an index. A restore rebuilds every index and the vector index over 50,000 requirements dominates: with PostgreSQL's default 64 MB it took 20 minutes, with 1 GB 3 minutes. Leave it unset to see the default.
 
 The load runner is a test class, not a script: `backend/vyoog-api/src/test/java/com/vyoog/api/LoadRehearsalHttpRunner.java` (its Javadoc has the command).

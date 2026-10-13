@@ -18,6 +18,8 @@ PORT=5439
 SCHEMA="${SCHEMA:-vyg_requirement}"
 BIN="$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)"
 ARCHIVE_TIMEOUT="${ARCHIVE_TIMEOUT:-60}"
+# VYB-0960: index-build memory for loading the copy (see backup-restore.sh): without it loading 50,000 requirements takes 20 minutes.
+if [ -n "${MAINTENANCE_WORK_MEM:-}" ]; then export PGOPTIONS="-c maintenance_work_mem=${MAINTENANCE_WORK_MEM}"; fi
 
 case "$SRC_HOST" in localhost|127.0.0.1|::1) ;; *) echo "Refusing: $SRC_HOST is not this machine." >&2; exit 2 ;; esac
 [ "$(id -u)" = 0 ] && AS_PG=(runuser -u postgres --) || AS_PG=()
