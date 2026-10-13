@@ -17,6 +17,9 @@ PORT="${PGPORT:-5432}"
 USER_NAME="${PGUSER:-postgres}"
 SCHEMA="${SCHEMA:-vyg_requirement}"
 JOBS="${JOBS:-4}"
+# VYB-0960: restoring rebuilds every index, and the vector index (HNSW) over 50,000 requirements dominates: with PostgreSQL's default 64 MB
+# of build memory it took 20 minutes. MAINTENANCE_WORK_MEM (for example 1GB) is given to every session this script opens.
+if [ -n "${MAINTENANCE_WORK_MEM:-}" ]; then export PGOPTIONS="-c maintenance_work_mem=${MAINTENANCE_WORK_MEM}"; fi
 
 case "$HOST" in
   localhost|127.0.0.1|::1) ;;
