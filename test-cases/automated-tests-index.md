@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1169 tests cover 72 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1193 tests cover 73 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1388,3 +1388,30 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` onlyAnAdministratorOrTheTeamsLeadSeesTheControls (`frontend/src/features/board/boardModel.test.ts`)
 - `AC8` columnsReorderAndTheLastOneStays (`frontend/src/features/board/boardModel.test.ts`)
 - `AC8` onlyAnAdministratorChangesTheDefaultAndNobodyDeletesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+
+## VYB-0956: Trend dashboards for defects, test pass rate, release readiness; xlsx and PDF export [M; F24]
+
+- `AC1` thePeriodsGiveWholeWeeksAndOnlyThreeAreAllowed (`backend/vyoog-domain/src/test/java/com/vyoog/report/TrendServiceTest.java`)
+- `AC1` theReadinessSnapshotRunsUnderItsOwnLeaseAndRecordsToday (`backend/vyoog-api/src/test/java/com/vyoog/api/scheduling/ScheduledJobsTest.java`)
+- `AC1` weeksRunMondayToSundayAndEndWithTheWeekHoldingToday (`backend/vyoog-domain/src/test/java/com/vyoog/report/TrendServiceTest.java`)
+- `AC10` aMissingRateIsSaidInWordsNeverShownAsZero (`backend/vyoog-domain/src/test/java/com/vyoog/report/TrendServiceTest.java`)
+- `AC10` theWorkbookHasASheetPerTrendWithNumbersAsNumbersAndAnAbsenceSaidInWordsNeverZero (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC11` theBuiltInPdfFontKeepsLatinOneAndMarksAnythingElse (`backend/vyoog-domain/src/test/java/com/vyoog/report/TrendServiceTest.java`)
+- `AC11` theWorkbookAndPdfCarryNoReadinessSheetFiguresWhenNoReleaseIsChosenAndSayNoReleaseWasChosen (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC12` thePdfListsTheReadinessDaysAndTheLiveFiguresAndEachExportIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC13` anyoneSignedInReadsTheTrendsAndDownloadsTheFilesAndNoOneElseDoes (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC14` aMissingRateIsSaidInWordsAndARealZeroIsZero (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC14` aShareOfAnEmptyScopeIsNotZeroPercent (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC15` aLineBreaksAtAGapAndKeepsEachPointsPosition (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC15` recordedDaysSitWhereTheyWereTakenSoAMissingDayLeavesSpace (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC16` labelsReadAsPlainDatesAndScalesRoundUp (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC17` aChartHasNothingToShowOnlyWhenEveryWeekIsEmpty (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC17` theReleaseShownFirstIsTheFirstOneStillBeingWorkedElseNone (`frontend/src/features/quality/trends/trendModel.test.ts`)
+- `AC2` theDefectTrendCountsRaisedClosedAndTheBacklogAtTheEndOfEachWeekAndAReopenedDefectIsBackInIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC3` theFiltersNarrowToTheApplicationOrProductAndADefectWithNoRequirementCountsOnlyUnfiltered (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC4` thePassRateIsTheShareOfResultsThatPassedAndAWeekWithNoResultsHasNoRateNotZero (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC5` theNightlyRecordHoldsTheFiguresTheReleaseScreenUsesOneRowPerReleasePerDayAndATwiceRunReplacesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC6` aReleaseIsRecordedWhileItIsBeingWorkedAndTheDayAfterItIsReleasedButNotLongAfter (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC7` theReadinessTrendIsTheRecordedDaysInOrderWithADayNotRecordedMissingAndTheLiveFiguresBesideThem (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC8` theDatabaseRefusesAnImpossibleDayAndASecondRowForTheSameDay (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+- `AC9` thePeriodIsThirtyNinetyOrAHundredAndEightyDaysAndAnUnknownScopeIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)

@@ -13,6 +13,7 @@ import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.platform.PurgeService;
 import com.vyoog.platform.SchedulerLock;
 import com.vyoog.platform.audit.AuditRetentionService;
+import com.vyoog.release.ReadinessSnapshotService;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ class ScheduledJobsTest {
     AuditRetentionService audit = mock(AuditRetentionService.class);
     ClarificationService clarifications = mock(ClarificationService.class);
     PurgeService purge = mock(PurgeService.class);
+    ReadinessSnapshotService snapshots = mock(ReadinessSnapshotService.class);
     ScheduledJobs jobs;
 
     @BeforeEach
@@ -37,7 +39,7 @@ class ScheduledJobsTest {
             ((Runnable) inv.getArgument(3)).run();
             return true;
         });
-        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge);
+        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge, snapshots);
     }
 
     @Test
@@ -72,6 +74,13 @@ class ScheduledJobsTest {
     }
 
     @Test
+    void VYB0956_AC1_theReadinessSnapshotRunsUnderItsOwnLeaseAndRecordsToday() {
+        jobs.readinessSnapshot();
+        verify(locks).runExclusive(eq("readiness-snapshot"), any(Duration.class), eq(ScheduledJobs.NIGHTLY_MIN_HOLD), any());
+        verify(snapshots).takeAll(java.time.LocalDate.now(java.time.ZoneOffset.UTC));
+    }
+
+    @Test
     void VYB0909_AC3_anInstanceThatDoesNotWinTheLeaseRunsNothing() {
         org.mockito.Mockito.doReturn(false).when(locks).runExclusive(any(), any(), any(), any());
         jobs.outboxRelay();
@@ -79,7 +88,8 @@ class ScheduledJobsTest {
         jobs.auditRetention();
         jobs.clarificationEscalation();
         jobs.purgeExpiredRecords();
-        org.mockito.Mockito.verifyNoInteractions(relay, sweep, audit, clarifications, purge);
+        jobs.readinessSnapshot();
+        org.mockito.Mockito.verifyNoInteractions(relay, sweep, audit, clarifications, purge, snapshots);
     }
 
     @Test
@@ -89,6 +99,8 @@ class ScheduledJobsTest {
         assertThat(scheduled("auditRetention").cron()).isEqualTo("0 15 2 * * *");
         assertThat(scheduled("clarificationEscalation").cron()).isEqualTo("0 30 2 * * *");
         assertThat(scheduled("purgeExpiredRecords").cron()).isEqualTo("0 0 3 * * *");
+        assertThat(scheduled("readinessSnapshot").cron()).isEqualTo("0 15 3 * * *");
+        assertThat(scheduled("readinessSnapshot").zone()).isEqualTo("UTC");
     }
 
     private static Scheduled scheduled(String method) throws Exception {

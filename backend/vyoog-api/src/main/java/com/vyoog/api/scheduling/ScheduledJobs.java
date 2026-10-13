@@ -6,7 +6,10 @@ import com.vyoog.detection.DetectionSweepService;
 import com.vyoog.platform.PurgeService;
 import com.vyoog.platform.SchedulerLock;
 import com.vyoog.platform.audit.AuditRetentionService;
+import com.vyoog.release.ReadinessSnapshotService;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -33,16 +36,18 @@ public class ScheduledJobs {
     private final AuditRetentionService auditRetention;
     private final ClarificationService clarifications;
     private final PurgeService purge;
+    private final ReadinessSnapshotService readinessSnapshots;
 
     public ScheduledJobs(SchedulerLock locks, NotificationRelayService relay, DetectionSweepService sweep,
                          AuditRetentionService auditRetention, ClarificationService clarifications,
-                         PurgeService purge) {
+                         PurgeService purge, ReadinessSnapshotService readinessSnapshots) {
         this.locks = locks;
         this.relay = relay;
         this.sweep = sweep;
         this.auditRetention = auditRetention;
         this.clarifications = clarifications;
         this.purge = purge;
+        this.readinessSnapshots = readinessSnapshots;
     }
 
     /** VYB-0791: outbox to live SSE connections, every 2 seconds. */
@@ -73,5 +78,12 @@ public class ScheduledJobs {
     @Scheduled(cron = "0 0 3 * * *")
     public void purgeExpiredRecords() {
         locks.runExclusive("purge-expired-records", Duration.ofHours(1), NIGHTLY_MIN_HOLD, purge::purgeExpired);
+    }
+
+    /** VYB-0956: 03:15 (UTC) record of each release's readiness for the trend; one row per release per day. */
+    @Scheduled(cron = "0 15 3 * * *", zone = "UTC")
+    public void readinessSnapshot() {
+        locks.runExclusive("readiness-snapshot", Duration.ofHours(1), NIGHTLY_MIN_HOLD,
+            () -> readinessSnapshots.takeAll(LocalDate.now(ZoneOffset.UTC)));
     }
 }

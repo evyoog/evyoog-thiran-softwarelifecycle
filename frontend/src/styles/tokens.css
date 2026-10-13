@@ -25,9 +25,12 @@
   --f-mono:'JetBrains Mono','SF Mono',Menlo,monospace;
   --f-serif:'Source Serif 4',Georgia,serif;
   color-scheme:dark;
+  /* VYB-0956: the two chart series (validated as a pair: scripts/validate_palette.js, both modes). Neither is amber (AI) nor a status colour. */
+  --series-1:#3987E5; --series-2:#D55181;
 }
 
 [data-theme="light"]{
+  --series-1:#2A78D6; --series-2:#E87BA4;
   --bg:#F1F4F8; --panel:#FFFFFF; --panel-2:#F7F9FC; --panel-3:#EDF1F7;
   --line:#7990B5; --line-2:#768AAB; --line-3:#AAB4C5;
   --tx:#0F1420; --tx-2:#4A5566; --tx-3:#616C7E;

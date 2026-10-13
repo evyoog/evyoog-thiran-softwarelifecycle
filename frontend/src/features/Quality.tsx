@@ -13,17 +13,18 @@ import { BulkTestCaseReviewPanel } from './quality/BulkTestCaseReviewPanel'
 import { TestCasesTab } from './quality/TestCasesTab'
 import { TestRunsTab } from './quality/TestRunsTab'
 import { PassRatesTab } from './quality/PassRatesTab'
+import { TrendsTab } from './quality/trends/TrendsTab'
 import { DefectDetailPanel } from './quality/DefectDetailPanel'
 import {
   FILTERS, FILTER_LABEL, STATE_CLASS, STATE_GLYPH, STATE_LABEL, assigneeText, emptyText, type StateFilter,
 } from './quality/defects'
 import { useMe } from '@/shared/useMe'
 
-type Tab = 'verification' | 'dependencies' | 'defects' | 'test-cases' | 'test-runs' | 'pass-rate'
+type Tab = 'verification' | 'dependencies' | 'defects' | 'test-cases' | 'test-runs' | 'pass-rate' | 'trends'
 
 const TAB_LABEL: Record<Tab, string> = {
   verification: 'Verification', dependencies: 'Dependencies', defects: 'Defects', 'test-cases': 'Test cases',
-  'test-runs': 'Test runs', 'pass-rate': 'Pass rate',
+  'test-runs': 'Test runs', 'pass-rate': 'Pass rate', trends: 'Trends',
 }
 
 const SEVERITIES: DefectSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
@@ -57,6 +58,7 @@ export function Quality() {
       {tab === 'test-cases' && <TestCasesTab />}
       {tab === 'test-runs' && <TestRunsTab />}
       {tab === 'pass-rate' && <PassRatesTab />}
+      {tab === 'trends' && <TrendsTab />}
     </Page>
   )
 }

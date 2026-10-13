@@ -638,6 +638,26 @@ export interface BoardTemplateBody {
   priority?: string
 }
 
+// ── Trends (VYB-0956, D43) ───────────────────────────────────────────────────────
+
+export interface TrendDefectWeek { weekStart: string; opened: number; closed: number; open: number }
+/** {@code rate} is absent for a week with no results: that is "no results", never zero. */
+export interface TrendPassWeek { weekStart: string; passed: number; failed: number; rate?: number | null }
+export interface TrendReadinessDay { day: string; committed: number; approved: number; verified: number; blocked: number; criticalGaps: number }
+export interface TrendReadiness { releaseId: string; releaseName: string; state: string; history: TrendReadinessDay[]; current: TrendReadinessDay }
+export interface Trends {
+  generatedAt: string
+  days: number
+  productId?: string | null
+  productName?: string | null
+  applicationId?: string | null
+  applicationName?: string | null
+  defects: TrendDefectWeek[]
+  passRate: TrendPassWeek[]
+  readiness?: TrendReadiness | null
+}
+export interface TrendParams { productId?: string; applicationId?: string; days: number; releaseId?: string }
+
 // ── Risk register (VYB-0949, D40) ────────────────────────────────────────────────
 
 export type RiskBand = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
@@ -2614,6 +2634,16 @@ export const api = {
   },
 
   /** VYB-0948: a baseline's evidence pack (a zip), fetched with the token and saved under the name the server gave it. */
+  trends: (p: TrendParams) => request<Trends>(`/trends${query({ productId: p.productId, applicationId: p.applicationId, days: p.days, releaseId: p.releaseId })}`),
+  /** The trend report as a file. The token cannot ride on a plain link, so it is fetched, then saved. */
+  downloadTrends: async (format: 'xlsx' | 'pdf', p: TrendParams): Promise<{ blob: Blob; filename: string }> => {
+    const token = tokenProvider()
+    const res = await fetch(`${BASE}/trends/export${query({ format, productId: p.productId, applicationId: p.applicationId, days: p.days, releaseId: p.releaseId })}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) throw await problemFrom(res)
+    const named = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
+    return { blob: await res.blob(), filename: named ?? `vyoog-trends.${format}` }
+  },
   downloadEvidencePack: async (baselineId: string): Promise<{ blob: Blob; filename: string }> => {
     const token = tokenProvider()
     const res = await fetch(`${BASE}/baselines/${baselineId}/evidence-pack`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })

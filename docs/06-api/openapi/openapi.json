@@ -6593,6 +6593,136 @@
         },
         "type" : "object"
       },
+      "TrendDefectWeek" : {
+        "properties" : {
+          "closed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "open" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "opened" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "weekStart" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TrendPassWeek" : {
+        "properties" : {
+          "failed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "weekStart" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TrendReadiness" : {
+        "properties" : {
+          "current" : {
+            "$ref" : "#/components/schemas/TrendReadinessDay"
+          },
+          "history" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrendReadinessDay"
+            },
+            "type" : "array"
+          },
+          "releaseId" : {
+            "type" : "string"
+          },
+          "releaseName" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TrendReadinessDay" : {
+        "properties" : {
+          "approved" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "blocked" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "committed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "criticalGaps" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "day" : {
+            "type" : "string"
+          },
+          "verified" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "TrendsView" : {
+        "properties" : {
+          "applicationId" : {
+            "type" : "string"
+          },
+          "applicationName" : {
+            "type" : "string"
+          },
+          "days" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "defects" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrendDefectWeek"
+            },
+            "type" : "array"
+          },
+          "generatedAt" : {
+            "type" : "string"
+          },
+          "passRate" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrendPassWeek"
+            },
+            "type" : "array"
+          },
+          "productId" : {
+            "type" : "string"
+          },
+          "productName" : {
+            "type" : "string"
+          },
+          "readiness" : {
+            "$ref" : "#/components/schemas/TrendReadiness"
+          }
+        },
+        "type" : "object"
+      },
       "UncoveredView" : {
         "properties" : {
           "id" : {
@@ -6998,7 +7128,7 @@
     },
     "/api/v1/ai-proposals/{id}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7927,7 +8057,7 @@
     },
     "/api/v1/briefs/{id}" : {
       "get" : {
-        "operationId" : "get_5",
+        "operationId" : "get_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8028,7 +8158,7 @@
     },
     "/api/v1/change-requests/{id}" : {
       "get" : {
-        "operationId" : "get_4",
+        "operationId" : "get_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8451,7 +8581,7 @@
         "tags" : [ "clause-controller" ]
       },
       "get" : {
-        "operationId" : "get_3",
+        "operationId" : "get_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -12212,7 +12342,7 @@
     },
     "/api/v1/releases/{id}" : {
       "get" : {
-        "operationId" : "get_2",
+        "operationId" : "get_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -13153,7 +13283,7 @@
         "tags" : [ "requirement-controller" ]
       },
       "get" : {
-        "operationId" : "get_1",
+        "operationId" : "get_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -13914,7 +14044,7 @@
     },
     "/api/v1/risks/{id}" : {
       "get" : {
-        "operationId" : "get",
+        "operationId" : "get_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -14738,7 +14868,7 @@
     },
     "/api/v1/settings/export" : {
       "get" : {
-        "operationId" : "export",
+        "operationId" : "export_1",
         "responses" : {
           "200" : {
             "content" : {
@@ -16923,6 +17053,118 @@
           }
         },
         "tags" : [ "trace-link-controller" ]
+      }
+    },
+    "/api/v1/trends" : {
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "productId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "applicationId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 90,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "releaseId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TrendsView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "trend-controller" ]
+      }
+    },
+    "/api/v1/trends/export" : {
+      "get" : {
+        "operationId" : "export",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "format",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "productId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "applicationId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 90,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "releaseId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "trend-controller" ]
       }
     },
     "/api/v1/users" : {

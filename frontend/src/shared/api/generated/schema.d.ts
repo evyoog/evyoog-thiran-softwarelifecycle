@@ -43,7 +43,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -427,7 +427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -475,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -699,7 +699,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_3"];
+        get: operations["get_4"];
         put: operations["update_1"];
         post?: never;
         delete: operations["delete_2"];
@@ -2379,7 +2379,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_2"];
+        get: operations["get_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2779,7 +2779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_1"];
+        get: operations["get_2"];
         put?: never;
         post?: never;
         delete: operations["delete_1"];
@@ -3051,7 +3051,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get"];
+        get: operations["get_1"];
         put: operations["update"];
         post?: never;
         delete?: never;
@@ -3467,7 +3467,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["export"];
+        get: operations["export_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4444,6 +4444,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["upstream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trends/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["export"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6950,6 +6982,56 @@ export interface components {
             name?: string;
             state?: string;
         };
+        TrendDefectWeek: {
+            /** Format: int32 */
+            closed?: number;
+            /** Format: int32 */
+            open?: number;
+            /** Format: int32 */
+            opened?: number;
+            weekStart?: string;
+        };
+        TrendPassWeek: {
+            /** Format: int32 */
+            failed?: number;
+            /** Format: int32 */
+            passed?: number;
+            /** Format: double */
+            rate?: number;
+            weekStart?: string;
+        };
+        TrendReadiness: {
+            current?: components["schemas"]["TrendReadinessDay"];
+            history?: components["schemas"]["TrendReadinessDay"][];
+            releaseId?: string;
+            releaseName?: string;
+            state?: string;
+        };
+        TrendReadinessDay: {
+            /** Format: int32 */
+            approved?: number;
+            /** Format: int32 */
+            blocked?: number;
+            /** Format: int32 */
+            committed?: number;
+            /** Format: int32 */
+            criticalGaps?: number;
+            day?: string;
+            /** Format: int32 */
+            verified?: number;
+        };
+        TrendsView: {
+            applicationId?: string;
+            applicationName?: string;
+            /** Format: int32 */
+            days?: number;
+            defects?: components["schemas"]["TrendDefectWeek"][];
+            generatedAt?: string;
+            passRate?: components["schemas"]["TrendPassWeek"][];
+            productId?: string;
+            productName?: string;
+            readiness?: components["schemas"]["TrendReadiness"];
+        };
         UncoveredView: {
             id?: string;
             key?: string;
@@ -7117,7 +7199,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7805,7 +7887,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -7893,7 +7975,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -8231,7 +8313,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -11163,7 +11245,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -11806,7 +11888,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -12377,7 +12459,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -13087,7 +13169,7 @@ export interface operations {
             };
         };
     };
-    export: {
+    export_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -14765,6 +14847,57 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReachabilityView"][];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: {
+                productId?: string;
+                applicationId?: string;
+                days?: number;
+                releaseId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrendsView"];
+                };
+            };
+        };
+    };
+    export: {
+        parameters: {
+            query: {
+                format: string;
+                productId?: string;
+                applicationId?: string;
+                days?: number;
+                releaseId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
         };
