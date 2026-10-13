@@ -62,28 +62,41 @@ public class DuplicateAcrossApplicationsDetector implements Detector {
         return similarity.duplicatesAcrossApplications(threshold(), 500).stream().map(this::toCandidate).toList();
     }
 
+    /**
+     * The pairs where either side is this requirement. VYB-0959: asked as two bounded queries, one for each side, not one query with
+     * {@code re1.requirement_id = ? OR re2.requirement_id = ?}. The single OR form cannot use either side to narrow the join, so
+     * the database built every cross-application pair of embeddings first and filtered afterwards: work proportional to the square
+     * of the embeddings, on every edit, transition and criterion (about 1.2 s per write at 2,000 requirements in the load
+     * rehearsal, and growing with the square). Each query below compares this one requirement with the others: work proportional
+     * to the embeddings. The two results are the same set of pairs (a pair is reported once, lower id first).
+     */
     @Override
     public List<Candidate> scanOne(UUID objectId) {
-        // Bounded: pairs where either side is this requirement, above threshold, cross-application.
-        var pairs = jdbc.query("""
-            SELECT r1.id AS id1, r1.key AS key1, r2.id AS id2, r2.key AS key2,
-                   1 - (re2.embedding <=> re1.embedding) AS similarity
-            FROM requirement_embedding re1
-            JOIN requirement_embedding re2 ON re2.model = re1.model AND re1.requirement_id <> re2.requirement_id
-            JOIN requirement r1 ON r1.id = re1.requirement_id AND r1.deleted_at IS NULL
-            JOIN requirement r2 ON r2.id = re2.requirement_id AND r2.deleted_at IS NULL
-            JOIN capability c1 ON c1.id = r1.capability_id
-            JOIN capability c2 ON c2.id = r2.capability_id
-            WHERE (re1.requirement_id = ? OR re2.requirement_id = ?)
-              AND r1.id < r2.id
-              AND c1.application_id <> c2.application_id
-              AND r1.capability_id <> r2.capability_id
-              AND (1 - (re2.embedding <=> re1.embedding)) >= ?
-            """,
-            (rs, n) -> new SimilaritySearchService.CrossAppPair(
+        double threshold = threshold();
+        var pairs = new java.util.LinkedHashMap<String, SimilaritySearchService.CrossAppPair>();
+        for (String side : new String[] {"re1", "re2"}) {
+            jdbc.query(PAIRS_OF_ONE.formatted(side), (rs, n) -> new SimilaritySearchService.CrossAppPair(
                 UUID.fromString(rs.getString("id1")), rs.getString("key1"),
                 UUID.fromString(rs.getString("id2")), rs.getString("key2"), rs.getDouble("similarity")),
-            objectId, objectId, threshold());
-        return pairs.stream().map(this::toCandidate).toList();
+                objectId, threshold).forEach((pair) -> pairs.putIfAbsent(pair.requirementIdA() + "|" + pair.requirementIdB(), pair));
+        }
+        return pairs.values().stream().map(this::toCandidate).toList();
     }
+
+    /** One side of the question: {@code %s} is the embedding alias ({@code re1} or {@code re2}) that must be the requirement asked about. */
+    private static final String PAIRS_OF_ONE = """
+        SELECT r1.id AS id1, r1.key AS key1, r2.id AS id2, r2.key AS key2,
+               1 - (re2.embedding <=> re1.embedding) AS similarity
+        FROM requirement_embedding re1
+        JOIN requirement_embedding re2 ON re2.model = re1.model AND re1.requirement_id <> re2.requirement_id
+        JOIN requirement r1 ON r1.id = re1.requirement_id AND r1.deleted_at IS NULL
+        JOIN requirement r2 ON r2.id = re2.requirement_id AND r2.deleted_at IS NULL
+        JOIN capability c1 ON c1.id = r1.capability_id
+        JOIN capability c2 ON c2.id = r2.capability_id
+        WHERE %s.requirement_id = ?
+          AND r1.id < r2.id
+          AND c1.application_id <> c2.application_id
+          AND r1.capability_id <> r2.capability_id
+          AND (1 - (re2.embedding <=> re1.embedding)) >= ?
+        """;
 }
