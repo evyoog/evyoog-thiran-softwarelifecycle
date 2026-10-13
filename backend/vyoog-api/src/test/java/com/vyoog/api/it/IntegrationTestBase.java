@@ -118,4 +118,33 @@ public abstract class IntegrationTestBase {
         return requirementService.transition(r.getId(), r.getRevision(),
             com.vyoog.requirements.RequirementStatus.APPROVED, null, administrator);
     }
+
+    /**
+     * A new requirement is checked for gaps and embedded a moment after it is saved, on another thread. A test that then counts what was
+     * found (findings, gaps) must not do so while that is still going on, or it counts a different number each time. This waits until
+     * every one has its embedding (stored last) and a moment more; if there is no embedding to wait for (a deployment without one) it
+     * gives up after ten seconds.
+     */
+    protected void awaitEnrichment(java.util.Collection<UUID> requirementIds) {
+        long deadline = System.currentTimeMillis() + 10_000;
+        UUID[] ids = requirementIds.toArray(new UUID[0]);
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                Integer done = jdbc.execute((java.sql.Connection c) -> {
+                    try (var ps = c.prepareStatement("SELECT count(*) FROM requirement_embedding WHERE requirement_id = ANY (?)")) {
+                        ps.setArray(1, c.createArrayOf("uuid", ids));
+                        try (var rs = ps.executeQuery()) {
+                            rs.next();
+                            return rs.getInt(1);
+                        }
+                    }
+                });
+                if (done != null && done >= ids.length) break;
+                Thread.sleep(50);
+            }
+            Thread.sleep(300);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }

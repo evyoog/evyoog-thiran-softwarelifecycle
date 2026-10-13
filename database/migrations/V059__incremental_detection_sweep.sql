@@ -1,4 +1,4 @@
--- VYB-0960 (F43, D48): the nightly detection sweep no longer compares every requirement's embedding with every other (hours at 50,000
+-- VYB-0960 (D48): the nightly detection sweep no longer compares every requirement's embedding with every other (hours at 50,000
 -- requirements). It checks only requirements whose embedding is new or changed since the last pass, each exactly as a write would, and
 -- carries on from where it stopped if it runs out of time. That needs three things recorded.
 --

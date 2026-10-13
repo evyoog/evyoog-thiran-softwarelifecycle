@@ -162,8 +162,18 @@ class TrendIT extends IntegrationTestBase {
 
     private UUID releaseWith(int approvedCount, int plainCount) {
         UUID id = releases.create(unique("R")).getId();
-        for (int i = 0; i < approvedCount; i++) releases.commit(id, approved(newRequirement(p, author), author, admin).getId(), admin, "in");
-        for (int i = 0; i < plainCount; i++) releases.commit(id, newRequirement(p, author).getId(), admin, "in");
+        java.util.List<UUID> made = new java.util.ArrayList<>();
+        for (int i = 0; i < approvedCount; i++) {
+            UUID r = approved(newRequirement(p, author), author, admin).getId();
+            made.add(r);
+            releases.commit(id, r, admin, "in");
+        }
+        for (int i = 0; i < plainCount; i++) {
+            UUID r = newRequirement(p, author).getId();
+            made.add(r);
+            releases.commit(id, r, admin, "in");
+        }
+        awaitEnrichment(made); // their gaps are found on another thread; count them only once it has finished
         return id;
     }
 

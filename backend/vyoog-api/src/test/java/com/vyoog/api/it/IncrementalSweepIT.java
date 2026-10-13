@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * VYB-0960 (F43, D48): the nightly sweep of the rules that compare requirements with one another checks only what changed, from where
+ * VYB-0960 (D48): the nightly sweep of the rules that compare requirements with one another checks only what changed, from where
  * it stopped. Against a real PostgreSQL. The database is shared with other tests, so each test looks only at its own requirements and
  * at the sweep's position relative to them.
  */

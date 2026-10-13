@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 /**
- * VYB-0960 (F43, D48): the nightly sweep of a detector that compares requirements with one another (possible duplicates and
+ * VYB-0960 (D48): the nightly sweep of a detector that compares requirements with one another (possible duplicates and
  * contradictions: {@link Detector#sweepsChangedOnly}).
  *
  * <p>The whole-database comparison it replaces grows with the square of the number of requirements: 29 s at 2,000 and not finished

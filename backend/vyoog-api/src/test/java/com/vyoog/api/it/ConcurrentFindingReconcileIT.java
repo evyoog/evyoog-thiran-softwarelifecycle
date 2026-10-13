@@ -20,7 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * VYB-0960 (F43, D48): writes that re-check what they changed no longer deadlock on the findings they share. The load rehearsal at 60
+ * VYB-0960 (D48): writes that re-check what they changed no longer deadlock on the findings they share. The load rehearsal at 60
  * concurrent people found the database stopping writes with "deadlock detected": each write checks the requirement it changed, many
  * writes share findings (a pair of requirements has one finding between them), and two writes took the locks on the same findings in
  * different orders. {@code FindingReconciler.reconcileOne} now takes every lock it needs first, in one fixed order, and inserts new
