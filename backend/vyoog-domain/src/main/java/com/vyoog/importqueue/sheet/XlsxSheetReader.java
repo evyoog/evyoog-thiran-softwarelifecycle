@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 public class XlsxSheetReader implements SheetReader {
 
     @Override
+    public String format() { return "xlsx"; }
+
+    @Override
     public boolean supports(byte[] bytes) {
         // Both .xlsx and .ods are ZIPs, so the PK header alone decides nothing. The
         // workbook part is what makes it an OOXML spreadsheet.

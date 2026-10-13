@@ -110,6 +110,7 @@ class AccessPolicyTest {
         Map.entry("VariantController#markApplies", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("VariantController#clear", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ImportController#upload", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
+        Map.entry("ImportController#validate", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("ImportController#extract", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.BATCH)),
         Map.entry("ImportController#analyse", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.BATCH)),
         Map.entry("ImportController#confirmBatchPlacement", new Expected(AccessRule.CREATE_EDIT_REQ, RequiresAccess.Scope.BATCH)),

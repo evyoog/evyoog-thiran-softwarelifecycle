@@ -2,7 +2,9 @@ package com.vyoog.importqueue.prd;
 
 import com.vyoog.importqueue.DocumentValidationException;
 import com.vyoog.importqueue.sheet.CsvSheetReader;
+import com.vyoog.importqueue.sheet.DocxSheetReader;
 import com.vyoog.importqueue.sheet.OdsSheetReader;
+import com.vyoog.importqueue.sheet.ReqIfSheetReader;
 import com.vyoog.importqueue.sheet.SheetReader;
 import com.vyoog.importqueue.sheet.XlsSheetReader;
 import com.vyoog.importqueue.sheet.XlsxSheetReader;
@@ -70,7 +72,15 @@ public class PrdTemplateParser {
         Map.entry("source", "source / requested by"),
         Map.entry("requested by", "source / requested by"),
         Map.entry("release", "target release"),
-        Map.entry("parent", "parent requirement"));
+        Map.entry("parent", "parent requirement"),
+        // VYB-0957: the names the common ReqIF tools give their attributes (DOORS and others use the ReqIF.* ones).
+        Map.entry("reqif.name", "requirement title"),
+        Map.entry("reqif.chaptername", "requirement title"),
+        Map.entry("name", "requirement title"),
+        Map.entry("reqif.text", "requirement statement"),
+        Map.entry("text", "requirement statement"),
+        Map.entry("object text", "requirement statement"),
+        Map.entry("depends on", "depends on"));
 
     private static final Set<String> TYPES = Set.of(
         "FUNCTIONAL", "NON_FUNCTIONAL", "BUSINESS_RULE", "INTERFACE", "DATA", "REPORT", "SECURITY", "COMPLIANCE");
@@ -95,8 +105,25 @@ public class PrdTemplateParser {
      * fallback for anything that is honestly text. Putting CSV first would have it claim
      * a .ods, since a ZIP is bytes like any other.
      */
-    private final List<SheetReader> readers =
-        List.of(new OdsSheetReader(), new XlsxSheetReader(), new XlsSheetReader(), new CsvSheetReader());
+    private final List<SheetReader> readers = List.of(new OdsSheetReader(), new XlsxSheetReader(),
+        new DocxSheetReader(PrdTemplateParser::looksLikeHeader), new XlsSheetReader(), new ReqIfSheetReader(), new CsvSheetReader());
+
+    /** VYB-0957: more rows than this in one file is refused: a file that size is a migration to plan, not a spreadsheet to review. */
+    public static final int MAX_ROWS = 5000;
+
+    /** The hierarchy columns a spreadsheet or Word template states on every row (a ReqIF file takes its placement from the upload). */
+    private static final Set<String> HIERARCHY = Set.of("product", "app", "capability");
+
+    /** VYB-0957: what a file is, by its content ("xlsx", "ods", "xls", "csv", "docx", "reqif"), or null when no reader knows it. */
+    public String formatOf(byte[] bytes) {
+        return readers.stream().filter(r -> r.supports(bytes)).map(SheetReader::format).findFirst().orElse(null);
+    }
+
+    /** True when a row of cells names enough of the template's columns to be its header. */
+    static boolean looksLikeHeader(List<String> cells) {
+        Map<String, Integer> columns = mapColumns(cells);
+        return MANDATORY.stream().filter(columns::containsKey).count() >= HEADER_MATCH_THRESHOLD;
+    }
 
     /** True when this looks like a spreadsheet at all — not that it is the template. */
     public boolean supports(byte[] bytes) {
@@ -106,28 +133,38 @@ public class PrdTemplateParser {
     public List<PrdRow> parse(byte[] bytes) {
         SheetReader reader = readers.stream().filter(r -> r.supports(bytes)).findFirst().orElseThrow(
             () -> new DocumentValidationException("not-a-spreadsheet",
-                "This file is not a spreadsheet. Upload the template as .ods, .xlsx, .xls or .csv."));
+                "This file is not one the import reads. Upload the template as .xlsx, .ods, .xls or .csv, a Word (.docx) file with a table, or a ReqIF (.reqif, .reqifz) file."));
 
         List<List<String>> rows = reader.read(bytes);
-        int headerIndex = findHeader(rows);
+        int headerIndex = reader.headerIsFirstRow() ? 0 : findHeader(rows);
         Map<String, Integer> columns = mapColumns(rows.get(headerIndex));
+        List<String> required = reader.hierarchyColumnsRequired() ? MANDATORY : MANDATORY.stream().filter(c -> !HIERARCHY.contains(c)).toList();
 
-        List<String> missing = MANDATORY.stream().filter(c -> !columns.containsKey(c)).toList();
+        List<String> missing = required.stream().filter(c -> !columns.containsKey(c)).toList();
         if (!missing.isEmpty()) {
             // A missing mandatory column is a whole-file problem, not a per-row one:
             // every row would carry the same complaint, and importing with a column
             // absent would put nulls into fields the register requires.
-            throw new DocumentValidationException("missing-columns",
-                "The sheet is missing required column%s: %s. Download a fresh copy of the PRD template, or rename your columns to match.".formatted(
-                    missing.size() == 1 ? "" : "s", String.join(", ", missing)));
+            String joined = String.join(", ", missing);
+            String plural = missing.size() == 1 ? "" : "s";
+            throw new DocumentValidationException("missing-columns", switch (reader.format()) {
+                case "reqif" -> "The ReqIF file has no attribute named %s. Name the attributes of its requirements as the template's columns are named (Requirement Title, Requirement Statement, Type, Priority)."
+                    .formatted(joined);
+                case "docx" -> "The Word table is missing required column%s: %s. Download the Word template, or rename your headings to match.".formatted(plural, joined);
+                default -> "The sheet is missing required column%s: %s. Download a fresh copy of the PRD template, or rename your columns to match.".formatted(plural, joined);
+            });
         }
 
         List<PrdRow> out = new ArrayList<>();
         for (int i = headerIndex + 1; i < rows.size(); i++) {
-            PrdRow row = readRow(rows.get(i), columns, i + 1);
+            PrdRow row = readRow(rows.get(i), columns, i + 1, required);
             if (row != null) {
                 out.add(row);
             }
+        }
+        if (out.size() > MAX_ROWS) {
+            throw new DocumentValidationException("too-many-rows",
+                "This file has %d requirements; the import takes at most %d at a time. Split it into several files.".formatted(out.size(), MAX_ROWS));
         }
         if (out.isEmpty()) {
             throw new DocumentValidationException("no-rows",
@@ -196,7 +233,7 @@ public class PrdTemplateParser {
     }
 
     /** @return the parsed row, or null when the row is blank and should be skipped. */
-    private static PrdRow readRow(List<String> cells, Map<String, Integer> columns, int sourceRow) {
+    private static PrdRow readRow(List<String> cells, Map<String, Integer> columns, int sourceRow, List<String> required) {
         String title = cell(cells, columns, "requirement title");
         String statement = cell(cells, columns, "requirement statement");
         if (title.isEmpty() && statement.isEmpty()) {
@@ -207,7 +244,7 @@ public class PrdTemplateParser {
         }
 
         List<String> problems = new ArrayList<>();
-        for (String column : MANDATORY) {
+        for (String column : required) {
             if (cell(cells, columns, column).isEmpty()) {
                 problems.add("%s is required".formatted(label(column)));
             }

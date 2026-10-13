@@ -1940,6 +1940,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/import/templates/{format}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["validate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations": {
         parameters: {
             query?: never;
@@ -5689,6 +5721,29 @@ export interface components {
             requirements?: number;
             /** Format: int32 */
             tests?: number;
+        };
+        ImportFileProblemView: {
+            message?: string;
+            rule?: string;
+        };
+        ImportRowProblemView: {
+            problems?: string[];
+            ref?: string;
+            /** Format: int32 */
+            row?: number;
+            title?: string;
+        };
+        ImportValidationReport: {
+            canUpload?: boolean;
+            fileProblems?: components["schemas"]["ImportFileProblemView"][];
+            format?: string;
+            /** Format: int32 */
+            ready?: number;
+            rowProblems?: components["schemas"]["ImportRowProblemView"][];
+            /** Format: int32 */
+            rows?: number;
+            /** Format: int32 */
+            withProblems?: number;
         };
         IngestOutcomeView: {
             testCaseWasUnknown?: boolean;
@@ -10541,6 +10596,57 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CandidateView"];
+                };
+            };
+        };
+    };
+    template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                format: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    validate: {
+        parameters: {
+            query: {
+                applicationId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportValidationReport"];
                 };
             };
         };

@@ -19,6 +19,18 @@ public interface SheetReader {
     /** Whether this reader recognises the bytes as its own format. */
     boolean supports(byte[] bytes);
 
+    /** The format's name for a person: "xlsx", "docx", "reqif". */
+    String format();
+
+    /**
+     * VYB-0957: whether the Product, App and Capability columns must be there. A spreadsheet or Word template states the
+     * hierarchy on every row; a ReqIF file has no such thing, so its rows are placed in the application the upload chose.
+     */
+    default boolean hierarchyColumnsRequired() { return true; }
+
+    /** VYB-0957: true when the grid's first row is known to be the header (a ReqIF grid is built that way), so it is not searched for. */
+    default boolean headerIsFirstRow() { return false; }
+
     /**
      * The first sheet-like grid, as rows of cells.
      *

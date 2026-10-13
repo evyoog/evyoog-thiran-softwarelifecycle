@@ -728,6 +728,12 @@ public class ImportService {
             outcomes.add(new CommitOutcome(c.getId(), true, null, r.getId()));
         }
 
+        // VYB-0957: the requirements just created are only in the persistence context until it is flushed, and creating a trace
+        // link checks both ends exist with plain SQL. Without this, a link between two requirements imported in this pass failed
+        // (silently, and it marked the transaction rollback-only) unless something else, such as writing acceptance criteria,
+        // had happened to flush first. A ReqIF file rarely carries criteria, so its relations hit this every time.
+        candidates.flush();
+
         // VYB-0630 AI enrichment: only the human-confirmed trace links become real
         // ones — mirrors the ReqIF-relation resolution just below, but from an AI
         // proposal instead of an explicit SPEC-RELATION tag.

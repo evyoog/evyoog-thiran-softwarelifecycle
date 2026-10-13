@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1193 tests cover 73 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1220 tests cover 74 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1415,3 +1415,33 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` theReadinessTrendIsTheRecordedDaysInOrderWithADayNotRecordedMissingAndTheLiveFiguresBesideThem (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
 - `AC8` theDatabaseRefusesAnImpossibleDayAndASecondRowForTheSameDay (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
 - `AC9` thePeriodIsThirtyNinetyOrAHundredAndEightyDaysAndAnUnknownScopeIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TrendIT.java`)
+
+## VYB-0957: Import: downloadable template, re-enable Word and ReqIF with validation [M; F25]
+
+- `AC1` aWordTableIsReadByItsHeadingsAndAMultiLineCellKeepsEachLine (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC10` eachFormatIsRecognisedByItsContentAndCsvStillCatchesPlainText (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC11` moreRowsThanTheLimitAreRefusedWithTheCount (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC12` theExcelTemplateHasTheRequiredHeadingsFirstDropdownsAndAnInstructionsSheetAndNoExampleToImport (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC13` aFilledExcelTemplateImportsWithEveryColumnOfTheTemplateRead (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC14` theWordTemplateHasTheHeadingsInATableAndAFilledRowImports (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC15` aWordFileIsCheckedBeforeUploadAndEveryRowsProblemIsListedAtOnce (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC16` aFileThatCannotBeReadIsReportedAsAWholeFileProblemAndCannotBeUploaded (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC17` aWordFileUploadsExtractsWithItsOwnValuesAndCommitsIntoRequirementsWithTheirLink (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC18` aReqIfFileKeepsItsIdentifiersTakesItsPlacementFromTheUploadAndItsRelationsBecomeLinks (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC19` aReqIfWithoutATypeOrPriorityIsRefusedWithThePlainReasonAndOldUploadKindsStayClosed (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC2` proseIsNeverReadAndACoverTableBeforeTheRequirementsIsPassedOver (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC20` onlyAPersonWhoMayCreateRequirementsHereChecksOrUploadsAFileAndAnyoneSignedInDownloadsATemplate (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC21` theDownloadedTemplatesPassTheCheckWhenFilledAndAreFoundToHaveNothingToImportWhenBlank (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ImportFormatsIT.java`)
+- `AC22` aWholeFileProblemStopsTheUploadAndARowProblemDoesNot (`frontend/src/features/importqueue/fileCheck.test.ts`)
+- `AC23` theSummaryNamesTheFormatAndHowManyAreReadyOrHaveProblems (`frontend/src/features/importqueue/fileCheck.test.ts`)
+- `AC23` theUploadButtonSaysWhatWillHappenToRowsWithProblems (`frontend/src/features/importqueue/fileCheck.test.ts`)
+- `AC24` aRowIsNamedByItsOwnReferenceAndItsSheetRowAndAReqIfByReferenceOnly (`frontend/src/features/importqueue/fileCheck.test.ts`)
+- `AC24` onlyTheFirstRowsAreListedAndTheRestAreCounted (`frontend/src/features/importqueue/fileCheck.test.ts`)
+- `AC25` theFilePickerOffersEveryFormatTheImportReads (`frontend/src/features/importqueue/fileCheck.test.ts`)
+- `AC3` aWordFileWithNoTableOrNoRecognisedHeadingsIsRefusedWithTheReason (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC4` aWordTableMissingAColumnNamesItAndStillNeedsTheHierarchyColumns (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC5` aReqIfObjectIsReadByAttributeNameWithItsIdentifierXhtmlEnumerationAndRelations (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC6` aReqIfWithoutATypeOrPriorityAttributeIsRefusedNotDefaulted (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC7` aReqIfRowMissingAValueIsAProblemOnThatRowAndAHeadingOnlyObjectIsOne (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC8` aReqIfzArchiveIsReadLikeTheFileInsideIt (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)
+- `AC9` aReqIfThatIsNotWellFormedHasNoObjectsOrDeclaresAnEntityIsRefused (`backend/vyoog-domain/src/test/java/com/vyoog/importqueue/ImportFormatsTest.java`)

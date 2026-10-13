@@ -14,6 +14,8 @@ import com.vyoog.importqueue.DocumentAnalysisService;
 import com.vyoog.importqueue.DocumentValidationException;
 import com.vyoog.importqueue.ImportBatch;
 import com.vyoog.importqueue.ImportCandidate;
+import com.vyoog.importqueue.ImportFileValidator;
+import com.vyoog.importqueue.ImportTemplateService;
 import com.vyoog.importqueue.ImportService;
 import com.vyoog.requirements.Placement;
 import com.vyoog.importqueue.UploadKind;
@@ -47,18 +49,23 @@ public class ImportController {
     private final UserProvisioningService provisioning;
     private final RateLimiter rateLimiter;
     private final PrincipalGuard guard;
+    private final ImportFileValidator validator;
+    private final ImportTemplateService templates;
 
     /** VYB-0902: the matrix's "Create req" column (Business Analyst, Architect); an administrator is never blocked. */
     private static final java.util.List<AccessRole> CREATE_ROLES =
         java.util.List.of(AccessRole.BUSINESS_ANALYST, AccessRole.ARCHITECT);
 
     public ImportController(ImportService service, DocumentAnalysisService analysis,
-                            UserProvisioningService provisioning, RateLimiter rateLimiter, PrincipalGuard guard) {
+                            UserProvisioningService provisioning, RateLimiter rateLimiter, PrincipalGuard guard,
+                            ImportFileValidator validator, ImportTemplateService templates) {
         this.service = service;
         this.analysis = analysis;
         this.provisioning = provisioning;
         this.rateLimiter = rateLimiter;
         this.guard = guard;
+        this.validator = validator;
+        this.templates = templates;
     }
 
     /**
@@ -138,8 +145,18 @@ public class ImportController {
         // new ones, it does not orphan what already exists.
         if (!SPREADSHEET_KINDS.contains(kind)) {
             throw new IllegalArgumentException(
-                "%s uploads are no longer accepted. Requirements are imported from the standard template — upload it as .ods, .xlsx, .xls or .csv."
+                "%s uploads are no longer accepted. Requirements are imported from the template (.xlsx, .ods, .xls, .csv), a Word (.docx) file with a table, or a ReqIF (.reqif, .reqifz) file."
                     .formatted(kind.name()));
+        }
+        // VYB-0957: the file is checked before anything is stored. A whole-file problem (unreadable, no table, a column missing,
+        // too many rows) refuses the upload with the reason; a row's own problem does not (that row arrives unticked, as ever).
+        try {
+            var report = validator.validate(file.getBytes(), applicationId);
+            if (!report.canUpload()) {
+                throw new IllegalArgumentException(String.join(" ", report.fileProblems().stream().map(ImportFileValidator.FileProblem::message).toList()));
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read the uploaded file: " + e.getMessage());
         }
         String text;
         try {
@@ -155,6 +172,45 @@ public class ImportController {
             throw new IllegalArgumentException("Could not read the uploaded file: " + e.getMessage());
         }
         return toView(service.upload(file.getOriginalFilename(), applicationId, kind, text, currentUserId(jwt)));
+    }
+
+    public record ImportFileProblemView(String rule, String message) {}
+    public record ImportRowProblemView(int row, String ref, String title, List<String> problems) {}
+    /** {@code format} is what the file is by its content (xlsx, ods, xls, csv, docx, reqif), absent when it is none of them. */
+    public record ImportValidationReport(String format, int rows, int ready, int withProblems, boolean canUpload,
+                                         List<ImportFileProblemView> fileProblems, List<ImportRowProblemView> rowProblems) {}
+
+    /**
+     * VYB-0957 (D44): checks a file the way extraction will read it and reports every problem by row, before anything is stored.
+     * Writes nothing, but is held to the same rule as the upload it precedes.
+     */
+    @RequiresAccess(value = AccessRule.CREATE_EDIT_REQ, scope = RequiresAccess.Scope.ANYWHERE)
+    @PostMapping(value = "/validate", consumes = "multipart/form-data")
+    public ImportValidationReport validate(@RequestParam("file") MultipartFile file, @RequestParam UUID applicationId, @AuthenticationPrincipal Jwt jwt) {
+        guard.requireAnyRoleOrAdmin(jwt, CREATE_ROLES, ScopeType.APP, applicationId, "check a file for this application");
+        try {
+            var r = validator.validate(file.getBytes(), applicationId);
+            return new ImportValidationReport(r.format(), r.rows(), r.ready(), r.withProblems(), r.canUpload(),
+                r.fileProblems().stream().map(p -> new ImportFileProblemView(p.rule(), p.message())).toList(),
+                r.rowProblems().stream().map(p -> new ImportRowProblemView(p.row(), p.ref(), p.title(), p.problems())).toList());
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read the uploaded file: " + e.getMessage());
+        }
+    }
+
+    /** VYB-0957: the blank template to fill in, as an Excel workbook ({@code xlsx}) or a Word file ({@code docx}). Anyone signed in. */
+    @GetMapping("/templates/{format}")
+    public ResponseEntity<byte[]> template(@PathVariable String format) {
+        boolean excel = "xlsx".equalsIgnoreCase(format);
+        if (!excel && !"docx".equalsIgnoreCase(format)) throw new IllegalArgumentException("The template is available as xlsx or docx");
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, excel
+                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            .header("X-Content-Type-Options", "nosniff")
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                org.springframework.http.ContentDisposition.attachment().filename("vyoog-requirements-template." + (excel ? "xlsx" : "docx")).build().toString())
+            .body(excel ? templates.xlsx() : templates.docx());
     }
 
     @GetMapping("/batches")

@@ -32,6 +32,9 @@ public class XlsSheetReader implements SheetReader {
     private final DataFormatter formatter = new DataFormatter();
 
     @Override
+    public String format() { return "xls"; }
+
+    @Override
     public boolean supports(byte[] bytes) {
         if (bytes == null || bytes.length < OLE2_MAGIC.length) {
             return false;

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Upload, FileText, Loader2, Trash2 } from 'lucide-react'
+import { Upload, FileText, Loader2, Trash2, Download } from 'lucide-react'
 import {
   ApiError, api, type Capability, type ImportCandidateInfo, type ImportCommitOutcome,
   type RequirementType, type UploadKind,
@@ -11,6 +11,8 @@ import { Modal } from '@/shared/ui/Modal'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { DocumentSummary, useDocumentAnalysis } from './importqueue/DocumentSummary'
 import { PrdTable } from './importqueue/PrdTable'
+import { FileCheck } from './importqueue/FileCheck'
+import { ACCEPTED_FILES, canUpload, uploadLabel } from './importqueue/fileCheck'
 
 /**
  * One kind: the standard template. Everything else the backend still knows about —
@@ -29,7 +31,7 @@ const UPLOAD_KINDS: UploadKind[] = ['PRD_TEMPLATE']
 
 /** The enum name is what the API wants; this is what the person choosing needs to read. */
 const KIND_LABELS: Record<UploadKind, string> = {
-  PRD_TEMPLATE: 'Requirements spreadsheet — .ods, .xlsx, .xls, .csv',
+  PRD_TEMPLATE: 'Requirements file — Excel, Word table or ReqIF',
   EXCEL: 'Other spreadsheet — statement column only',
   FREEFORM: 'Freeform document',
   STANDARD_SPEC: 'Numbered specification',
@@ -44,7 +46,7 @@ const REQUIREMENT_TYPES: RequirementType[] = [
 ]
 
 const KIND_ACCEPTS: Record<UploadKind, string | undefined> = {
-  PRD_TEMPLATE: '.ods,.xlsx,.xls,.csv',
+  PRD_TEMPLATE: ACCEPTED_FILES,
   FREEFORM: '.txt,.md,.pdf,.doc,.docx',
   STANDARD_SPEC: '.txt,.md,.pdf,.doc,.docx',
   REQIF: '.reqif,.reqifz,.xml',
@@ -149,12 +151,38 @@ export function ImportQueue() {
   const [file, setFile] = useState<File | null>(null)
   const [batchId, setBatchId] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [templateError, setTemplateError] = useState('')
 
   const { data: products } = useQuery({ queryKey: ['products'], queryFn: api.products })
   const { data: applications } = useQuery({
     queryKey: ['applications', productId], queryFn: () => api.applications(productId), enabled: !!productId,
   })
   const { data: batches } = useQuery({ queryKey: ['import-batches'], queryFn: api.importBatches })
+
+  // VYB-0957: the file is checked as soon as there is one and an application to place it in (the placement names are looked up
+  // against that application), and again if either changes. Nothing is stored by checking.
+  const fileKey = file ? `${file.name}:${file.size}:${file.lastModified}` : ''
+  const check = useQuery({
+    queryKey: ['import-file-check', fileKey, applicationId],
+    queryFn: () => api.validateImportFile(file as File, applicationId),
+    enabled: !!file && !!applicationId,
+    retry: false,
+    staleTime: Infinity,
+  })
+  const downloadTemplate = async (format: 'xlsx' | 'docx') => {
+    setTemplateError('')
+    try {
+      const { blob, filename } = await api.downloadImportTemplate(format)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setTemplateError(errorMessage(e, 'Could not download the template.'))
+    }
+  }
   const [deletingBatch, setDeletingBatch] = useState<{ id: string; filename: string } | null>(null)
   const deleteBatch = useMutation({
     mutationFn: (id: string) => api.deleteImportBatch(id),
@@ -196,20 +224,31 @@ export function ImportQueue() {
           <select className="select" value={kind} onChange={(e) => { setKind(e.target.value as UploadKind); setFile(null) }}>
             {UPLOAD_KINDS.map((k) => <option key={k} value={k}>{KIND_LABELS[k]}</option>)}
           </select>
-          <input type="file" accept={KIND_ACCEPTS[kind]} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <input type="file" accept={KIND_ACCEPTS[kind]} aria-label="Requirements file" onChange={(e) => { setUploadError(null); setFile(e.target.files?.[0] ?? null) }} />
           <button
-            className="btn pri" disabled={!file || !applicationId || upload.isPending}
+            className="btn pri" disabled={!file || !applicationId || upload.isPending || check.isFetching || !canUpload(check.data)}
             onClick={() => upload.mutate()}
           >
-            <Upload /> Upload
+            <Upload /> {uploadLabel(check.data, check.isFetching)}
           </button>
         </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
+          <span className="hint muted">Start from a template:</span>
+          <button className="btn" onClick={() => void downloadTemplate('xlsx')}><Download /> Excel template</button>
+          <button className="btn" onClick={() => void downloadTemplate('docx')}><Download /> Word template</button>
+        </div>
+        {templateError && <p className="err-text" role="alert" style={{ marginTop: 8 }}>{templateError}</p>}
+        {file && !applicationId && <p className="hint muted" style={{ marginTop: 8 }}>Choose a product and an application to check this file; its product, app and capability names are looked up there.</p>}
+        {file && applicationId && (
+          <FileCheck report={check.data} checking={check.isFetching} failed={check.isError ? errorMessage(check.error, 'The check failed.') : undefined} />
+        )}
         {uploadError && <p className="err-text" style={{ marginTop: 8 }}>Could not read this file: {uploadError}</p>}
         <p className="hint muted" style={{ marginTop: 8 }}>
-          Reads your template's columns exactly as written — no AI, so extraction is instant and the type,
-          priority and acceptance criteria you filled in are the ones you get. The Product, App and Capability
-          columns place each row automatically; you can change any of them afterwards. Rows whose columns cannot
-          be matched still import — they arrive unticked with the reason next to them.
+          Reads your file's columns exactly as written — no AI, so extraction is instant and the type,
+          priority and acceptance criteria you filled in are the ones you get. A spreadsheet or a Word table uses
+          the template's headings (Product, App and Capability place each row); a ReqIF file is read by attribute
+          name and goes into the application you chose, with its identifiers and relations kept. The file is
+          checked before it is uploaded. Rows with a problem still import: they arrive unticked with the reason next to them.
         </p>
       </div>
 

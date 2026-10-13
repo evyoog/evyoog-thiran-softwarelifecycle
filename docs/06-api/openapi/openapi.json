@@ -3024,6 +3024,73 @@
         },
         "type" : "object"
       },
+      "ImportFileProblemView" : {
+        "properties" : {
+          "message" : {
+            "type" : "string"
+          },
+          "rule" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImportRowProblemView" : {
+        "properties" : {
+          "problems" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "ref" : {
+            "type" : "string"
+          },
+          "row" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImportValidationReport" : {
+        "properties" : {
+          "canUpload" : {
+            "type" : "boolean"
+          },
+          "fileProblems" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImportFileProblemView"
+            },
+            "type" : "array"
+          },
+          "format" : {
+            "type" : "string"
+          },
+          "ready" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rowProblems" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImportRowProblemView"
+            },
+            "type" : "array"
+          },
+          "rows" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "withProblems" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "IngestOutcomeView" : {
         "properties" : {
           "testCaseWasUnknown" : {
@@ -11479,6 +11546,76 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/CandidateView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "import-controller" ]
+      }
+    },
+    "/api/v1/import/templates/{format}" : {
+      "get" : {
+        "operationId" : "template",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "format",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "import-controller" ]
+      }
+    },
+    "/api/v1/import/validate" : {
+      "post" : {
+        "operationId" : "validate",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportValidationReport"
                 }
               }
             },

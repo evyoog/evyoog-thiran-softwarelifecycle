@@ -757,6 +757,21 @@ export interface ClauseMapping {
 
 export type UploadKind = 'FREEFORM' | 'STANDARD_SPEC' | 'REQIF' | 'EXCEL' | 'WORD' | 'PRD_TEMPLATE'
 
+/** VYB-0957 (D44): what checking a file before upload found. {@code canUpload} is false only for a whole-file problem; a row's own problem does not stop it. */
+export interface ImportFileProblem { rule: string; message: string }
+export interface ImportRowProblem { row: number; ref?: string | null; title?: string | null; problems: string[] }
+export interface ImportValidationReport {
+  /** What the file is by its content: xlsx, ods, xls, csv, docx or reqif. Absent when it is none of them. */
+  format?: string | null
+  rows: number
+  ready: number
+  withProblems: number
+  canUpload: boolean
+  fileProblems: ImportFileProblem[]
+  /** The rows with problems, in file order; there may be more than are listed (see {@code withProblems}). */
+  rowProblems: ImportRowProblem[]
+}
+
 export interface ImportBatchInfo {
   id: string
   filename: string
@@ -2334,6 +2349,26 @@ export const api = {
     })
     if (!res.ok) throw await problemFrom(res)
     return res.json()
+  },
+  /** VYB-0957: checks a file the way extraction will read it, before anything is stored. */
+  validateImportFile: async (file: File, applicationId: string): Promise<ImportValidationReport> => {
+    const form = new FormData()
+    form.append('file', file)
+    const token = tokenProvider()
+    const res = await fetch(`${BASE}/import/validate${query({ applicationId })}`, {
+      method: 'POST', body: form,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!res.ok) throw await problemFrom(res)
+    return res.json()
+  },
+  /** VYB-0957: the blank template. The token cannot ride on a plain link, so it is fetched, then saved. */
+  downloadImportTemplate: async (format: 'xlsx' | 'docx'): Promise<{ blob: Blob; filename: string }> => {
+    const token = tokenProvider()
+    const res = await fetch(`${BASE}/import/templates/${format}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) throw await problemFrom(res)
+    const named = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
+    return { blob: await res.blob(), filename: named ?? `vyoog-requirements-template.${format}` }
   },
   importBatches: () => request<ImportBatchInfo[]>('/import/batches'),
   importBatch: (id: string) => request<ImportBatchInfo>(`/import/batches/${id}`),

@@ -25,6 +25,9 @@ public class CsvSheetReader implements SheetReader {
     private static final char[] DELIMITERS = {',', ';', '\t', '|'};
 
     @Override
+    public String format() { return "csv"; }
+
+    @Override
     public boolean supports(byte[] bytes) {
         if (bytes == null || bytes.length == 0 || XlsxSheetReader.isZip(bytes)) {
             // A ZIP is one of the real spreadsheet formats; this reader is the fallback

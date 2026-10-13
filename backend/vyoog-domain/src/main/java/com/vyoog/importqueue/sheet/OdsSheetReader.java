@@ -46,6 +46,9 @@ public class OdsSheetReader implements SheetReader {
     private static final int PADDING_THRESHOLD = 512;
 
     @Override
+    public String format() { return "ods"; }
+
+    @Override
     public boolean supports(byte[] bytes) {
         return XlsxSheetReader.isZip(bytes) && ZipPeek.hasEntry(bytes, "content.xml");
     }
