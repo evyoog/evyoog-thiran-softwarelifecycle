@@ -141,6 +141,8 @@ is a re-embed and not silent drift.
 | Nightly | Full tenant sweep; reconciles anything the event path missed |
 | Manual "Rescan" | Full tenant sweep, rate-limited to one per five minutes |
 
+> **Since VYB-0960 (D48)** the nightly sweep of the two rules that compare requirements with one another (duplicates and contradictions) checks only what changed since its last pass, from where it stopped, instead of every pair; see [`detection-sweep.md`](detection-sweep.md). The table above is otherwise as built.
+
 Run under a Redis lock keyed by `tenant_id` so two sweeps cannot overlap. Emit
 `DetectionRunCompleted` with counts per rule for the trend chart on Home.
 

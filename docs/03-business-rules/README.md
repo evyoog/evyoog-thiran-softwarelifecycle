@@ -4,6 +4,7 @@
 |---|---|
 | Non-negotiable product principles (spec §1.4) | [`product-principles.md`](product-principles.md) |
 | Gap detection: the detectors and when they run (spec §6) | [`gap-detection.md`](gap-detection.md) |
+| The nightly sweep, pair findings, and how writes check what they changed (VYB-0960) | [`detection-sweep.md`](detection-sweep.md) |
 | Requirement status rules | [`../04-workflows/requirement-state-machine.md`](../04-workflows/requirement-state-machine.md) |
 | Who may do what: the role × scope matrix (spec §4.4), separation of duties, step-up | [`../08-architecture/security/keycloak-and-authorization.md`](../08-architecture/security/keycloak-and-authorization.md) |
 | Rules for coding agents (never negotiable) | [`../../CLAUDE.md`](../../CLAUDE.md) |

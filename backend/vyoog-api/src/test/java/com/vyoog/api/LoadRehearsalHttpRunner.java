@@ -72,6 +72,7 @@ class LoadRehearsalHttpRunner extends VerificationRunnerBase {
     @Autowired UserProvisioningService users;
     @Autowired AccessGrantService grants;
     @Autowired DetectionSweepService sweep;
+    @Autowired com.vyoog.detection.IncrementalSweep incremental;
 
     private static final Pattern ID = Pattern.compile("\"id\"\\s*:\\s*\"([0-9a-f-]{36})\"");
     private static final Pattern REVISION = Pattern.compile("\"revision\"\\s*:\\s*(\\d+)");
@@ -113,24 +114,41 @@ class LoadRehearsalHttpRunner extends VerificationRunnerBase {
 
         say("");
         say("## Nightly detection sweep (the same method the 02:00 job calls)");
-        long findingsBefore = jdbc.queryForObject("SELECT count(*) FROM finding", Long.class);
-        int limitMinutes = Integer.parseInt(env("REHEARSAL_SWEEP_MINUTES", "20"));
-        long t0 = System.nanoTime();
-        var sweepRun = Executors.newSingleThreadExecutor(r -> { Thread t = new Thread(r, "rehearsal-sweep"); t.setDaemon(true); return t; }).submit(() -> { sweep.nightlySweep(); return null; });
-        try {
-            sweepRun.get(limitMinutes, TimeUnit.MINUTES);
-            say(String.format("sweep over %,d requirements: %.1f s; findings %,d before, %,d after", requirementCount, (System.nanoTime() - t0) / 1e9,
-                findingsBefore, jdbc.queryForObject("SELECT count(*) FROM finding", Long.class)));
-        } catch (java.util.concurrent.TimeoutException e) {
-            say(String.format("sweep over %,d requirements DID NOT FINISH within %d minutes (stopped; findings %,d before, %,d when stopped)", requirementCount,
-                limitMinutes, findingsBefore, jdbc.queryForObject("SELECT count(*) FROM finding", Long.class)));
-            jdbc.queryForList("SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE state = 'active' AND pid <> pg_backend_pid() AND query ILIKE '%requirement_embedding%'");
-        }
+        int limitMinutes = Integer.parseInt(env("REHEARSAL_SWEEP_MINUTES", "30"));
+        say(String.format("first pass on a database never swept (time budget %s minutes; the sweep carries on the next night):", System.getProperty("vyoog.detection.sweep-budget-minutes", "60")));
+        timedSweep("first pass", limitMinutes);
+        say(String.format("  still waiting for the next night: %,d requirements", incremental.waiting("dup")));
+
+        // The nights it would take to finish are not waited for: the position is moved to the end by hand, which is what they would do.
+        jdbc.update("""
+            UPDATE detection_sweep_state SET cursor_at = (SELECT max(embedded_at) FROM requirement_embedding),
+                   cursor_id = (SELECT requirement_id FROM requirement_embedding ORDER BY embedded_at DESC, requirement_id DESC LIMIT 1)
+             WHERE rule_key = 'dup'""");
+        int changed = Integer.parseInt(env("REHEARSAL_CHANGED", "200"));
+        jdbc.update("UPDATE requirement_embedding SET embedded_at = clock_timestamp() WHERE requirement_id IN (SELECT requirement_id FROM requirement_embedding ORDER BY random() LIMIT ?)", changed);
+        say(String.format("a night of ordinary change (%,d requirements re-embedded since the last pass; the first pass's remaining nights stand finished):", changed));
+        timedSweep("ordinary night", limitMinutes);
+        say(String.format("  still waiting: %,d", incremental.waiting("dup")));
 
         Path out = Path.of("target", "rehearsal", label + ".txt");
         Files.createDirectories(out.getParent());
         Files.writeString(out, report.toString());
         System.out.println("[rehearsal] report written to " + out.toAbsolutePath());
+    }
+
+    private void timedSweep(String name, int limitMinutes) throws Exception {
+        long findingsBefore = jdbc.queryForObject("SELECT count(*) FROM finding", Long.class);
+        long t0 = System.nanoTime();
+        var run = Executors.newSingleThreadExecutor(r -> { Thread t = new Thread(r, "rehearsal-sweep"); t.setDaemon(true); return t; }).submit(() -> { sweep.nightlySweep(); return null; });
+        try {
+            run.get(limitMinutes, TimeUnit.MINUTES);
+            Integer processed = jdbc.queryForObject("SELECT processed_last FROM detection_sweep_state WHERE rule_key = 'dup'", Integer.class);
+            say(String.format("  %s: %.1f s; the duplicate rule checked %,d requirements; findings %,d before, %,d after", name, (System.nanoTime() - t0) / 1e9,
+                processed, findingsBefore, jdbc.queryForObject("SELECT count(*) FROM finding", Long.class)));
+        } catch (java.util.concurrent.TimeoutException e) {
+            say(String.format("  %s: DID NOT FINISH within %d minutes (stopped)", name, limitMinutes));
+            run.cancel(true);
+        }
     }
 
     // ------------------------------------------------------------------ data
