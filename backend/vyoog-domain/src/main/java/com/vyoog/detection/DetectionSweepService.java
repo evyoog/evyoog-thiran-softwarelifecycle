@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,6 +38,8 @@ public class DetectionSweepService {
     private final AiUsageTracker aiUsage;
     private final MeterRegistry meters;
     private final com.vyoog.platform.tx.AfterCommitRunner afterCommit;
+    private final IncrementalSweep incremental;
+    private final Duration sweepBudget;
 
     // VYB-0163 AC1: two sweeps never run in parallel inside one instance. Across instances the
     // nightly trigger is serialised by SchedulerLock (VYB-0909); a manual sweep is only guarded here.
@@ -45,7 +48,13 @@ public class DetectionSweepService {
 
     public DetectionSweepService(List<Detector> detectors, GapRuleService gapRules,
                                   FindingReconciler reconciler, AiUsageTracker aiUsage, MeterRegistry meters,
-                                  com.vyoog.platform.tx.AfterCommitRunner afterCommit) {
+                                  com.vyoog.platform.tx.AfterCommitRunner afterCommit, IncrementalSweep incremental,
+                                  @Value("${vyoog.detection.sweep-budget-minutes:60}") int sweepBudgetMinutes) {
+        if (sweepBudgetMinutes < 1) {
+            throw new IllegalArgumentException("vyoog.detection.sweep-budget-minutes must be at least 1, got " + sweepBudgetMinutes);
+        }
+        this.incremental = incremental;
+        this.sweepBudget = Duration.ofMinutes(sweepBudgetMinutes);
         this.detectors = detectors;
         this.gapRules = gapRules;
         this.reconciler = reconciler;
@@ -114,12 +123,17 @@ public class DetectionSweepService {
         try {
             aiUsage.beginRun(); // VYB-0620: the per-run AI-call budget resets once, here, not per detector.
             Map<String, Boolean> enabledByRule = gapRules.enabledByRuleKey();
+            // VYB-0960: the detectors that compare requirements with one another share one time budget, so a long first pass on a big
+            // database stops in the morning and carries on the next night; the others (one query each) run to the end as they always did.
+            Instant deadline = Instant.now().plus(sweepBudget);
 
             java.util.Set<String> notConfigured = java.util.concurrent.ConcurrentHashMap.newKeySet();
             List<FindingReconciler.ReconcileResult> results = detectors.stream()
                 // VYB-0164 AC1: a disabled rule produces no findings. Absent = enabled by default.
                 .filter(d -> enabledByRule.getOrDefault(d.ruleKey(), true))
-                .map(d -> runOne(d, notConfigured, () -> reconciler.reconcile(d.ruleKey(), d.scan())))
+                .map(d -> d.sweepsChangedOnly()
+                    ? runOne(d, notConfigured, () -> sweepChangedOnly(d, deadline))
+                    : runOne(d, notConfigured, () -> reconciler.reconcile(d.ruleKey(), d.scan())))
                 .toList();
 
             results.forEach(r -> {
@@ -142,6 +156,14 @@ public class DetectionSweepService {
         }
     }
 
+    private FindingReconciler.ReconcileResult sweepChangedOnly(Detector d, Instant deadline) {
+        d.ensureAvailable(); // AI off or unconfigured: reported as such, and no position is read or moved
+        IncrementalSweep.Outcome o = incremental.run(d, deadline);
+        log.info("[detection] {}: checked {} changed requirement{}{}; {} waiting", d.ruleKey(), o.processed(), o.processed() == 1 ? "" : "s",
+            o.stoppedEarly() ? " and stopped for time (the rest wait for the next sweep)" : "", incremental.waiting(d.ruleKey()));
+        return o.totals();
+    }
+
     /**
      * VYB-0603 AC1: one detector's failure — an AI provider being down, or anything
      * else going wrong — never stops the others in the same sweep from running.
@@ -162,6 +184,15 @@ public class DetectionSweepService {
             log.warn("[detection] {} unavailable: {}", d.ruleKey(), e.getMessage());
             return FindingReconciler.ReconcileResult.unavailable(d.ruleKey());
         } catch (Exception e) {
+            // VYB-0960: a database error inside the CALLER's transaction (a write that rescans what it changed) has already aborted that
+            // transaction, so carrying on as if detection merely found nothing made the write's next statement fail with "current
+            // transaction is aborted" and a 500 that hid the real cause (a deadlock found by the load rehearsal). Say what happened
+            // instead: the write is refused, with the database's own reason, and nothing it did is saved.
+            if (e instanceof org.springframework.dao.DataAccessException
+                    && org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+                log.warn("[detection] {} hit a database error inside the caller's transaction: {}", d.ruleKey(), e.getMessage());
+                throw (org.springframework.dao.DataAccessException) e;
+            }
             log.error("[detection] {} failed unexpectedly: {}", d.ruleKey(), e.getMessage(), e);
             return FindingReconciler.ReconcileResult.unavailable(d.ruleKey());
         }

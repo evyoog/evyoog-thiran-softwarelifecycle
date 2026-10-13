@@ -29,6 +29,10 @@ public class Finding {
     @Column(name = "object_id", nullable = false)
     private UUID objectId;
 
+    /** VYB-0960: the other object of a finding about a pair (see {@link Candidate#relatedObjectId()}); null otherwise. */
+    @Column(name = "related_object_id")
+    private UUID relatedObjectId;
+
     @Column(nullable = false)
     private String severity;
 
@@ -82,6 +86,7 @@ public class Finding {
         this.fingerprint = c.fingerprint();
         this.objectType = c.objectType();
         this.objectId = c.objectId();
+        this.relatedObjectId = c.relatedObjectId();
         this.severity = c.severity();
         this.title = c.title();
         this.detail = c.detail();
@@ -102,6 +107,7 @@ public class Finding {
      * a finding no longer being reseen at all, not one whose content updates.
      */
     void refresh(Candidate c) {
+        if (c.relatedObjectId() != null) this.relatedObjectId = c.relatedObjectId();
         this.title = c.title();
         this.detail = c.detail();
         this.suggestion = c.suggestion();
@@ -166,6 +172,8 @@ public class Finding {
     public String getRuleKey() { return ruleKey; }
     public String getFingerprint() { return fingerprint; }
     public String getObjectType() { return objectType; }
+    public UUID getRelatedObjectId() { return relatedObjectId; }
+
     public UUID getObjectId() { return objectId; }
     public String getSeverity() { return severity; }
     public String getTitle() { return title; }

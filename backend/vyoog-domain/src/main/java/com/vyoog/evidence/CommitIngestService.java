@@ -97,6 +97,10 @@ public class CommitIngestService {
         try {
             commits.flush();
             detection.rescanObject(commit.getId());
+        } catch (org.springframework.dao.DataAccessException e) {
+            // VYB-0960: a database error here has already aborted this transaction (a deadlock, say); carrying on would only make the
+            // next statement fail with "current transaction is aborted" and hide the cause. Refuse the write with the real error.
+            throw e;
         } catch (Exception e) {
             // Same rationale as RequirementService#rescan: detection is secondary —
             // a write that already committed must not appear to have failed.

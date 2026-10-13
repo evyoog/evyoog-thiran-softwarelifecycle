@@ -89,6 +89,9 @@ public class RequirementService {
             Map.of("key", requirement.getKey(), "status", requirement.getStatus().name(),
                    "revision", requirement.getRevision(),
                    "reason", reason == null || reason.isBlank() ? "" : reason));
+        // VYB-0960: what was found about it, or about a pair it was half of, is resolved now. The nightly sweep no longer looks at a
+        // requirement it has already checked (it checks what changed), and a deleted one does not change again.
+        rescan(id);
     }
 
     /** VYB-0203: recomputed on every save, not just at creation, so it never drifts from what's actually there. */
@@ -129,6 +132,10 @@ public class RequirementService {
             // might not have hit the DB yet, and the detector would see stale state.
             requirements.flush();
             detection.rescanObject(requirementId);
+        } catch (org.springframework.dao.DataAccessException e) {
+            // VYB-0960: a database error here has already aborted this transaction (a deadlock, say); carrying on would only make the
+            // next statement fail with "current transaction is aborted" and hide the cause. Refuse the write with the real error.
+            throw e;
         } catch (Exception e) {
             log.warn("[detection] bounded rescan failed for {}: {}", requirementId, e.getMessage());
         }

@@ -93,6 +93,34 @@ class RequirementDeleteTest {
     }
 
     @Test
+    void VYB0960_AC10_deletingChecksWhatWasFoundAboutItSoItsFindingsAreResolvedNowNotAtNight() {
+        when(requirements.findById(id)).thenReturn(Optional.of(requirement));
+
+        service.delete(id, "duplicate of VY-1039", actor);
+
+        verify(detection).rescanObject(id);
+    }
+
+    @Test
+    void VYB0960_AC11_aDatabaseErrorInTheCheckRefusesTheWriteWithItsRealCauseAndAnyOtherFailureIsOnlyLogged() {
+        when(requirements.findById(id)).thenReturn(Optional.of(requirement));
+        doThrow(new org.springframework.dao.CannotAcquireLockException("deadlock detected")).when(detection).rescanObject(id);
+
+        assertThatThrownBy(() -> service.delete(id, null, actor))
+            .as("the transaction is already aborted, so carrying on would only hide why")
+            .isInstanceOf(org.springframework.dao.CannotAcquireLockException.class).hasMessageContaining("deadlock");
+
+        reset(detection);
+        doThrow(new IllegalStateException("a detector bug")).when(detection).rescanObject(id);
+        Requirement another = new Requirement("VY-1043", "Another", "The system shall.", actor);
+        when(requirements.findById(id)).thenReturn(Optional.of(another));
+
+        service.delete(id, null, actor); // detection is secondary: a failure that does not poison the transaction is logged, not raised
+
+        assertThat(another.isDeleted()).isTrue();
+    }
+
+    @Test
     void VYB0666_AC1_aMissingRequirementIsNotFoundRatherThanSilentlyIgnored() {
         when(requirements.findById(id)).thenReturn(Optional.empty());
 

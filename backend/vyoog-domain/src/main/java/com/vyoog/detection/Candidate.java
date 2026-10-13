@@ -16,6 +16,9 @@ import java.util.UUID;
  *     either is or isn't a missing acceptance criterion. {@link FindingReconciler}
  *     suppresses a candidate below its rule's configured threshold entirely (AC1) —
  *     never shows it, even flagged weak.
+ * @param relatedObjectId VYB-0960: for a finding about a PAIR of objects (a possible duplicate, a contradiction), the other one; the
+ *     finding is about {@code objectId} (the lower id) and a re-check of either side must be able to find it. {@code null} for a
+ *     finding about one object.
  * @param model VYB-0616: "model + prompt version" as one string (e.g.
  *     {@code "local-hashing-v1@prompt-v1"}) — one column on {@code finding}
  *     (V001__baseline.sql) was already written with exactly that combined shape in
@@ -23,7 +26,15 @@ import java.util.UUID;
  */
 public record Candidate(String ruleKey, String objectType, UUID objectId, String discriminator,
                          int objectRevision, String severity, String title, String detail, String suggestion,
-                         Double confidence, String model) {
+                         Double confidence, String model, UUID relatedObjectId) {
+
+    /** A finding about one object, raised by an AI detector (confidence and model, no related object). */
+    public Candidate(String ruleKey, String objectType, UUID objectId, String discriminator,
+                      int objectRevision, String severity, String title, String detail, String suggestion,
+                      Double confidence, String model) {
+        this(ruleKey, objectType, objectId, discriminator, objectRevision, severity, title, detail, suggestion,
+            confidence, model, null);
+    }
 
     /** The eight non-AI detectors built in Phases 1–2 — no confidence, no model, unchanged call sites. */
     public Candidate(String ruleKey, String objectType, UUID objectId, String discriminator,

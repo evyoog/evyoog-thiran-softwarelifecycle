@@ -53,6 +53,10 @@ public class TraceGraphService {
         try {
             links.flush();
             detection.rescanObject(objectId);
+        } catch (org.springframework.dao.DataAccessException e) {
+            // VYB-0960: a database error here has already aborted this transaction (a deadlock, say); carrying on would only make the
+            // next statement fail with "current transaction is aborted" and hide the cause. Refuse the write with the real error.
+            throw e;
         } catch (Exception e) {
             log.warn("[detection] bounded rescan failed for {}: {}", objectId, e.getMessage());
         }

@@ -269,6 +269,20 @@ public class ApiExceptionHandler {
         return pd;
     }
 
+    /**
+     * VYB-0960: two changes took locks on the same rows in a way that could not both finish, and the database stopped this one (a
+     * deadlock, or a lock it would not wait for). Nothing it did was saved. This used to surface as a 500 with a database error that
+     * said only "current transaction is aborted"; it is now a 409 that says what to do, which is to try again.
+     */
+    @ExceptionHandler(org.springframework.dao.PessimisticLockingFailureException.class)
+    public ProblemDetail onLockConflict(org.springframework.dao.PessimisticLockingFailureException e) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+            "Another change to the same records was in progress, and the database stopped this one. Nothing was saved. Try again.");
+        pd.setType(URI.create("https://vyoog.dev/problems/try-again"));
+        pd.setTitle("Try again");
+        return pd;
+    }
+
     /** VYB-0130 AC2: an unrecognised filter/sort value is a 400 naming the field, not a 500. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail onBadParameter(MethodArgumentTypeMismatchException e) {

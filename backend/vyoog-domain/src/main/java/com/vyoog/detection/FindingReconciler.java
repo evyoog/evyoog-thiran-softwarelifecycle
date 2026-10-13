@@ -51,7 +51,7 @@ public class FindingReconciler {
      */
     @Transactional
     public ReconcileResult reconcile(String ruleKey, List<Candidate> candidates) {
-        List<Candidate> aboveThreshold = aboveThreshold(ruleKey, candidates);
+        List<Candidate> aboveThreshold = inFingerprintOrder(aboveThreshold(ruleKey, candidates));
         Set<String> seenFingerprints = new HashSet<>();
         int[] counts = new int[3]; // opened, refreshed, reopened
         processCandidates(aboveThreshold, seenFingerprints, counts);
@@ -72,15 +72,50 @@ public class FindingReconciler {
     /**
      * VYB-0161: the bounded, triggered-on-change counterpart. The "anything not seen
      * this run has gone away" step (VYB-0152) is scoped to just this object's own
-     * existing findings for the rule — not the whole rule's findings table — or a
-     * bounded rescan of one object would incorrectly resolve every *other* object's
-     * open findings for that rule simply because they weren't in this tiny candidate
-     * list. That scope is inherently small (one object's own findings), so unlike
-     * {@link #reconcile} it's read as a single {@code List} rather than paged.
+     * existing findings for the rule, and those about a pair that includes it
+     * ({@code related_object_id}, VYB-0960), not the whole rule's findings table: or a bounded
+     * rescan of one object would incorrectly resolve every *other* object's open findings for
+     * that rule simply because they weren't in this tiny candidate list. That scope is
+     * inherently small, so unlike {@link #reconcile} its fingerprints are read as a single list.
+     *
+     * <p>VYB-0960: <b>fingerprints are handled one at a time in ascending order, each row locked ({@code FOR UPDATE}) at its turn.</b>
+     * A finding is shared between the writes that touch the same requirements (a pair of requirements has one finding between
+     * them), and two writes that took the locks on shared findings in different orders deadlocked: the load rehearsal at 60
+     * concurrent people had the database stop writes with "deadlock detected", surfacing as a 500. With every write taking its locks
+     * in the same global order, none can wait on another in a circle, including for a finding another write creates in the meantime
+     * (it is locked, or inserted, when its turn comes, never before a larger one already held). The same order is used for inserts.
      */
     @Transactional
     public ReconcileResult reconcileOne(String ruleKey, UUID objectId, List<Candidate> candidates) {
-        return reconcileWithin(ruleKey, candidates, findings.findAllByRuleKeyAndObjectId(ruleKey, objectId));
+        java.util.Map<String, Candidate> wanted = new java.util.TreeMap<>();
+        for (Candidate c : aboveThreshold(ruleKey, candidates)) wanted.put(c.fingerprint(), c);
+        java.util.TreeSet<String> turn = new java.util.TreeSet<>(wanted.keySet());
+        turn.addAll(jdbc.queryForList(
+            "SELECT fingerprint FROM finding WHERE rule_key = ? AND (object_id = ? OR related_object_id = ?)",
+            String.class, ruleKey, objectId, objectId));
+
+        int[] counts = new int[3]; // opened, refreshed, reopened
+        int resolved = 0;
+        for (String fingerprint : turn) {
+            Candidate c = wanted.get(fingerprint);
+            var existing = findings.lockByFingerprint(fingerprint);
+            if (c == null) {
+                // in scope but not seen this time: it has gone away
+                if (existing.isPresent() && existing.get().getState() != FindingState.RESOLVED) {
+                    existing.get().resolve();
+                    findings.save(existing.get());
+                    resolved++;
+                }
+            } else if (existing.isPresent()) {
+                applyToExisting(existing.get(), c, counts);
+            } else if (insertIfAbsent(c) == 1) {
+                counts[0]++; // opened
+            } else {
+                // another write inserted it between our look and our insert; wait for it, then fold into its row
+                applyToExisting(findings.lockByFingerprint(fingerprint).orElseThrow(), c, counts);
+            }
+        }
+        return new ReconcileResult(ruleKey, counts[0], counts[1], counts[2], resolved, false);
     }
 
     /**
@@ -98,21 +133,10 @@ public class FindingReconciler {
             .toList();
     }
 
-    private ReconcileResult reconcileWithin(String ruleKey, List<Candidate> rawCandidates, List<Finding> resolveScope) {
-        List<Candidate> candidates = aboveThreshold(ruleKey, rawCandidates);
-        Set<String> seenFingerprints = new HashSet<>();
-        int[] counts = new int[3]; // opened, refreshed, reopened
-        processCandidates(candidates, seenFingerprints, counts);
-        int resolved = resolvePass(resolveScope, seenFingerprints);
-        return new ReconcileResult(ruleKey, counts[0], counts[1], counts[2], resolved, false);
+    private static List<Candidate> inFingerprintOrder(List<Candidate> candidates) {
+        return candidates.stream().sorted(java.util.Comparator.comparing(Candidate::fingerprint)).toList();
     }
 
-    /**
-     * VYB-0781: the per-candidate save loop, shared by every reconcile path — a
-     * detector call can itself shortlist a large candidate set (e.g.
-     * {@code ConflictingRequirementsDetector.scan()}), so this flushes/clears every
-     * {@link #BATCH_SIZE} candidates rather than only between the two loops.
-     */
     private void processCandidates(List<Candidate> candidates, Set<String> seenFingerprints, int[] counts) {
         int processed = 0;
         for (Candidate c : candidates) {
@@ -154,12 +178,12 @@ public class FindingReconciler {
     private int insertIfAbsent(Candidate c) {
         return jdbc.update("""
             INSERT INTO finding
-                (rule_key, fingerprint, object_type, object_id, severity, title, detail, suggestion,
+                (rule_key, fingerprint, object_type, object_id, related_object_id, severity, title, detail, suggestion,
                  object_revision, confidence, model)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (fingerprint) DO NOTHING
             """,
-            c.ruleKey(), c.fingerprint(), c.objectType(), c.objectId(), c.severity(), c.title(),
+            c.ruleKey(), c.fingerprint(), c.objectType(), c.objectId(), c.relatedObjectId(), c.severity(), c.title(),
             c.detail(), c.suggestion(), c.objectRevision(), c.confidence(), c.model());
     }
 

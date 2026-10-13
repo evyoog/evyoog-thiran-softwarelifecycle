@@ -36,4 +36,21 @@ public interface Detector {
     default boolean callsModel() {
         return false;
     }
+
+    /**
+     * VYB-0960 (D48): true for a detector that compares requirements with one another (the embedding comparisons: possible duplicates
+     * and contradictions). Comparing every requirement with every other grows with the square of their number and took hours at 50,000,
+     * so the nightly sweep does not call {@link #scan()} for such a detector. It checks only the requirements whose embedding is new
+     * or changed since its last pass, each with {@link #scanOne}, exactly as a write does (see {@link IncrementalSweep}).
+     */
+    default boolean sweepsChangedOnly() {
+        return false;
+    }
+
+    /**
+     * VYB-0960: throws {@link DetectorNotConfiguredException} (or {@link DetectorUnavailableException}) if this detector cannot run at
+     * all right now (AI is off), before the sweep reads or moves any position. A detector that can always run does nothing here.
+     */
+    default void ensureAvailable() {
+    }
 }

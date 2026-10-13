@@ -38,6 +38,12 @@ public class DuplicateAcrossApplicationsDetector implements Detector {
         return "dup";
     }
 
+    /** VYB-0960: the nightly sweep re-checks only changed requirements (this rule's whole-database scan is quadratic). */
+    @Override
+    public boolean sweepsChangedOnly() {
+        return true;
+    }
+
     private double threshold() {
         BigDecimal configured = gapRules.getThreshold(ruleKey());
         return (configured != null ? configured : DEFAULT_THRESHOLD).doubleValue();
@@ -54,7 +60,7 @@ public class DuplicateAcrossApplicationsDetector implements Detector {
             "%s and %s are %.0f%% similar and live in different applications."
                 .formatted(pair.keyA(), pair.keyB(), pair.similarity() * 100),
             "Compare both; if they're the same rule, link one as derived from the other and retire the duplicate.",
-            pair.similarity(), "local-hashing-v1@prompt-n/a");
+            pair.similarity(), "local-hashing-v1@prompt-n/a", pair.requirementIdB());
     }
 
     @Override

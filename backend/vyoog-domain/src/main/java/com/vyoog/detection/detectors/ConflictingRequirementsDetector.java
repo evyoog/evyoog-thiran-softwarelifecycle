@@ -55,6 +55,17 @@ public class ConflictingRequirementsDetector implements Detector {
         return "conflict";
     }
 
+    @Override
+    public void ensureAvailable() {
+        requireAdjudicator();
+    }
+
+    /** VYB-0960: the nightly sweep re-checks only changed requirements (this rule's whole-database shortlist is quadratic). */
+    @Override
+    public boolean sweepsChangedOnly() {
+        return true;
+    }
+
     private double shortlistThreshold() {
         BigDecimal configured = gapRules.getThreshold(ruleKey());
         return (configured != null ? configured : SHORTLIST_THRESHOLD).doubleValue();
@@ -94,7 +105,7 @@ public class ConflictingRequirementsDetector implements Detector {
                 "Contradicts " + p.keyB(),
                 "%s and %s: %s".formatted(p.keyA(), p.keyB(), verdict.explanation()), // AC2: names the nature of the contradiction
                 "Resolve which requirement is correct, or scope both so they no longer overlap.",
-                verdict.confidence(), llm.modelAndPromptVersion()));
+                verdict.confidence(), llm.modelAndPromptVersion(), p.requirementIdB()));
         }
         return out;
     }

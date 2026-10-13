@@ -62,7 +62,7 @@ class DeferredModelDetectionTest {
         };
         sweep = new DetectionSweepService(
             List.of(new Probe("plain", false, log), new Probe("model", true, log)), gapRules, reconciler,
-            mock(AiUsageTracker.class), new SimpleMeterRegistry(), runner);
+            mock(AiUsageTracker.class), new SimpleMeterRegistry(), runner, mock(IncrementalSweep.class), 60);
     }
 
     @AfterEach
