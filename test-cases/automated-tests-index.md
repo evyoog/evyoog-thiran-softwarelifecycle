@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1153 tests cover 71 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1169 tests cover 72 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1369,3 +1369,22 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` applyingIsOfferedOnlyWhenThereIsSomethingToAdd (`frontend/src/features/compliance/complianceModel.test.ts`)
 - `AC8` theResultSaysWhatWasAddedAndThatWhatWasThereIsUntouched (`frontend/src/features/compliance/complianceModel.test.ts`)
 - `AC9` applyingATemplateAddsItsClausesAsOrdinaryClausesAndIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ClauseTemplateIT.java`)
+
+## VYB-0953: Kanban board driven from status, with templates per team [M; F42]
+
+- `AC1` aDropIsMoveVerifyIllegalOrSameFromTheLifecycleTable (`frontend/src/features/board/boardModel.test.ts`)
+- `AC1` theDefaultExistsForEveryoneShowsEveryStatusAndIsListedFirst (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC2` aTemplateKeepsItsColumnsInOrderItsScopeAndFiltersAndIsAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC2` anIllegalDropIsRefusedInWordsAndALegalOneIsNot (`frontend/src/features/board/boardModel.test.ts`)
+- `AC3` aCardOffersOnlyTheLegalColumnsThatTheTemplateShows (`frontend/src/features/board/boardModel.test.ts`)
+- `AC3` aTemplateRefusesNoColumnsADuplicateOrUnknownStatusTwoScopesAndABadTypeOrPriority (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC4` aNameIsFreePerTeamButNotTwiceInOneAndTheDatabaseAgrees (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC4` aReasonIsAskedForExactlyWhereThePageAsksForOne (`frontend/src/features/board/boardModel.test.ts`)
+- `AC5` aColumnQueryCarriesTheStatusAndOnlyTheScopeAndFiltersSet (`frontend/src/features/board/boardModel.test.ts`)
+- `AC5` theDefaultIsNeverDeletedATeamTemplateIsAndItsGoneAfterwardAndAudited (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC6` theRequirementListNarrowsByApplicationAndProductAsAColumnNeeds (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC6` theSummaryNamesTheDeepestScopeAndTheFilters (`frontend/src/features/board/boardModel.test.ts`)
+- `AC7` aTeamsLeadOrAnAdministratorMakesAndChangesItsTemplatesNobodyElseAndAnyoneSignedInReads (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)
+- `AC7` onlyAnAdministratorOrTheTeamsLeadSeesTheControls (`frontend/src/features/board/boardModel.test.ts`)
+- `AC8` columnsReorderAndTheLastOneStays (`frontend/src/features/board/boardModel.test.ts`)
+- `AC8` onlyAnAdministratorChangesTheDefaultAndNobodyDeletesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/BoardTemplateIT.java`)

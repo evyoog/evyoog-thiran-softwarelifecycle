@@ -27,7 +27,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_18"];
+        get: operations["list_19"];
         put?: never;
         post?: never;
         delete?: never;
@@ -155,9 +155,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_17"];
+        get: operations["list_18"];
         put?: never;
-        post: operations["create_15"];
+        post: operations["create_16"];
         delete?: never;
         options?: never;
         head?: never;
@@ -177,7 +177,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_6"];
+        patch: operations["update_7"];
         trace?: never;
     };
     "/api/v1/applications/{applicationId}/capabilities/{id}/archive": {
@@ -299,7 +299,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_16"];
+        get: operations["list_17"];
         put?: never;
         post: operations["freeze"];
         delete?: never;
@@ -351,6 +351,38 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_16"];
+        put?: never;
+        post: operations["create_15"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_2"];
+        post?: never;
+        delete: operations["delete_3"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2193,7 +2225,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_5"];
+        patch: operations["update_6"];
         trace?: never;
     };
     "/api/v1/products/{id}/archive": {
@@ -2241,7 +2273,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_4"];
+        patch: operations["update_5"];
         trace?: never;
     };
     "/api/v1/products/{productId}/applications/{id}/archive": {
@@ -2753,7 +2785,7 @@ export interface paths {
         delete: operations["delete_1"];
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/api/v1/requirements/{id}/acceptance-criteria": {
@@ -3937,7 +3969,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_2"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/v1/test-cases/{id}/steps": {
@@ -4714,6 +4746,28 @@ export interface components {
             reason?: string;
             requirementId?: string;
         };
+        BoardTemplateCreated: {
+            id?: string;
+        };
+        BoardTemplateView: {
+            applicationId?: string;
+            applicationName?: string;
+            capabilityId?: string;
+            capabilityName?: string;
+            columns?: string[];
+            id?: string;
+            isDefault?: boolean;
+            name?: string;
+            priority?: string;
+            productId?: string;
+            productName?: string;
+            scopeApplicationId?: string;
+            scopeProductId?: string;
+            teamId?: string;
+            teamName?: string;
+            type?: string;
+            updatedAt?: string;
+        };
         BootstrapRequest: {
             /** Format: uuid */
             firstAdministratorUserId?: string;
@@ -5033,6 +5087,16 @@ export interface components {
         CreateApplication: {
             description?: string;
             name: string;
+        };
+        CreateBoardTemplate: {
+            applicationId?: string;
+            capabilityId?: string;
+            columns?: string[];
+            name: string;
+            priority?: string;
+            productId?: string;
+            teamId: string;
+            type?: string;
         };
         CreateCapability: {
             code?: string;
@@ -6895,6 +6959,15 @@ export interface components {
             description?: string;
             name: string;
         };
+        UpdateBoardTemplate: {
+            applicationId?: string;
+            capabilityId?: string;
+            columns?: string[];
+            name: string;
+            priority?: string;
+            productId?: string;
+            type?: string;
+        };
         UpdateCapability: {
             code?: string;
             description?: string;
@@ -7018,7 +7091,7 @@ export interface operations {
             };
         };
     };
-    list_18: {
+    list_19: {
         parameters: {
             query?: {
                 state?: string;
@@ -7197,7 +7270,7 @@ export interface operations {
             };
         };
     };
-    list_17: {
+    list_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -7219,7 +7292,7 @@ export interface operations {
             };
         };
     };
-    create_15: {
+    create_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -7245,7 +7318,7 @@ export interface operations {
             };
         };
     };
-    update_6: {
+    update_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7438,7 +7511,7 @@ export interface operations {
             };
         };
     };
-    list_16: {
+    list_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -7546,6 +7619,96 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ItemView"][];
                 };
+            };
+        };
+    };
+    list_16: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardTemplateView"][];
+                };
+            };
+        };
+    };
+    create_15: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBoardTemplate"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardTemplateCreated"];
+                };
+            };
+        };
+    };
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBoardTemplate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardTemplateView"];
+                };
+            };
+        };
+    };
+    delete_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10720,7 +10883,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -10816,7 +10979,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -11380,6 +11543,8 @@ export interface operations {
             query: {
                 status?: "DRAFT" | "IN_REVIEW" | "REVIEWED" | "NEEDS_REVISION" | "APPROVED" | "REJECTED";
                 capabilityId?: string;
+                applicationId?: string;
+                productId?: string;
                 type?: string;
                 priority?: string;
                 ownerId?: string;
@@ -11685,7 +11850,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: {
                 changeRequestId?: string;
@@ -13659,7 +13824,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;

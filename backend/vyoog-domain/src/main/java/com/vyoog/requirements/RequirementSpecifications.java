@@ -28,6 +28,32 @@ public final class RequirementSpecifications {
         return (root, query, cb) -> cb.equal(root.get("capabilityId"), capabilityId);
     }
 
+    /**
+     * VYB-0953: requirements placed in an application, directly or in one of its capabilities (D12 lets a requirement sit at product,
+     * application or capability level). Correlated subqueries, not joins, so a requirement is never counted twice.
+     */
+    public static Specification<Requirement> inApplication(UUID applicationId) {
+        return (root, query, cb) -> {
+            var caps = query.subquery(UUID.class);
+            var cap = caps.from(com.vyoog.portfolio.Capability.class);
+            caps.select(cap.get("id")).where(cb.equal(cap.get("applicationId"), applicationId));
+            return cb.or(cb.equal(root.get("applicationId"), applicationId), root.get("capabilityId").in(caps));
+        };
+    }
+
+    /** VYB-0953: requirements placed anywhere in a product: on it, on one of its applications, or in one of their capabilities. */
+    public static Specification<Requirement> inProduct(UUID productId) {
+        return (root, query, cb) -> {
+            var apps = query.subquery(UUID.class);
+            var app = apps.from(com.vyoog.portfolio.Application.class);
+            apps.select(app.get("id")).where(cb.equal(app.get("productId"), productId));
+            var caps = query.subquery(UUID.class);
+            var cap = caps.from(com.vyoog.portfolio.Capability.class);
+            caps.select(cap.get("id")).where(cap.get("applicationId").in(apps));
+            return cb.or(cb.equal(root.get("productId"), productId), root.get("applicationId").in(apps), root.get("capabilityId").in(caps));
+        };
+    }
+
     public static Specification<Requirement> hasType(String type) {
         return (root, query, cb) -> cb.equal(root.get("type"), type);
     }

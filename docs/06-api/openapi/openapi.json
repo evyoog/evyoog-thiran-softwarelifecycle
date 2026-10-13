@@ -385,6 +385,73 @@
         },
         "type" : "object"
       },
+      "BoardTemplateCreated" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BoardTemplateView" : {
+        "properties" : {
+          "applicationId" : {
+            "type" : "string"
+          },
+          "applicationName" : {
+            "type" : "string"
+          },
+          "capabilityId" : {
+            "type" : "string"
+          },
+          "capabilityName" : {
+            "type" : "string"
+          },
+          "columns" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "isDefault" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "type" : "string"
+          },
+          "productId" : {
+            "type" : "string"
+          },
+          "productName" : {
+            "type" : "string"
+          },
+          "scopeApplicationId" : {
+            "type" : "string"
+          },
+          "scopeProductId" : {
+            "type" : "string"
+          },
+          "teamId" : {
+            "type" : "string"
+          },
+          "teamName" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "BootstrapRequest" : {
         "properties" : {
           "firstAdministratorUserId" : {
@@ -1317,6 +1384,39 @@
           }
         },
         "required" : [ "name" ],
+        "type" : "object"
+      },
+      "CreateBoardTemplate" : {
+        "properties" : {
+          "applicationId" : {
+            "type" : "string"
+          },
+          "capabilityId" : {
+            "type" : "string"
+          },
+          "columns" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "type" : "string"
+          },
+          "productId" : {
+            "type" : "string"
+          },
+          "teamId" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "teamId" ],
         "type" : "object"
       },
       "CreateCapability" : {
@@ -6519,6 +6619,36 @@
         "required" : [ "name" ],
         "type" : "object"
       },
+      "UpdateBoardTemplate" : {
+        "properties" : {
+          "applicationId" : {
+            "type" : "string"
+          },
+          "capabilityId" : {
+            "type" : "string"
+          },
+          "columns" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "type" : "string"
+          },
+          "productId" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
       "UpdateCapability" : {
         "properties" : {
           "code" : {
@@ -6808,7 +6938,7 @@
     },
     "/api/v1/ai-proposals" : {
       "get" : {
-        "operationId" : "list_18",
+        "operationId" : "list_19",
         "parameters" : [ {
           "in" : "query",
           "name" : "state",
@@ -7054,7 +7184,7 @@
     },
     "/api/v1/applications/{applicationId}/capabilities" : {
       "get" : {
-        "operationId" : "list_17",
+        "operationId" : "list_18",
         "parameters" : [ {
           "in" : "path",
           "name" : "applicationId",
@@ -7082,7 +7212,7 @@
         "tags" : [ "capability-controller" ]
       },
       "post" : {
-        "operationId" : "create_15",
+        "operationId" : "create_16",
         "parameters" : [ {
           "in" : "path",
           "name" : "applicationId",
@@ -7119,7 +7249,7 @@
     },
     "/api/v1/applications/{applicationId}/capabilities/{id}" : {
       "patch" : {
-        "operationId" : "update_6",
+        "operationId" : "update_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "applicationId",
@@ -7435,7 +7565,7 @@
     },
     "/api/v1/baselines" : {
       "get" : {
-        "operationId" : "list_16",
+        "operationId" : "list_17",
         "responses" : {
           "200" : {
             "content" : {
@@ -7571,6 +7701,108 @@
           }
         },
         "tags" : [ "baseline-controller" ]
+      }
+    },
+    "/api/v1/boards/templates" : {
+      "get" : {
+        "operationId" : "list_16",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/BoardTemplateView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "board-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_15",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateBoardTemplate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardTemplateCreated"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "board-controller" ]
+      }
+    },
+    "/api/v1/boards/templates/{id}" : {
+      "delete" : {
+        "operationId" : "delete_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "board-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateBoardTemplate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardTemplateView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "board-controller" ]
       }
     },
     "/api/v1/briefs" : {
@@ -11609,7 +11841,7 @@
     },
     "/api/v1/products/{id}" : {
       "patch" : {
-        "operationId" : "update_5",
+        "operationId" : "update_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -11738,7 +11970,7 @@
     },
     "/api/v1/products/{productId}/applications/{id}" : {
       "patch" : {
-        "operationId" : "update_4",
+        "operationId" : "update_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "productId",
@@ -12526,6 +12758,22 @@
           }
         }, {
           "in" : "query",
+          "name" : "applicationId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "productId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
           "name" : "type",
           "required" : false,
           "schema" : {
@@ -12930,7 +13178,7 @@
         "tags" : [ "requirement-controller" ]
       },
       "patch" : {
-        "operationId" : "update_3",
+        "operationId" : "update_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -15316,7 +15564,7 @@
     },
     "/api/v1/test-cases/{id}" : {
       "patch" : {
-        "operationId" : "update_2",
+        "operationId" : "update_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",

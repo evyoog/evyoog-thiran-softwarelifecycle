@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 40, PARTIAL 1, TODO 14.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 41, PARTIAL 1, TODO 13.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -143,7 +143,12 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 |---|---|---|---|---|---|
 | VYB-0951 | 6 | Configurability and boards | Artifact type registry replacing type lists in checks, enums, detectors and UI [L; F39] | TODO | S11 |
 | VYB-0952 | 6 | Configurability and boards | Custom fields on requirements with revision capture and import mapping [L; F39] | TODO | S11 |
-| VYB-0953 | 6 | Configurability and boards | Kanban board driven from status, with templates per team [M; F42] | TODO | S11 |
+
+## S11,104: Configurability and boards
+
+| ID | Phase | Capability | Requirement | Status | Session |
+|---|---|---|---|---|---|
+| VYB-0953 | 6 | Configurability and boards | Kanban board driven from status, with templates per team [M; F42] | DONE on dev: a Board button on Requirements opens the lifecycle as columns, a card's column being its status and nothing else. Dragging a card (or its Move… list) asks the server for the ordinary transition, so roles, separation of duties and blocking clarifications stay the server's; a drop the lifecycle never allows is refused on the board in words, a move that needs a reason asks for it, and In review to Reviewed opens the Design verify page. A template is columns in an order plus a scope (one of product, application or capability) and a type and priority filter; a team's lead or an Administrator edits it, the Default is an Administrator's and never deleted. Migration V056, `BoardTemplateService`, `BoardController`, `applicationId` and `productId` list filters, `docs/04-workflows/kanban-board.md`, D42. `BoardTemplateIT` 8, `boardModel.test.ts` 8 (commit only, no PR yet) | S11,104 |
 
 ## S11,103: Configurability and boards
 

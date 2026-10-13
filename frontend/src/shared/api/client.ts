@@ -603,6 +603,41 @@ export interface Clause {
   text: string
 }
 
+// ── Board templates (VYB-0953, D42) ─────────────────────────────────────────────
+
+export interface BoardTemplate {
+  id: string
+  teamId?: string | null
+  teamName?: string | null
+  name: string
+  /** Statuses, left to right. */
+  columns: RequirementStatus[]
+  productId?: string | null
+  productName?: string | null
+  applicationId?: string | null
+  applicationName?: string | null
+  capabilityId?: string | null
+  capabilityName?: string | null
+  type?: string | null
+  priority?: string | null
+  /** The one template that belongs to no team: for everyone, changed by an administrator only, never deleted. */
+  isDefault: boolean
+  updatedAt: string
+  /** The product and application the scope sits under (a capability's template has both), for the edit form to preselect. */
+  scopeProductId?: string | null
+  scopeApplicationId?: string | null
+}
+
+export interface BoardTemplateBody {
+  name: string
+  columns: RequirementStatus[]
+  productId?: string
+  applicationId?: string
+  capabilityId?: string
+  type?: string
+  priority?: string
+}
+
 // ── Risk register (VYB-0949, D40) ────────────────────────────────────────────────
 
 export type RiskBand = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
@@ -2005,7 +2040,7 @@ export const api = {
 
   // Requirements
   requirements: (params: {
-    status?: RequirementStatus; capabilityId?: string; type?: string; priority?: string; ownerId?: string
+    status?: RequirementStatus; capabilityId?: string; applicationId?: string; productId?: string; type?: string; priority?: string; ownerId?: string
     title?: string; page?: number; size?: number
     /** VYB-0666: true = only requirements that have criteria, false = only those that don't. */
     hasCriteria?: boolean
@@ -2018,7 +2053,7 @@ export const api = {
     sort?: string[]
   }) => {
     const base = query({
-      status: params.status, capabilityId: params.capabilityId, type: params.type, priority: params.priority,
+      status: params.status, capabilityId: params.capabilityId, applicationId: params.applicationId, productId: params.productId, type: params.type, priority: params.priority,
       ownerId: params.ownerId, title: params.title, page: params.page, size: params.size,
       // VYB-0666: was declared on the params type but never actually reached the URL —
       // every call silently ran with no criteria filter at all, which is why the "needs
@@ -2231,6 +2266,13 @@ export const api = {
   clauses: () => request<Clause[]>('/clauses'),
   createClause: (body: { standard: string; section?: string; text: string }) =>
     request<Clause>('/clauses', { method: 'POST', body: JSON.stringify(body) }),
+  // Board templates (VYB-0953)
+  boardTemplates: () => request<BoardTemplate[]>('/boards/templates'),
+  createBoardTemplate: (teamId: string, body: BoardTemplateBody) =>
+    request<{ id: string }>('/boards/templates', { method: 'POST', body: JSON.stringify({ teamId, ...body }) }),
+  updateBoardTemplate: (id: string, body: BoardTemplateBody) =>
+    request<BoardTemplate>(`/boards/templates/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteBoardTemplate: (id: string) => request<void>(`/boards/templates/${id}`, { method: 'DELETE' }),
   // Risk register (VYB-0949)
   risks: () => request<RiskRow[]>('/risks'),
   risk: (id: string) => request<RiskDetail>(`/risks/${id}`),

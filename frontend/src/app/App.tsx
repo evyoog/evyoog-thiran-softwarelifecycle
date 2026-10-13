@@ -10,6 +10,7 @@ import { RequirementNew } from '@/features/RequirementNew'
 import { RequirementDetail } from '@/features/RequirementDetail'
 import { ImportQueue } from '@/features/ImportQueue'
 import { Documents } from '@/features/Documents'
+import { BoardPage } from '@/features/board/BoardPage'
 import { CoverageMatrixPage } from '@/features/CoverageMatrixPage'
 import { DefectMatrixPage } from '@/features/trace/DefectMatrixPage'
 import { ReleaseMatrixPage } from '@/features/trace/ReleaseMatrixPage'
@@ -59,6 +60,7 @@ export function App() {
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/requirements" element={<Requirements />} />
           <Route path="/requirements/new" element={<RequirementNew />} />
+          <Route path="/requirements/board" element={<BoardPage />} />
           <Route path="/requirements/import" element={<ImportQueue />} />
           <Route path="/requirements/documents" element={<Documents />} />
           <Route path="/requirements/coverage" element={<CoverageMatrixPage />} />

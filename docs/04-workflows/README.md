@@ -13,4 +13,5 @@
 - [`clause-register.md`](clause-register.md) — the compliance clause register: mapping requirements to clauses, and the unmapped, mapped and evidenced reading of each (VYB-0947).
 - [`evidence-pack.md`](evidence-pack.md) — a baseline's evidence pack: wording as frozen, status, approvals, design, tests and results in one zip with file hashes (VYB-0948).
 - [`risk-register.md`](risk-register.md) — the risk register: likelihood and impact, status with reasons, links to requirements and releases (VYB-0949).
+- [`kanban-board.md`](kanban-board.md) — the Kanban board: columns are statuses, drops use the real transition rules, templates per team (VYB-0953).
 - [`../08-architecture/development-process.md`](../08-architecture/development-process.md) — how Vyoog itself is built.

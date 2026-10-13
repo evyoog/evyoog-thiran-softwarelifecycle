@@ -194,6 +194,9 @@ public class RequirementController {
     public Page<RequirementView> list(
             @RequestParam(required = false) RequirementStatus status,
             @RequestParam(required = false) UUID capabilityId,
+            /** VYB-0953: anywhere in this application, or anywhere in this product. At most one of the three scopes. */
+            @RequestParam(required = false) UUID applicationId,
+            @RequestParam(required = false) UUID productId,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String priority,
             @RequestParam(required = false) UUID ownerId,
@@ -207,6 +210,8 @@ public class RequirementController {
         Specification<Requirement> spec = RequirementSpecifications.notDeleted();
         if (status != null) spec = spec.and(RequirementSpecifications.hasStatus(status));
         if (capabilityId != null) spec = spec.and(RequirementSpecifications.hasCapability(capabilityId));
+        if (applicationId != null) spec = spec.and(RequirementSpecifications.inApplication(applicationId));
+        if (productId != null) spec = spec.and(RequirementSpecifications.inProduct(productId));
         if (type != null) spec = spec.and(RequirementSpecifications.hasType(type));
         if (priority != null) spec = spec.and(RequirementSpecifications.hasPriority(priority));
         if (ownerId != null) spec = spec.and(RequirementSpecifications.hasOwner(ownerId));

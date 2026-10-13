@@ -9,6 +9,7 @@ import {
 import { CapabilityPicker } from '@/shared/ui/CapabilityPicker'
 import { StatusBadge, PriorityBadge, CoveragePips } from '@/shared/ui/Badges'
 import { Modal } from '@/shared/ui/Modal'
+import { NEXT_STATES, moveLabel, reasonRequired } from './requirements/lifecycle'
 import { UserPicker } from '@/shared/ui/UserPicker'
 import { HistorySection } from './requirements/HistorySection'
 import { VersionsPanel } from './requirements/VersionsPanel'
@@ -20,49 +21,6 @@ const TYPES: RequirementType[] = [
 const PRIORITIES: RequirementPriority[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 const SEVERITIES: DefectSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 const FOUND_IN: FoundIn[] = ['DEV', 'QA', 'UAT', 'PRODUCTION']
-
-/**
- * What each move is called, keyed by where it comes from as well as where it goes.
- *
- * <p>Keying on the target alone would get "reopen" wrong: NEEDS_REVISION is reached
- * both by a decision maker sending REVIEWED back for changes, and by reopening a
- * REJECTED requirement — two different actions that both land on the same status.
- */
-const MOVE_LABEL: Record<string, { button: string; sentence: string }> = {
-  'DRAFT>IN_REVIEW':          { button: 'Submit for review',   sentence: 'submit this for review' },
-  // VYB-0813 (D17): the manual review gate. The same decision maker who used to click
-  // "Approve" straight from IN_REVIEW now clicks this first, then a separate decision
-  // below — two actions, still one role, per the human-decides rule (no AI review yet).
-  'IN_REVIEW>REVIEWED':       { button: 'Move to Reviewed',     sentence: 'mark this reviewed' },
-  'IN_REVIEW>DRAFT':          { button: 'Withdraw to draft',    sentence: 'withdraw this back to draft' },
-  'REVIEWED>APPROVED':        { button: 'Approve',              sentence: 'approve this' },
-  'REVIEWED>REJECTED':        { button: 'Reject',               sentence: 'reject this' },
-  'REVIEWED>NEEDS_REVISION':  { button: 'Send back for revision', sentence: 'send this back for revision' },
-  'NEEDS_REVISION>IN_REVIEW': { button: 'Resubmit',             sentence: 'resubmit this for review' },
-  // VYB-0813: a rejection reopens into NEEDS_REVISION, not DRAFT — the rejection
-  // already carries the reason the author needs to act on.
-  'REJECTED>NEEDS_REVISION':  { button: 'Reopen',               sentence: 'reopen this into needs revision' },
-}
-
-function moveLabel(from: string, target: string) {
-  return MOVE_LABEL[`${from}>${target}`] ?? { button: target, sentence: `move this to ${target}` }
-}
-
-/**
- * VYB-0813 (D17): a full replacement of the prior five-state machine, not an
- * extension of it. Rejecting directly from IN_REVIEW is gone; NEEDS_REVISION is new;
- * REJECTED reopens into NEEDS_REVISION rather than DRAFT; APPROVED is fully terminal —
- * no move leaves it (editing an approved requirement is refused, and forking a new
- * version on such an edit is a deferred follow-up, not built yet).
- */
-const NEXT_STATES: Record<RequirementStatus, RequirementStatus[]> = {
-  DRAFT: ['IN_REVIEW'],
-  IN_REVIEW: ['DRAFT', 'REVIEWED'],
-  REVIEWED: ['APPROVED', 'REJECTED', 'NEEDS_REVISION'],
-  NEEDS_REVISION: ['IN_REVIEW'],
-  APPROVED: [],
-  REJECTED: ['NEEDS_REVISION'],
-}
 
 /**
  * Module scope, not inside the component. Two reasons: the modals at the foot of this file
@@ -634,9 +592,7 @@ export function RequirementDetail() {
                 /* VYB-0813: sending a reviewed requirement back for revision needs a
                    reason exactly like a rejection does — reopening a REJECTED one
                    into NEEDS_REVISION does not, since the rejection already carries one. */
-                reasonRequired={confirmingTransition === 'REJECTED'
-                  || (confirmingTransition === 'NEEDS_REVISION' && req.status === 'REVIEWED')
-                  || (confirmingTransition === 'IN_REVIEW' && (criteria?.length ?? 0) === 0)}
+                reasonRequired={reasonRequired(req.status, confirmingTransition, criteria?.length ?? 0)}
                 reasonContext={confirmingTransition === 'NEEDS_REVISION' && req.status === 'REVIEWED'
                   ? 'What needs to change before this can be resubmitted.'
                   : undefined}

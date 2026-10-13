@@ -453,6 +453,7 @@ export function Requirements() {
             </button>
           )}
           <button className="btn" onClick={() => navigate('/requirements/documents')}><Download /> ReqIF / Word</button>
+          <button className="btn" onClick={() => navigate('/requirements/board')}><Columns3 /> Board</button>
           <button className="btn" onClick={() => navigate('/requirements/import')}><Upload /> Import queue</button>
           <button className="btn pri" onClick={() => navigate('/requirements/new')}><Plus /> New requirement</button>
         </div>
