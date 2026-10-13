@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1236 tests cover 75 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1239 tests cover 76 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1464,3 +1464,9 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` theSwitcherOffersEnglishAndTheTestLanguageIsMarkedAsOne (`frontend/src/shared/i18n/i18n.test.ts`)
 - `AC9` datesAreFormattedByLocaleAndAnEmptyOrBadOneIsEmptyNotToday (`frontend/src/shared/i18n/i18n.test.ts`)
 - `AC9` theWeekStartsOnMondayAndNumbersGroupDigits (`frontend/src/shared/i18n/i18n.test.ts`)
+
+## VYB-0959: Pilot onboarding of one real team, load and recovery rehearsal [S; F11]
+
+- `AC1` aSimilarPairInDifferentApplicationsIsFoundFromEitherSideAndAnUnrelatedRequirementFindsNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DuplicateScanOneIT.java`)
+- `AC1` anInventedTeamGoesFromAnEmptyPortfolioToApprovedRequirementsAndAReleaseThroughTheRunbooksSteps (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PilotDryRunIT.java`)
+- `AC2` aSimilarPairInTheSameApplicationOrWithADeletedSideIsNotReported (`backend/vyoog-api/src/test/java/com/vyoog/api/it/DuplicateScanOneIT.java`)

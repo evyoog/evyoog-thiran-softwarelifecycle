@@ -47,7 +47,7 @@ class PilotDryRunIT extends IntegrationTestBase {
         return json.readTree(r.andReturn().getResponse().getContentAsString());
     }
 
-    private JsonNode post(String url, Object payload, JwtRequestPostProcessor who) throws Exception {
+    private JsonNode postJson(String url, Object payload, JwtRequestPostProcessor who) throws Exception {
         return body(mvc.perform(post(url).contentType(JSON).content(json.writeValueAsString(payload)).with(who)).andExpect(status().is2xxSuccessful()));
     }
 
@@ -61,10 +61,10 @@ class PilotDryRunIT extends IntegrationTestBase {
         JwtRequestPostProcessor admin = signedIn(adminSub, adminSub.substring(4) + "@it.test");
 
         // Step 1: the administrator makes the portfolio the team will work in.
-        String productId = post("/api/v1/products", new java.util.LinkedHashMap<String, Object>() {{
+        String productId = postJson("/api/v1/products", new java.util.LinkedHashMap<String, Object>() {{
             put("key", tag.toUpperCase().substring(0, Math.min(12, tag.length()))); put("name", tag + " product"); }}, admin).get("id").asText();
-        String applicationId = post("/api/v1/products/" + productId + "/applications", java.util.Map.of("name", tag + " app"), admin).get("id").asText();
-        String capabilityId = post("/api/v1/applications/" + applicationId + "/capabilities", java.util.Map.of("name", tag + " cap"), admin).get("id").asText();
+        String applicationId = postJson("/api/v1/products/" + productId + "/applications", java.util.Map.of("name", tag + " app"), admin).get("id").asText();
+        String capabilityId = postJson("/api/v1/applications/" + applicationId + "/capabilities", java.util.Map.of("name", tag + " cap"), admin).get("id").asText();
 
         // Step 2: the administrator adds each person to the directory before they have ever signed in, with a role at the capability.
         // The people sign in later; the roles are waiting for them.
@@ -74,7 +74,7 @@ class PilotDryRunIT extends IntegrationTestBase {
         List<Person> people = new ArrayList<>();
         for (Row r : rows) {
             String email = r.key() + "." + tag + "@pilot.test";
-            JsonNode created = post("/api/v1/users", java.util.Map.of("email", email, "displayName", "Pilot " + r.key(), "role", r.role(),
+            JsonNode created = postJson("/api/v1/users", java.util.Map.of("email", email, "displayName", "Pilot " + r.key(), "role", r.role(),
                 "scopeType", "CAPABILITY", "scopeId", capabilityId), admin);
             people.add(new Person(r.key(), email, "kc-" + UUID.randomUUID(), r.role(), UUID.fromString(created.get("id").asText())));
         }
@@ -89,7 +89,7 @@ class PilotDryRunIT extends IntegrationTestBase {
             as.put(p.key(), token);
             mvc.perform(get("/api/v1/me").with(token)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(p.id().toString()))
-                .andExpect(jsonPath("$.administrator").value(false))
+                .andExpect(jsonPath("$.platformAdministrator").value(false))
                 .andExpect(jsonPath("$.activeGrants[0].role").value(p.role()))
                 .andExpect(jsonPath("$.activeGrants[0].scopeId").value(capabilityId));
         }
@@ -113,7 +113,7 @@ class PilotDryRunIT extends IntegrationTestBase {
         mvc.perform(get("/api/v1/teams/" + teamId + "/members").with(admin)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(5));
 
         // Step 5: the lead gives the team its board (columns in the order the team works), in the team's own scope.
-        post("/api/v1/boards/templates", java.util.Map.of("teamId", teamId, "name", tag + " board", "columns", List.of("DRAFT", "IN_REVIEW", "REVIEWED", "APPROVED"),
+        postJson("/api/v1/boards/templates", java.util.Map.of("teamId", teamId, "name", tag + " board", "columns", List.of("DRAFT", "IN_REVIEW", "REVIEWED", "APPROVED"),
             "applicationId", applicationId), as.get("analyst"));
         mvc.perform(get("/api/v1/boards/templates").with(as.get("viewer"))).andExpect(status().isOk())
             .andExpect(jsonPath("$[?(@.name == '" + tag + " board')].columns[0]").value("DRAFT"));
@@ -125,11 +125,11 @@ class PilotDryRunIT extends IntegrationTestBase {
             .andExpect(status().isForbidden());
         List<String[]> reqs = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
-            JsonNode r = post("/api/v1/requirements", java.util.Map.of("title", tag + " requirement " + i, "statement",
+            JsonNode r = postJson("/api/v1/requirements", java.util.Map.of("title", tag + " requirement " + i, "statement",
                 "The system shall let a pilot user complete step " + i + " within five seconds.", "type", "FUNCTIONAL", "priority", "MEDIUM",
                 "capabilityId", capabilityId), as.get("analyst"));
             String id = r.get("id").asText();
-            post("/api/v1/requirements/" + id + "/acceptance-criteria", java.util.Map.of("text", "Step " + i + " completes in under five seconds on the pilot data set."), as.get("analyst"));
+            postJson("/api/v1/requirements/" + id + "/acceptance-criteria", java.util.Map.of("text", "Step " + i + " completes in under five seconds on the pilot data set."), as.get("analyst"));
             JsonNode submitted = body(mvc.perform(post("/api/v1/requirements/" + id + "/transition?revision=" + r.get("revision").asInt()).contentType(JSON)
                 .content("{\"target\":\"IN_REVIEW\"}").with(as.get("analyst"))).andExpect(status().isOk()));
             reqs.add(new String[] {id, submitted.get("revision").asText()});
@@ -152,7 +152,7 @@ class PilotDryRunIT extends IntegrationTestBase {
             .andExpect(jsonPath("$.totalElements").value(1));
 
         // Step 8: the first release: the approver names it and commits the approved requirements to it.
-        String releaseId = post("/api/v1/releases", java.util.Map.of("name", tag + " release 1"), as.get("approver")).get("id").asText();
+        String releaseId = postJson("/api/v1/releases", java.util.Map.of("name", tag + " release 1"), as.get("approver")).get("id").asText();
         for (int i = 0; i < 2; i++) {
             mvc.perform(post("/api/v1/releases/" + releaseId + "/scope").contentType(JSON).content(json.writeValueAsString(java.util.Map.of(
                 "requirementId", reqs.get(i)[0], "reason", "Pilot scope"))).with(as.get("approver"))).andExpect(status().is2xxSuccessful());

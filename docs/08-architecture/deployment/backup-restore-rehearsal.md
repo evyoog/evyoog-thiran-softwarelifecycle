@@ -1,5 +1,7 @@
 # Backup/restore rehearsal (VYB-0785)
 
+> **Superseded for current figures by [`pilot-rehearsals.md`](pilot-rehearsals.md) (VYB-0959, 2026-10-13):** the backup/restore rehearsal was repeated on today's schema, through the real HTTP layer where it applies. This page stays as the record of the 2026-08-09 run.
+
 **Performed:** 2026-08-09, session 14, against the real local PostgreSQL 16.4 instance
 (self-built with `pgvector`/`pg_trgm`/`pgcrypto` this session — see `BUILD-REGISTER.md`
 session 14). Every command below was actually run; every number is a real measurement

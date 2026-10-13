@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 44, PARTIAL 1, TODO 10.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 44, PARTIAL 1, PARTLY 1, TODO 9.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -161,7 +161,7 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0955 | 6 | Reporting, notifications and release to pilot | Notifications: review, approval, release, test failure and mention events; email and chat channels; user preferences [M; F21] | TODO | S12 |
-| VYB-0959 | 6 | Reporting, notifications and release to pilot | Pilot onboarding of one real team, load and recovery rehearsal [S; F11] | TODO | S12 |
+| VYB-0959 | 6 | Reporting, notifications and release to pilot | Pilot onboarding of one real team, load and recovery rehearsal [S; F11] | PARTLY DONE on dev, started ahead of Sprint 11 at the product owner's request. Done: a pilot onboarding runbook and a scripted dry run (`PilotDryRunIT`) that takes an invented team from an empty portfolio to approved requirements and a release through real HTTP; a load rehearsal through real HTTP with real tokens at 2,000 and 50,000 requirements against stated targets; backup and restore on today's schema with the application booted against the copy; point-in-time recovery with WAL archiving on a local cluster; and a fix for a per-write duplicate scan that cost about 1.2 s a write at 2,000 requirements (`DuplicateScanOneIT`). **Open:** no real team has been onboarded (a human step: the team, Keycloak accounts, the first week), the nightly sweep does not finish at 50,000 requirements, concurrent writes can fail with a 500 under stress, and the object store, Keycloak and the production RDS were not rehearsed. See `docs/08-architecture/deployment/pilot-rehearsals.md`, `pilot-onboarding.md` and D46. | S12 |
 
 ## S12,105: Reporting, notifications and release to pilot
 

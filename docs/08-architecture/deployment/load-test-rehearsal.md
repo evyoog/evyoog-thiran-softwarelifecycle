@@ -1,5 +1,7 @@
 # Load test rehearsal (VYB-0780/0781)
 
+> **Superseded for current figures by [`pilot-rehearsals.md`](pilot-rehearsals.md) (VYB-0959, 2026-10-13):** the load rehearsal was repeated on today's schema, through the real HTTP layer where it applies. This page stays as the record of the 2026-08-09 run.
+
 **Performed:** 2026-08-09, session 14, against the real local PostgreSQL 16.4 instance
 and the real `vyoog-api` application (no mocks) — see `BUILD-REGISTER.md` session 14.
 Every number below is a real measurement; the harness is
