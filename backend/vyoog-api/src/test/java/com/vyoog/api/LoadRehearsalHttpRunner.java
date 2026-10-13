@@ -186,8 +186,24 @@ class LoadRehearsalHttpRunner extends VerificationRunnerBase {
             """.formatted(tag));
         jdbc.update("""
             INSERT INTO requirement_embedding (requirement_id, revision, model, embedding)
-            SELECT r.id, 1, 'local-hashing-v1', (SELECT array_agg(random()::real - 0.5) FROM generate_series(1, 1536))::vector
+            SELECT r.id, 1, 'local-hashing-v1', (SELECT array_agg(random()::real - 0.5) FROM generate_series(1, 1536) WHERE r.id IS NOT NULL)::vector
             FROM requirement r WHERE r.key LIKE 'RL%1$s-%%'
+            """.formatted(tag));
+        // The line above refers to the outer row on purpose: without that, PostgreSQL evaluates the subquery once and every requirement
+        // gets the SAME vector, which made every requirement a 100% duplicate of every other (found by looking at the sweep's findings:
+        // hundreds of thousands of them). Independent random vectors are about as similar as unrelated text is, so about half a percent
+        // of the requirements are made near-copies of one in another application, to give the duplicate rule real pairs to find.
+        jdbc.update("""
+            WITH picked AS (
+              SELECT e.requirement_id AS id, row_number() OVER (ORDER BY random()) AS n
+                FROM requirement_embedding e JOIN requirement r ON r.id = e.requirement_id WHERE r.key LIKE 'RL%1$s-%%'
+               LIMIT (SELECT greatest(2, count(*) / 200) FROM requirement WHERE key LIKE 'RL%1$s-%%')),
+            sources AS (
+              SELECT e.requirement_id AS id, e.embedding, row_number() OVER (ORDER BY random()) AS n
+                FROM requirement_embedding e JOIN requirement r ON r.id = e.requirement_id WHERE r.key LIKE 'RL%1$s-%%'
+               LIMIT (SELECT greatest(2, count(*) / 200) FROM requirement WHERE key LIKE 'RL%1$s-%%'))
+            UPDATE requirement_embedding t SET embedding = s.embedding
+              FROM picked p JOIN sources s ON s.n = p.n AND s.id <> p.id WHERE t.requirement_id = p.id
             """.formatted(tag));
         List<UUID> ids = jdbc.queryForList("SELECT id FROM requirement WHERE key LIKE ? ORDER BY random() LIMIT 3000", UUID.class, "RL" + tag + "-%");
         return new Seed(capabilities.get(0), capabilities, ids, product);
