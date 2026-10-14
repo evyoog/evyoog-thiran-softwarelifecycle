@@ -99,12 +99,12 @@ its real cause, and one the database stops over a lock conflict answers **409 "T
 findings over in shuffled orders (`ConcurrentFindingReconcileIT`; without the ordering it fails with "deadlock detected"), and the stress phase above (0 of 7,957
 and 0 of 2,070 failed; 5 of 8,609 before).
 
-## Findings that are not fixed here (each is its own change)
+## Findings that were not fixed here (each its own change)
 
 1. **A write costs more as the data grows**: 517 ms at 50,000 against a 2 s target is fine for a pilot, but it is a linear scan on every write (above), and under stress at 50,000 writes reached seven seconds.
-2. **`PATCH /requirements/{id}` without `capabilityId` removes the placement**, and with it the editor's rights from that placement. Clients must send it back every time.
-3. **`POST /teams` returns nothing.** The caller must list and match by name.
-4. A person who has never signed in can be granted a role only through `POST /users`, and only a typed email links the row to the real person later; nothing checks it against Keycloak (`PilotDryRunIT` shows the mismatch gives a second, empty account).
+2. ~~`PATCH /requirements/{id}` without `capabilityId` removes the placement.~~ **Fixed (VYB-0961, D49):** leaving it out keeps the placement; `null` unplaces.
+3. ~~`POST /teams` returns nothing.~~ **Fixed (VYB-0961):** it returns the team with its id.
+4. A person who has never signed in can be granted a role only through `POST /users`, and only a typed email links the row to the real person later; nothing checks it against Keycloak. **The consequence is repairable (VYB-0961, D49):** an administrator can merge the signed-in empty account into the prepared row (Administration, People, "Signed in already?"); prevention (checking against Keycloak) is still not done.
 5. **A restore from a dump needs index-build memory (below).** Not a defect, but a setting a person doing a recovery must know.
 
 ## Backup and restore, on today's schema

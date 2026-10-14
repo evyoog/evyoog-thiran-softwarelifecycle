@@ -786,6 +786,16 @@
         },
         "type" : "object"
       },
+      "ClaimAccount" : {
+        "properties" : {
+          "accountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "accountId" ],
+        "type" : "object"
+      },
       "ClarificationView" : {
         "properties" : {
           "answer" : {
@@ -15856,8 +15866,15 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK"
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TeamView"
+                }
+              }
+            },
+            "description" : "Created"
           }
         },
         "tags" : [ "team-controller" ]
@@ -17742,6 +17759,43 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/SetStatus"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{preparedId}/claim" : {
+      "post" : {
+        "operationId" : "claimAccount",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "preparedId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ClaimAccount"
               }
             }
           },

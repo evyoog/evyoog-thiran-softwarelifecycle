@@ -4660,6 +4660,22 @@ export interface paths {
         patch: operations["setStatus"];
         trace?: never;
     };
+    "/api/v1/users/{preparedId}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claimAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/variants": {
         parameters: {
             query?: never;
@@ -5008,6 +5024,10 @@ export interface components {
             requirementId?: string;
             /** Format: int32 */
             toRevision?: number;
+        };
+        ClaimAccount: {
+            /** Format: uuid */
+            accountId: string;
         };
         ClarificationView: {
             answer?: string;
@@ -14053,12 +14073,14 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "*/*": components["schemas"]["TeamView"];
+                };
             };
         };
     };
@@ -15366,6 +15388,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SetStatus"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserView"];
+                };
+            };
+        };
+    };
+    claimAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                preparedId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimAccount"];
             };
         };
         responses: {

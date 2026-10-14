@@ -96,14 +96,10 @@ class PilotDryRunIT extends IntegrationTestBase {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM app_user WHERE email LIKE ?", Integer.class, "%." + tag + "@pilot.test"))
             .as("first sign-in claimed the prepared rows, it did not add new ones").isEqualTo(5);
 
-        // Step 4: the team. Creating a team returns nothing, so the id is found by name (a gap the dry run recorded in the runbook).
+        // Step 4: the team. Creating one answers with it, id included (VYB-0961; it used to answer with nothing).
         String teamName = tag + " team";
-        mvc.perform(post("/api/v1/teams").contentType(JSON).content(json.writeValueAsString(java.util.Map.of("name", teamName))).with(admin)).andExpect(status().is2xxSuccessful());
-        String teamId = null;
-        for (JsonNode t : body(mvc.perform(get("/api/v1/teams").with(admin)).andExpect(status().isOk()))) {
-            if (teamName.equals(t.get("name").asText())) teamId = t.get("id").asText();
-        }
-        assertThat(teamId).as("the new team is in the list").isNotNull();
+        String teamId = postJson("/api/v1/teams", java.util.Map.of("name", teamName), admin).get("id").asText();
+        assertThat(jdbc.queryForObject("SELECT name FROM team WHERE id = ?::uuid", String.class, teamId)).isEqualTo(teamName);
         for (Person p : people) {
             mvc.perform(put("/api/v1/teams/" + teamId + "/members/" + p.id()).with(admin)).andExpect(status().is2xxSuccessful());
         }

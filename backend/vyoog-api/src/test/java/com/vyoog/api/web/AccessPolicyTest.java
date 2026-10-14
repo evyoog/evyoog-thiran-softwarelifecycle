@@ -90,6 +90,8 @@ class AccessPolicyTest {
         Map.entry("NotificationController#setMyPreferences", new Expected(AccessRule.PERSON, RequiresAccess.Scope.NONE)),
         Map.entry("NotificationSettingsController#setChatKinds", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("NotificationSettingsController#test", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
+        // VYB-0961: joining a prepared directory entry to the account its person signed in with is the administrator's
+        Map.entry("UserController#claimAccount", new Expected(AccessRule.ADMIN, RequiresAccess.Scope.NONE)),
         Map.entry("RiskController#create", new Expected(AccessRule.RISK, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("RiskController#update", new Expected(AccessRule.RISK, RequiresAccess.Scope.ANYWHERE)),
         Map.entry("RiskController#changeStatus", new Expected(AccessRule.RISK, RequiresAccess.Scope.ANYWHERE)),

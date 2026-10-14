@@ -36,8 +36,8 @@ As the administrator, create the **product**, its **application** and the **capa
 Add each person to the directory with `POST /users` (Administration, People): email, display name, and a **role at the capability**
 (Business analyst, Reviewer, Approver, Developer, Viewer, and so on). Do it before their first sign-in so the access is waiting for
 them. The email address must be the one Keycloak will send; **a first sign-in claims the prepared row by email**, so a mismatch
-(a nickname, another domain) gives them a second, empty account and no access. The dry run proves the claim works and that nobody ends
-up with two accounts; it cannot prove the address in Keycloak is the address you typed, so compare them.
+(a nickname, another domain) gives them a second, empty account and no access (step 4 says how to repair it). The dry run proves the
+claim works and that nobody ends up with two accounts; it cannot prove the address in Keycloak is the address you typed, so compare them.
 
 Keep roles honest: the person who writes a requirement cannot be the one who approves it (separation of duties is enforced, and the
 dry run shows the 403).
@@ -45,12 +45,13 @@ dry run shows the 403).
 ### 4. First sign-in (human, with the product)
 
 Ask each person to open the address and sign in through Keycloak. Check **Administration, People**: every person shows as signed in
-with the grants you gave them. Anyone who shows a second row, or no grants, is the email mismatch above: fix the directory row, not
-the person.
+with the grants you gave them. Anyone who shows a second row, or no grants, is the email mismatch above. Repair it in the same screen:
+the prepared row still says **Signed in already?**; choose their account there and confirm, and the prepared row takes over the sign-in
+with its grants and team intact (D49). Do not fix it by retyping the email on the prepared row.
 
 ### 5. The team (product)
 
-`POST /teams` creates it; it returns nothing, so find its id in `GET /teams` (or use the Teams screen). Add each person
+`POST /teams` creates it and returns it, id included (or use the Teams screen). Add each person
 (`PUT /teams/{id}/members/{userId}`), and make one of them **LEAD** (`PUT .../role`). A lead can manage the team's members and make
 its board templates.
 
@@ -81,12 +82,11 @@ the spreadsheet instead. Those notes are the pilot's result. Do not tune the pro
 
 ## What the dry run found missing
 
-These are the gaps the scripted dry run (and the load rehearsal) hit. None is fixed by this row, because each is a decision or a change
-of its own (see `pilot-rehearsals.md`):
+These are the gaps the scripted dry run (and the load rehearsal) hit. The first three were fixed afterwards (VYB-0961, D49):
 
-1. **`POST /teams` returns no id.** The caller has to list the teams and find it by name. The Teams screen does this; a script cannot do it safely if two teams share a name.
-2. **Granting a role to someone who has never signed in is only possible through `POST /users`**, and only a typed email links the row to the person later. There is no check that the email matches what Keycloak will send.
-3. **`PATCH /requirements/{id}` without `capabilityId` removes the requirement's placement.** Every client must send it back on every edit; a client that forgets orphans the requirement and loses the edit rights that came from its placement.
+1. ~~**`POST /teams` returns no id.**~~ **Fixed:** it answers with the new team, id included.
+2. ~~**A first sign-in under a different email gives a second, empty account.**~~ **Repaired by an administrator, not prevented:** in Administration, People, a prepared entry nobody has signed into shows **Signed in already?**; the administrator picks the account (likely matches first) and the entry takes over that sign-in, grants and all, and the empty account is removed. It is refused for an account that holds access, belongs to a team, or has done anything. It is still true that nothing checks a typed email against what Keycloak will send, so **compare them in step 3** and use this only when they differ.
+3. ~~**`PATCH /requirements/{id}` without `capabilityId` removes the requirement's placement.**~~ **Fixed:** leaving it out keeps the requirement where it is; `null` unplaces it; a value moves it.
 4. **Email and chat exist (VYB-0955) but have never been tried against a real mail server or Teams channel.** They are off until the deployment sets `MAIL_*` and `NOTIFY_TEAMS_WEBHOOK_URL`; see [`notifications-setup.md`](notifications-setup.md), and press the test buttons on Administration, Notifications before the team starts. With neither set, people are told only in the bell and My Work.
 5. **Keycloak is not rehearsed here.** The sandbox has no Keycloak; the realm, the users and the sign-in redirect are human steps and untested by this row.
 

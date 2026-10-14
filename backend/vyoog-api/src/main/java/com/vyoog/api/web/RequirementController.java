@@ -136,9 +136,40 @@ public class RequirementController {
         String type, String priority, String capabilityId,
         String productId, String applicationId) {}
 
-    public record UpdateRequirement(
-        int revision, @NotBlank String title, @NotBlank String statement,
-        String type, String priority, String capabilityId) {}
+    /**
+     * VYB-0961 (D49): {@code capabilityId} has three meanings, as a partial update should: <b>left out</b> keeps the requirement where it is,
+     * <b>null</b> takes it out of its capability (unplaces it), a <b>value</b> moves it. It used to be that leaving it out unplaced the
+     * requirement, so a client that forgot the field silently orphaned it and took the editor's rights with it. A class, not a record:
+     * Jackson reads a missing property and a null one the same way for a record, and only a setter is called when the property is there.
+     */
+    public static final class UpdateRequirement {
+        private int revision;
+        @NotBlank private String title;
+        @NotBlank private String statement;
+        private String type;
+        private String priority;
+        private String capabilityId;
+        private boolean capabilityIdSent;
+
+        public int getRevision() { return revision; }
+        public void setRevision(int revision) { this.revision = revision; }
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
+        public String getStatement() { return statement; }
+        public void setStatement(String statement) { this.statement = statement; }
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        public String getPriority() { return priority; }
+        public void setPriority(String priority) { this.priority = priority; }
+        public String getCapabilityId() { return capabilityId; }
+        @com.fasterxml.jackson.annotation.JsonSetter("capabilityId")
+        public void setCapabilityId(String capabilityId) {
+            this.capabilityId = capabilityId;
+            this.capabilityIdSent = true; // called only when the property is in the body, null or not
+        }
+        @com.fasterxml.jackson.annotation.JsonIgnore
+        public boolean isCapabilityIdSent() { return capabilityIdSent; }
+    }
 
     public record TransitionRequest(@NotBlank String target, String reason) {}
 
@@ -305,16 +336,18 @@ public class RequirementController {
                                    @RequestParam(required = false) UUID changeRequestId,
                                    @AuthenticationPrincipal Jwt jwt) {
         requireEditRole(jwt, id, "edit requirement");
-        UUID capabilityId = body.capabilityId() == null ? null : UUID.fromString(body.capabilityId());
+        UUID capabilityId = body.isCapabilityIdSent()
+            ? (body.getCapabilityId() == null ? null : UUID.fromString(body.getCapabilityId())) // null unplaces; a value moves
+            : requirements.findById(id).orElseThrow(NoSuchElementException::new).getCapabilityId(); // left out: not a change (VYB-0961)
         Requirement r;
         if (changeRequestId != null) {
             changeRequests.assertCanEdit(changeRequestId, id);
             r = service.applyChangeRequestEdit(
-                id, body.revision(), body.title(), body.statement(), body.type(), body.priority(),
+                id, body.getRevision(), body.getTitle(), body.getStatement(), body.getType(), body.getPriority(),
                 capabilityId, currentUserId(jwt));
         } else {
             r = service.update(
-                id, body.revision(), body.title(), body.statement(), body.type(), body.priority(),
+                id, body.getRevision(), body.getTitle(), body.getStatement(), body.getType(), body.getPriority(),
                 capabilityId, currentUserId(jwt));
         }
         return toView(r, traceGraph.coverageFor(List.of(r.getId())).get(r.getId()));

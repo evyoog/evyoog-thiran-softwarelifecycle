@@ -126,7 +126,7 @@ export function RequirementDetail() {
       if (!req) throw new Error('not loaded')
       return api.updateRequirement(id, {
         revision: req.revision, title, statement, type, priority,
-        capabilityId: capabilityChanged ? (capabilityId ?? undefined) : req.capabilityId,
+        capabilityId: capabilityChanged ? capabilityId : req.capabilityId, // null unplaces (VYB-0961: left out now keeps)
       }, locked ? changeRequestId.trim() || undefined : undefined)
     },
     onSuccess: () => { setConflict(null); invalidateReq() },

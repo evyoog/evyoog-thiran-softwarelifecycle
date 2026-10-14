@@ -226,7 +226,11 @@ export interface UpdateRequirement {
   statement: string
   type: RequirementType
   priority: RequirementPriority
-  capabilityId?: string
+  /**
+   * VYB-0961: left out keeps the requirement where it is; `null` takes it out of its capability; a value moves it. (Leaving it out used to
+   * unplace the requirement.)
+   */
+  capabilityId?: string | null
 }
 
 export interface AcceptanceCriterion {
@@ -2252,7 +2256,10 @@ export const api = {
 
   // Teams
   teams: () => request<Team[]>('/teams'),
-  createTeam: (name: string) => request<void>('/teams', { method: 'POST', body: JSON.stringify({ name }) }),
+  createTeam: (name: string) => request<Team>('/teams', { method: 'POST', body: JSON.stringify({ name }) }),
+  // VYB-0961: joins a prepared entry to the account its person signed in with
+  claimAccount: (preparedId: string, accountId: string) =>
+    request<AppUserView>(`/users/${preparedId}/claim`, { method: 'POST', body: JSON.stringify({ accountId }) }),
   addTeamMember: (teamId: string, userId: string) => request<void>(`/teams/${teamId}/members/${userId}`, { method: 'PUT' }),
   removeTeamMember: (teamId: string, userId: string) => request<void>(`/teams/${teamId}/members/${userId}`, { method: 'DELETE' }),
   teamMembers: (teamId: string) => request<TeamMember[]>(`/teams/${teamId}/members`),

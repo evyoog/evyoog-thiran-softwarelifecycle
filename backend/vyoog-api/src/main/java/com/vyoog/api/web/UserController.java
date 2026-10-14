@@ -2,6 +2,9 @@ package com.vyoog.api.web;
 
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.AccessRole;
+import com.vyoog.api.config.RequiresAccess;
+import com.vyoog.identity.AccessRule;
+import com.vyoog.identity.AccountClaimService;
 import com.vyoog.identity.AppUser;
 import com.vyoog.identity.AppUserService;
 import com.vyoog.identity.ScopeType;
@@ -23,11 +26,13 @@ public class UserController {
     private final AppUserService users;
     private final UserProvisioningService provisioning;
     private final PrincipalGuard guard;
+    private final AccountClaimService claims;
 
-    public UserController(AppUserService users, UserProvisioningService provisioning, PrincipalGuard guard) {
+    public UserController(AppUserService users, UserProvisioningService provisioning, PrincipalGuard guard, AccountClaimService claims) {
         this.users = users;
         this.provisioning = provisioning;
         this.guard = guard;
+        this.claims = claims;
     }
 
     /**
@@ -123,6 +128,19 @@ public class UserController {
     public void setManager(@PathVariable UUID id, @RequestBody SetManager body, @AuthenticationPrincipal Jwt jwt) {
         guard.requireAdministrator(jwt);
         users.setManager(id, body.managerId() == null ? null : UUID.fromString(body.managerId()), currentUserId(jwt));
+    }
+
+    public record ClaimAccount(@jakarta.validation.constraints.NotNull UUID accountId) {}
+
+    /**
+     * VYB-0961 (D49): joins a prepared entry to the account its person actually signed in with, when the address Keycloak sent was not
+     * the one typed. Administrator only; refused for an account that holds access, belongs to a team or has done anything.
+     */
+    @RequiresAccess(AccessRule.ADMIN)
+    @PostMapping("/{preparedId}/claim")
+    public UserView claimAccount(@PathVariable UUID preparedId, @RequestBody @Valid ClaimAccount body, @AuthenticationPrincipal Jwt jwt) {
+        claims.claim(preparedId, body.accountId(), currentUserId(jwt));
+        return toView(users.directoryRow(preparedId));
     }
 
     private UUID currentUserId(Jwt jwt) {

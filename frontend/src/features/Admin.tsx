@@ -16,6 +16,8 @@ import { ConnectorHealthTab } from './admin/ConnectorHealthTab'
 import { NotificationsTab } from './admin/NotificationsTab'
 import { AiRedactionCard } from './admin/AiRedactionCard'
 import { AiTokenBudgetCard } from './admin/AiTokenBudgetCard'
+import { ClaimAccountDialog } from './admin/ClaimAccountDialog'
+import { isAwaitingFirstSignIn } from './admin/claimCandidates'
 
 type Tab = 'users' | 'teams' | 'grants' | 'roles' | 'service-accounts' | 'security' | 'audit' | 'integrations' | 'connector-health' | 'notifications' | 'settings'
 const TABS: { key: Tab; label: string }[] = [
@@ -250,6 +252,7 @@ function UsersTab() {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['admin-users'], queryFn: api.users })
   const [creating, setCreating] = useState(false)
+  const [claiming, setClaiming] = useState<AppUserView | null>(null)
   // Every mutation here used to fail silently: the select snapped back on refetch with
   // no reason shown, which reads as "the click didn't register" rather than "the server
   // refused it". The reason the server gave is what belongs on screen.
@@ -315,13 +318,19 @@ function UsersTab() {
                     {u.source}
                     {/* Principle 8: a row nobody has signed into yet says so rather than
                         looking like an ordinary account that simply never appears. */}
-                    {u.source === 'LOCAL' && u.lastSeenAt == null && (
-                      <div style={{ fontSize: 10, color: 'var(--tx-3)' }}>awaiting first sign-in</div>
+                    {isAwaitingFirstSignIn(u) && (
+                      <>
+                        <div style={{ fontSize: 10, color: 'var(--tx-3)' }}>awaiting first sign-in</div>
+                        {/* VYB-0961: they may have signed in under another address and have a second, empty account. */}
+                        <button className="btn" style={{ padding: '1px 6px', fontSize: 10.5, marginTop: 3 }} onClick={() => setClaiming(u)}>
+                          Signed in already?
+                        </button>
+                      </>
                     )}
                   </td>
                   <td {...grid.cellProps(rowIdx, 2)}>
                     <select
-                      className="select" value={u.status}
+                      className="select" aria-label={`Status of ${u.displayName}`} value={u.status}
                       onChange={(e) => setStatus.mutate({ id: u.id, status: e.target.value })}
                     >
                       {['ACTIVE', 'LEAVE', 'DEPARTED', 'EXTERNAL'].map((s) => <option key={s} value={s}>{s}</option>)}
@@ -339,7 +348,7 @@ function UsersTab() {
                   <td {...grid.cellProps(rowIdx, 7)}>
                     {/* VYB-0706: who takes this user's derived tasks while they're away. */}
                     <select
-                      className="select" value={u.delegateId ?? ''}
+                      className="select" aria-label={`Delegate of ${u.displayName}`} value={u.delegateId ?? ''}
                       onChange={(e) => setDelegate.mutate({ id: u.id, delegateId: e.target.value || null })}
                     >
                       <option value="">— none —</option>
@@ -351,7 +360,7 @@ function UsersTab() {
                   <td {...grid.cellProps(rowIdx, 8)}>
                     {/* VYB-0334/0792: who an ageing clarification escalates to, before falling back to the capability owner then the raiser. */}
                     <select
-                      className="select" value={u.managerId ?? ''}
+                      className="select" aria-label={`Manager of ${u.displayName}`} value={u.managerId ?? ''}
                       onChange={(e) => setManager.mutate({ id: u.id, managerId: e.target.value || null })}
                     >
                       <option value="">— none —</option>
@@ -367,6 +376,7 @@ function UsersTab() {
         </div>
       )}
 
+      {claiming && data && <ClaimAccountDialog prepared={claiming} directory={data} onClose={() => setClaiming(null)} />}
       {creating && (
         <CreateUserModal
           onClose={() => setCreating(false)}

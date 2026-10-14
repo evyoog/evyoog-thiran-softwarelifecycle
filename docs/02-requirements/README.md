@@ -23,8 +23,8 @@ Every requirement in the register, by feature. `BUILD-REGISTER.md` is the source
 | [Platform foundation](FRD/platform-foundation/requirement.md) | 12 | DONE 5, SUPERSEDED 7 |
 | [Non-functional: Performance and operability](non-functional-requirements/performance.md) | 6 | DONE 6 |
 | [Non-functional: Accessibility and cross-cutting UX](non-functional-requirements/accessibility-and-ux.md) | 7 | DONE 7 |
-| [Planned: Phase 6](functional-requirements/phase-6-planned.md) | 61 | BLOCKED 5, DONE 46, PARTIAL 1, PARTLY 1, TODO 8 |
+| [Planned: Phase 6](functional-requirements/phase-6-planned.md) | 62 | BLOCKED 5, DONE 47, PARTIAL 1, PARTLY 1, TODO 8 |
 
-Total: 359 requirements (298 in phases 0 to 5, 61 planned in phase 6).
+Total: 360 requirements (298 in phases 0 to 5, 62 planned in phase 6).
 
 See also: [`SPECIFICATION-INDEX.md`](SPECIFICATION-INDEX.md) (the build specification, by section), [`specification-guide.md`](specification-guide.md), [`docs/DECISIONS.md`](../DECISIONS.md).

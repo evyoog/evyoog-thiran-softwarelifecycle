@@ -52,8 +52,12 @@ public class TeamController {
     // VYB-0906: creating a team is administrator-only; managing its members is administrator or the team lead.
     @RequiresAccess(value = AccessRule.ADMIN)
     @PostMapping
-    public void create(@RequestBody CreateTeam body) {
-        teams.create(body.name());
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public TeamView create(@RequestBody CreateTeam body) {
+        // VYB-0961: answers with the new team (it used to answer with nothing, so a script had to list the teams and match by name,
+        // which two teams with one name make unsafe).
+        var team = teams.create(body.name());
+        return new TeamView(team.getId().toString(), team.getName(), List.of());
     }
 
     @PutMapping("/{teamId}/members/{userId}")

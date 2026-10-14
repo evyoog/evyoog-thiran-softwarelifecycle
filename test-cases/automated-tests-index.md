@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1298 tests cover 78 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1312 tests cover 79 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -1535,3 +1535,20 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` changingTheRulesThresholdChecksEverythingAgainUnderTheNewOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
 - `AC8` aRuleThatCannotRunMovesNoPosition (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
 - `AC9` deletingARequirementResolvesItsPairFindingsAtOnceFromEitherSide (`backend/vyoog-api/src/test/java/com/vyoog/api/it/IncrementalSweepIT.java`)
+
+## VYB-0961: Close the three small API gaps the VYB-0959 dry run found: `PATCH /requirements/{id}` silently unplaced a requirement, `POST /teams` returned no id, and a person whose Keycloak email differs from the typed one got a second, empty account [S; from VYB-0959]
+
+- `AC1` leavingOutTheCapabilityKeepsTheRequirementWhereItIsAndTheEditorCanStillEditIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ApiGapsIT.java`)
+- `AC10` onlyAnAdministratorMayJoinAccounts (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AccountClaimIT.java`)
+- `AC11` accountsThatShareAWordWithThePreparedEntryComeFirstThenTheMostRecentSignIns (`frontend/src/features/admin/claimCandidates.test.ts`)
+- `AC11` onlyASignedInAccountWithNoAccessCanBeJoined (`frontend/src/features/admin/claimCandidates.test.ts`)
+- `AC11` onlyAnEntryNobodyHasSignedIntoIsOfferedAClaim (`frontend/src/features/admin/claimCandidates.test.ts`)
+- `AC11` wordsAreCompareWithoutCaseAndShortOnesDoNotCount (`frontend/src/features/admin/claimCandidates.test.ts`)
+- `AC2` anExplicitNullUnplacesAndAValueMovesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ApiGapsIT.java`)
+- `AC3` aMalformedCapabilityIsStillARefusalNotAnUnplace (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ApiGapsIT.java`)
+- `AC4` creatingATeamAnswersWithTheNewTeamAndItsIdWorks (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ApiGapsIT.java`)
+- `AC5` onlyAnAdministratorCreatesATeam (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ApiGapsIT.java`)
+- `AC6` theAdministratorJoinsThePreparedEntryToTheAccountAndThePersonHasTheirAccessFromTheNextRequest (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AccountClaimIT.java`)
+- `AC7` anAccountThatHoldsAccessBelongsToATeamOrHasSavedViewsIsNeverMergedAway (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AccountClaimIT.java`)
+- `AC8` anAccountThatHasDoneAnythingIsRefusedByTheDatabaseItselfAndTheAnswerNamesWhat (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AccountClaimIT.java`)
+- `AC9` thePairMustBeAPreparedEntryAndARealSignInAndDifferentAndExisting (`backend/vyoog-api/src/test/java/com/vyoog/api/it/AccountClaimIT.java`)
