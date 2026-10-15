@@ -4640,6 +4640,59 @@
         },
         "type" : "object"
       },
+      "PushBody" : {
+        "properties" : {
+          "acceptance_criteria" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "type" : "string"
+          },
+          "source_capability_id" : {
+            "type" : "string"
+          },
+          "source_feature_id" : {
+            "type" : "string"
+          },
+          "source_function_id" : {
+            "type" : "string"
+          },
+          "source_goal_id" : {
+            "type" : "string"
+          },
+          "source_system" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PushResponse" : {
+        "properties" : {
+          "created_at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "requirement_id" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "traceability" : {
+            "$ref" : "#/components/schemas/Traceability"
+          }
+        },
+        "type" : "object"
+      },
       "PushResultView" : {
         "properties" : {
           "error" : {
@@ -6783,6 +6836,14 @@
           }
         },
         "required" : [ "linkType", "requirementId" ],
+        "type" : "object"
+      },
+      "Traceability" : {
+        "properties" : {
+          "source_function_id" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "TransitionRequest" : {
@@ -12211,6 +12272,42 @@
           }
         },
         "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/v1/planner/requirements" : {
+      "post" : {
+        "operationId" : "receive_1",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PushBody"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PushResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "planner-requirement-controller" ]
       }
     },
     "/api/v1/products" : {

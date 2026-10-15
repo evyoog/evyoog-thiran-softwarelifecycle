@@ -2196,6 +2196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/planner/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["receive_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -6389,6 +6405,24 @@ export interface components {
             stale?: boolean;
             state?: string;
         };
+        PushBody: {
+            acceptance_criteria?: string[];
+            description?: string;
+            priority?: string;
+            source_capability_id?: string;
+            source_feature_id?: string;
+            source_function_id?: string;
+            source_goal_id?: string;
+            source_system?: string;
+            title?: string;
+        };
+        PushResponse: {
+            /** Format: date-time */
+            created_at?: string;
+            requirement_id?: string;
+            status?: string;
+            traceability?: components["schemas"]["Traceability"];
+        };
         PushResultView: {
             error?: string;
             /** Format: int32 */
@@ -7158,6 +7192,9 @@ export interface components {
         TraceLinkChoiceBody: {
             linkType: string;
             requirementId: string;
+        };
+        Traceability: {
+            source_function_id?: string;
         };
         TransitionRequest: {
             reason?: string;
@@ -11146,6 +11183,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    receive_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushResponse"];
+                };
             };
         };
     };

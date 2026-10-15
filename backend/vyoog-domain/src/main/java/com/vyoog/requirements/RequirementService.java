@@ -141,10 +141,24 @@ public class RequirementService {
         }
     }
 
-    @Transactional
     /** D12: creation at product, application or capability level, or nowhere yet. */
+    @Transactional
     public Requirement create(String title, String statement, String type, String priority,
                                Placement placement, UUID actorId) {
+        return createInternal(title, statement, type, priority, placement, actorId, false);
+    }
+
+    /**
+     * VYB-0915: creation by a registered service account (the Agile Planner's push), not a person. The requirement has no creator, and
+     * the audit event says a service did it rather than recording a person who does not exist.
+     */
+    @Transactional
+    public Requirement createByService(String title, String statement, String type, String priority, Placement placement) {
+        return createInternal(title, statement, type, priority, placement, null, true);
+    }
+
+    private Requirement createInternal(String title, String statement, String type, String priority,
+                                        Placement placement, UUID actorId, boolean byService) {
         Requirement r = new Requirement(keys.next(), title, statement, actorId);
         r.initialize(type, priority, placement);
         r.setQualityScore((short) qualityScore.score(statement, 0, false).total());
@@ -155,7 +169,11 @@ public class RequirementService {
             r.getType(), r.getStatus().name(), r.getPriority(), r.getCapabilityId(),
             actorId, null));
 
-        audit.record(actorId, "requirement.created", "REQUIREMENT", r.getId(), null, snapshot(r));
+        if (byService) {
+            audit.recordService("requirement.created", "REQUIREMENT", r.getId(), snapshot(r));
+        } else {
+            audit.record(actorId, "requirement.created", "REQUIREMENT", r.getId(), null, snapshot(r));
+        }
 
         // VYB-0666: scheduled to run once this transaction actually commits, not called
         // here directly. Detection and embedding are each an AI round-trip; a bulk import

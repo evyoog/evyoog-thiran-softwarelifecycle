@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1312 tests cover 79 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1323 tests cover 80 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -677,6 +677,20 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC5` failuresAreCountedPerOperationNotPerAttempt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
 - `AC5` theMetricsCountOperationsByOutcome (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
 - `AC5` threeFailedOperationsInARowDegradeTheConnectionOnceAndASuccessRecoversIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/ConnectorExecutorIT.java`)
+
+## VYB-0915: Receive a Function from the Agile Planner (`POST` with `Idempotency-Key`, service-account token) and create one draft requirement with its acceptance criteria and a back-reference [M; F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: outbound `function.upserted`)
+
+- `AC1` aPushCreatesADraftRequirementWithItsCriteriaAndABackReference (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC2` theSameIdempotencyKeyAnswersWithTheRequirementItMade (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC3` theSameFunctionAgainIsARepeatWhenUnchangedAndRefusedWhenChanged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC3` theSameWordsHashAlikeWhateverTheSpacingAndPriorityCaseAndDifferentWordsDoNot (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerRequirementIntakeTest.java`)
+- `AC4` aMissingDescriptionIsStatedByTheTitle (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerRequirementIntakeTest.java`)
+- `AC4` priorityIsMappedAndADescriptionlessFunctionIsStatedByItsTitle (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC4` priorityMapsByNameWhateverTheCaseAndAnythingElseIsMedium (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerRequirementIntakeTest.java`)
+- `AC5` onlyARegisteredServiceAccountWithTheScopeMayPush (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC6` aBadPushIsRefusedWithAReasonAndCreatesNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC6` validationNamesWhatIsWrong (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerRequirementIntakeTest.java`)
+- `AC7` theSameFunctionSentAtTheSameMomentBecomesOneRequirement (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
 
 ## VYB-0916: Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40]
 

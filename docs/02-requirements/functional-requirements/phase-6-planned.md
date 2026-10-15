@@ -2,7 +2,7 @@
 
 # Planned requirements: Phase 6
 
-The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 5, DONE 47, PARTIAL 1, PARTLY 1, TODO 8.
+The next plan, from `BUILD-REGISTER.md` rows VYB-0900 to VYB-0959: hardening first (Sprint 1), then the connector framework and Agile Planner, manual test execution, releases and defects, Macro Planner sync, AI governance, traceability depth, compliance evidence, configurability and boards, and pilot readiness. Sizes (S, M, L) and finding IDs (F01 to F42, from the SWLCA gap analysis) are in each row. Status: BLOCKED 4, DONE 49, PARTIAL 1, PARTLY 1, TODO 7.
 
 Open decisions that gate some of these: D24 (delivery tool), D25 (configurability and multi-tenancy), D26 (review rounds), D27 (compliance framework), in [`docs/DECISIONS.md`](../../DECISIONS.md).
 
@@ -34,8 +34,8 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
 | VYB-0913 | 6 | Connector framework and Agile Planner, outbound | Generic connector interface on the existing registry: auth, retries, backoff, idempotency key, sync log, health state [L; F40] | DONE on dev (44 new tests; generic part only, no connector uses it yet; D24 still open; commit only, no PR yet) | S3 |
-| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-level ownership table for Feature and Function against Agile Planner backlog items [M; F40] | BLOCKED: the Agile Planner repository has no field-level table and a different contract from this plan; decisions needed, see docs/09-integrations/agile-planner-contract-analysis.md | S3 |
-| VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Outbound function.upserted, triggered by approval rather than a manual push [M; F40] | TODO | S3 |
+| VYB-0914 | 6 | Connector framework and Agile Planner, outbound | Field-by-field ownership of a Planner-created requirement, recorded [S; F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). | DONE on dev, started ahead of Sprint 11 at the product owner's request: `docs/09-integrations/agile-planner-field-ownership.md`, from the product owner's D24 answers and the defaults of D50 (marked there); documentation only; nothing confirmed with the Planner team | S3 |
+| VYB-0915 | 6 | Connector framework and Agile Planner, outbound | Receive a Function from the Agile Planner (`POST` with `Idempotency-Key`, service-account token) and create one draft requirement with its acceptance criteria and a back-reference [M; F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: outbound `function.upserted`) | DONE on dev, started ahead of Sprint 11 at the product owner's request (11 new tests; backend only, no screen; one migration, V060; D50): `POST /api/v1/planner/requirements`, idempotent, one requirement per Function, a changed Function is refused with 409 until proposals exist. **Not exercised against the real Planner (its ALM integration is not built).** See `docs/09-integrations/agile-planner-requirements-intake.md` | S3 |
 | VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | DONE on dev (27 new tests; commit only, no PR yet) | S3 |
 | VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | DONE on dev (33 new tests; checked in a browser against mocked data; commit only, no PR yet) | S3 |
 
@@ -43,10 +43,10 @@ Open decisions that gate some of these: D24 (delivery tool), D25 (configurabilit
 
 | ID | Phase | Capability | Requirement | Status | Session |
 |---|---|---|---|---|---|
-| VYB-0918 | 6 | Agile Planner inbound and reconciliation | Process inbound backlog_item.status_changed and write completion signals back to requirements [M; F16] | TODO | S4 |
-| VYB-0919 | 6 | Agile Planner inbound and reconciliation | sprint.reassigned marks affected trace links suspect [S; F16] | TODO | S4 |
-| VYB-0920 | 6 | Agile Planner inbound and reconciliation | Orphan and reconciliation handling, conflict queue where both sides changed a field [M; F40] | TODO | S4 |
-| VYB-0921 | 6 | Agile Planner inbound and reconciliation | Webhook hardening: timestamp window, rate limit, constant-time compare, real payload processing [S; F08] | TODO | S4 |
+| VYB-0918 | 6 | Agile Planner inbound and reconciliation | Tell the Planner back: signed `requirement.status_changed`, `design_artifact.created`, `test_case.created`, `test_result.recorded` webhooks (`X-ALM-Signature`, its OAuth2 token and `X-TENANT-ID`, retries and sync log through the connector framework) [L; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `backlog_item.status_changed`) | TODO | S4 |
+| VYB-0919 | 6 | Agile Planner inbound and reconciliation | A later change to a Function arrives as a proposal on its requirement that a person accepts or rejects; the 409 of VYB-0915 becomes a proposal [M; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `sprint.reassigned`) | TODO | S4 |
+| VYB-0920 | 6 | Agile Planner inbound and reconciliation | Version-based discard of an older Function, "deprecate, never delete", and an unlinked report for a Planner requirement id this application does not know [M; F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: orphan and conflict queue) | TODO | S4 |
+| VYB-0921 | 6 | Agile Planner inbound and reconciliation | Hardening of the Planner endpoints: rate limit, body size, replay window, and the signed-payload format against the contract's [S; F08] Rewritten 2026-10-15 around the Planner's documented contract (D24). | TODO | S4 |
 | VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
 
 ## S5: Manual test execution

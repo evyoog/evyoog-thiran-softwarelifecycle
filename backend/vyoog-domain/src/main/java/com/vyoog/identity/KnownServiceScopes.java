@@ -14,8 +14,10 @@ public final class KnownServiceScopes {
     public static final String WEBHOOK_CI = "webhook:ci";
     public static final String WEBHOOK_HR = "webhook:hr";
     public static final String WEBHOOK_PLANNING = "webhook:planning";
+    /** VYB-0915 (D24, D50): the Agile Planner sends a Function to be created as a draft requirement. */
+    public static final String PLANNER_REQUIREMENTS = "planner:requirements";
 
-    public static final Set<String> ALL = Set.of(CI_INGEST, WEBHOOK_GIT, WEBHOOK_CI, WEBHOOK_HR, WEBHOOK_PLANNING);
+    public static final Set<String> ALL = Set.of(CI_INGEST, WEBHOOK_GIT, WEBHOOK_CI, WEBHOOK_HR, WEBHOOK_PLANNING, PLANNER_REQUIREMENTS);
 
     private KnownServiceScopes() {}
 }
