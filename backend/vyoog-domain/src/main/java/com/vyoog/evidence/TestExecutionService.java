@@ -48,11 +48,13 @@ public class TestExecutionService {
     private final EntityManager entityManager;
     private final DetectionSweepService detection;
     private final NotificationEvents events;
+    private final com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents;
     private final TransactionOperations tx;
 
     public TestExecutionService(JdbcTemplate jdbc, AuditService audit, TestManagementService mgmt,
                                  AttachmentService attachments, EntityManager entityManager,
-                                 DetectionSweepService detection, TransactionOperations tx, NotificationEvents events) {
+                                 DetectionSweepService detection, TransactionOperations tx, NotificationEvents events,
+                                 com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents) {
         this.tx = tx;
         this.entityManager = entityManager;
         this.detection = detection;
@@ -61,6 +63,7 @@ public class TestExecutionService {
         this.mgmt = mgmt;
         this.attachments = attachments;
         this.events = events;
+        this.plannerEvents = plannerEvents;
     }
 
     @Transactional
@@ -150,6 +153,12 @@ public class TestExecutionService {
         int written = 0;
         java.util.Set<UUID> touched = new java.util.LinkedHashSet<>();
         for (TestManagementService.RunCase c : cases) {
+            // VYB-0918b: a requirement the Agile Planner sent is told each result of the run, a blocked case included (it writes no
+            // verification, but the Planner's own contract names it). Reported once per run, case and requirement.
+            if (RESULTS.contains(c.result())) {
+                c.requirements().forEach(r -> plannerEvents.testResultRecorded(r.requirementId(), c.key(), c.result(), runLabel,
+                    r.testedRevision(), "run:" + runId + ":" + c.id()));
+            }
             if (!"PASS".equals(c.result()) && !"FAIL".equals(c.result())) continue;
             written += jdbc.update("""
                 INSERT INTO verification (requirement_id, requirement_revision, test_case_id, test_run_id, result)

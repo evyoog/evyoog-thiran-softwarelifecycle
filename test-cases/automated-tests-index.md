@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1354 tests cover 82 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1360 tests cover 82 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -766,6 +766,12 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC1` oneEventIsOneOperationKeyedByItsIdToTheWebhookPath (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerWebhookRulesTest.java`)
 - `AC1` theConnectorFillsInThePlannersSignatureSchemeSoOnlyTheUrlAndSecretAreNeeded (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerWebhookRulesTest.java`)
 - `AC1` theSignatureHeaderAndPrefixAreConfigurableAndDefaultToTheOldOnes (`backend/vyoog-domain/src/test/java/com/vyoog/integration/connector/ConnectorConfigTest.java`)
+- `AC10` aDesignArtifactThatCoversARequirementIsReportedOnceAndNeverForThePipelineMilestones (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerEventsIT.java`)
+- `AC11` aRequirementThePlannerDidNotSendQueuesNoneOfTheThree (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerEventsIT.java`)
+- `AC12` aTestCaseThatNowVerifiesARequirementIsReportedOnceWithItsKeyAndTitle (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerEventsIT.java`)
+- `AC13` aCiResultIsReportedWithItsOutcomeBuildAndRevisionAfterItsTestCaseAndOnlyOncePerRun (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerEventsIT.java`)
+- `AC14` aManualRunReportsEachCaseResultWhenItIsCompletedABlockedOneIncluded (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerEventsIT.java`)
+- `AC15` theDesignTestCaseAndResultEventsGoOutSignedToThePlannersWebhookInOrder (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
 - `AC2` aRequirementThePlannerDidNotSendWritesNothingAndARolledBackChangeSendsNothing (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
 - `AC2` theStatusPayloadCarriesTheContractsFieldsWithLowerCaseStatuses (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerWebhookRulesTest.java`)
 - `AC3` aBulkStatusChangeIsReportedToo (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)

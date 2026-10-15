@@ -35,10 +35,12 @@ public class VerificationService {
     private final TraceLinkRepository links;
     private final AuditService audit;
     private final NotificationEvents events;
+    private final com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents;
 
     public VerificationService(TestCaseRepository testCases, TestRunRepository testRuns,
                                 VerificationRepository verifications, RequirementRepository requirements,
-                                TraceLinkRepository links, AuditService audit, NotificationEvents events) {
+                                TraceLinkRepository links, AuditService audit, NotificationEvents events,
+                                com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents) {
         this.testCases = testCases;
         this.testRuns = testRuns;
         this.verifications = verifications;
@@ -46,6 +48,7 @@ public class VerificationService {
         this.links = links;
         this.audit = audit;
         this.events = events;
+        this.plannerEvents = plannerEvents;
     }
 
     /** VYB-0311 AC3: the same build+source reuses the same run rather than duplicating it. */
@@ -83,7 +86,9 @@ public class VerificationService {
             }
             verifications.save(new Verification(r.getId(), r.getRevision(), testCase.getId(), run.getId(), in.result()));
             verifiedKeys.add(r.getKey());
-            ensureVerifiesLink(testCase.getId(), r.getId());
+            ensureVerifiesLink(testCase, r.getId());
+            // VYB-0918b: a requirement the Agile Planner sent is told the result (and, first, that this test case verifies it).
+            plannerEvents.testResultRecorded(r.getId(), testCase.getKey(), in.result().name(), run.getBuildLabel(), r.getRevision(), "run:" + run.getId());
             // VYB-0955: a failure tells the requirement's author (chat gets one post per run, however many fail).
             if (in.result() == VerificationResult.FAIL) {
                 events.testFailed(r.getId(), testCase.getTitle() != null ? testCase.getTitle() : in.testKey(), run.getBuildLabel(), run.getId(), null);
@@ -111,13 +116,15 @@ public class VerificationService {
             .toList();
     }
 
-    private void ensureVerifiesLink(UUID testCaseId, UUID requirementId) {
+    private void ensureVerifiesLink(TestCase testCase, UUID requirementId) {
+        UUID testCaseId = testCase.getId();
         boolean exists = links.existsByFromTypeAndFromIdAndToTypeAndToIdAndLinkType(
             TraceObjectType.TEST, testCaseId, TraceObjectType.REQUIREMENT, requirementId, TraceLinkType.VERIFIES);
         if (!exists) {
             links.save(new TraceLink(
                 TraceObjectType.TEST, testCaseId, TraceObjectType.REQUIREMENT, requirementId,
                 TraceLinkType.VERIFIES, null));
+            plannerEvents.testCaseLinked(requirementId, testCaseId, testCase.getKey(), testCase.getTitle()); // VYB-0918b
         }
     }
 

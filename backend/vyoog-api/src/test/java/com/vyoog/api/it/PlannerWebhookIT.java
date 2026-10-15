@@ -46,6 +46,9 @@ class PlannerWebhookIT extends IntegrationTestBase {
     @Autowired IntegrationService integrations;
     @Autowired PlannerWebhookDelivery delivery;
     @Autowired BulkEditService bulk;
+    @Autowired com.vyoog.design.DesignService design;
+    @Autowired com.vyoog.evidence.TestCaseService testCases;
+    @Autowired com.vyoog.evidence.VerificationService verification;
     @Autowired ObjectMapper json;
 
     private static final String SECRET = "planner-shared-secret";
@@ -306,5 +309,35 @@ class PlannerWebhookIT extends IntegrationTestBase {
         jdbc.update("UPDATE planner_outbound_event SET next_attempt_at = now()");
         delivery.deliver();
         assertThat(five.stream().map(r -> events(r).get(0).get("state"))).containsOnly("SENT");
+    }
+
+    @Test
+    void VYB0918_AC15_theDesignTestCaseAndResultEventsGoOutSignedToThePlannersWebhookInOrder() throws Exception {
+        UUID author = newUser("author");
+        Portfolio p = newPortfolio();
+        Requirement r = submit(fromPlanner(p, author), author);
+        design.generateFrom(design.createFlow(p.applicationId(), author).getId(), p.applicationId(), author);
+        var t = testCases.draft("Pausing stops billing", null, null, r.getId(), author);
+        verification.ingest(verification.findOrCreateRun(unique("build"), "ci"),
+            new com.vyoog.evidence.VerificationService.ResultInput(t.getKey(), null, com.vyoog.evidence.VerificationResult.PASS, List.of(r.getKey())));
+        connect();
+        delivery.deliver();
+
+        List<Map<String, Object>> queued = events(r);
+        assertThat(queued).hasSize(4).allSatisfy(e -> assertThat(e.get("state")).isEqualTo("SENT"));
+        List<Received> sent;
+        synchronized (received) {
+            sent = List.copyOf(received);
+        }
+        List<String> types = new ArrayList<>();
+        long last = 0;
+        for (Received call : sent) {
+            assertThat(call.header("X-ALM-Signature")).isEqualTo("hmac-sha256=" + WebhookSignatureVerifier.sign(SECRET, call.body()));
+            JsonNode b = json.readTree(call.body());
+            types.add(b.get("event").asText());
+            assertThat(b.get("version").asLong()).as("sent in the order they happened").isGreaterThan(last);
+            last = b.get("version").asLong();
+        }
+        assertThat(types).containsExactly("requirement.status_changed", "design_artifact.created", "test_case.created", "test_result.recorded");
     }
 }

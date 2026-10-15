@@ -24,14 +24,17 @@ public class DesignService {
     private final DesignEdgeRepository edges;
     private final JdbcTemplate jdbc;
     private final AuditService audit;
+    private final com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents;
 
     public DesignService(DesignFlowRepository flows, DesignNodeRepository nodes, DesignEdgeRepository edges,
-                          JdbcTemplate jdbc, AuditService audit) {
+                          JdbcTemplate jdbc, AuditService audit,
+                          com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents) {
         this.flows = flows;
         this.nodes = nodes;
         this.edges = edges;
         this.jdbc = jdbc;
         this.audit = audit;
+        this.plannerEvents = plannerEvents;
     }
 
     /** VYB-0490 AC1: a second flow for the same application is refused, checked before the DB's own UNIQUE would refuse it anyway. */
@@ -244,6 +247,7 @@ public class DesignService {
             DesignNode node = nodes.saveAndFlush(new DesignNode(flowId, kindFor((String) row.get("type")), label, null));
             jdbc.update("INSERT INTO design_node_requirement (node_id, requirement_id) VALUES (?,?)",
                 node.getId(), requirementId);
+            plannerEvents.designArtifactCreated(requirementId, node.getId(), node.getKind().name(), label); // VYB-0918b
             nodeByRequirement.put(requirementId, node.getId());
             created++;
         }
@@ -396,6 +400,10 @@ public class DesignService {
             jdbc.update("INSERT INTO design_node_requirement (node_id, requirement_id) VALUES (?,?)", nodeId, requirementId);
             audit.record(actor, "design.requirement_linked", "DESIGN_NODE", nodeId, null,
                 Map.of("requirementId", requirementId.toString()));
+            // VYB-0918b: a requirement the Agile Planner sent is told a design artifact now covers it.
+            jdbc.query("SELECT kind, label FROM design_node WHERE id = ?", rs -> {
+                plannerEvents.designArtifactCreated(requirementId, nodeId, rs.getString("kind"), rs.getString("label"));
+            }, nodeId);
         }
     }
 

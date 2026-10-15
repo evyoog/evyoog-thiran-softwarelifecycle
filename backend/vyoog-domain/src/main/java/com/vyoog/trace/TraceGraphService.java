@@ -39,13 +39,16 @@ public class TraceGraphService {
     private final RequirementRepository requirements;
     private final JdbcTemplate jdbc;
     private final DetectionSweepService detection;
+    private final com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents;
 
     public TraceGraphService(TraceLinkRepository links, RequirementRepository requirements, JdbcTemplate jdbc,
-                              DetectionSweepService detection) {
+                              DetectionSweepService detection,
+                              com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents) {
         this.links = links;
         this.requirements = requirements;
         this.jdbc = jdbc;
         this.detection = detection;
+        this.plannerEvents = plannerEvents;
     }
 
     /** VYB-0161: a link changing is exactly what "orphan"/"nodesign"/"suspect" read. */
@@ -99,6 +102,10 @@ public class TraceGraphService {
         recomputeClosure();
         if (toType == TraceObjectType.REQUIREMENT) rescan(toId);
         if (fromType == TraceObjectType.REQUIREMENT) rescan(fromId);
+        // VYB-0918b: a requirement the Agile Planner sent is told a test case now verifies it.
+        if (fromType == TraceObjectType.TEST && toType == TraceObjectType.REQUIREMENT && linkType == TraceLinkType.VERIFIES) {
+            plannerEvents.testCaseLinked(toId, fromId);
+        }
         return link;
     }
 

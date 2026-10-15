@@ -1,8 +1,8 @@
-# Agile Planner: telling it back (VYB-0918, first part)
+# Agile Planner: telling it back (VYB-0918)
 
 What this application sends the Agile Planner about the requirements the Planner sent it (`agile-planner-requirements-intake.md`), as decided in D24 and D52. **Not exercised against the real Planner**: its ALM integration is not built and there is no test instance, so this is proven only by this repository's tests, which play the Planner over real HTTP. **The Planner has not defined the event bodies; the ones below are this application's proposal, built from what its documents do say, and nobody there has confirmed them.**
 
-Row VYB-0918 is split. **Built (0918a):** the signed-webhook path, the queue, retries and ordering, and `requirement.status_changed`. **Not built (0918b):** `design_artifact.created`, `test_case.created` and `test_result.recorded`; the queue already accepts them (V062 lists all four types).
+Row VYB-0918 was built in two parts. **0918a:** the signed-webhook path, the queue, retries and ordering, and `requirement.status_changed`. **0918b:** `design_artifact.created`, `test_case.created` and `test_result.recorded` (this page describes all four).
 
 ## Setting it up (a person with Administration access; nothing is sent until this is done)
 
@@ -19,13 +19,35 @@ Row VYB-0918 is split. **Built (0918a):** the signed-webhook path, the queue, re
 | `X-ALM-Signature` | `hmac-sha256=` and the hex HMAC-SHA256 of the exact body bytes, keyed by the shared secret (the Planner's own scheme) |
 | `Idempotency-Key` | `planner-event:<event_id>`, the same on every retry |
 
-`requirement.status_changed`, sent whenever the status of a requirement **the Planner sent** changes (by a person, or in a bulk edit). Any other requirement sends nothing.
+`requirement.status_changed`: sent whenever the status of a requirement **the Planner sent** changes (by a person, or in a bulk edit). Any other requirement sends nothing.
 
 ```
 { "event": "requirement.status_changed", "event_id": "<uuid>", "occurred_at": "2026-10-15T09:00:00Z",
   "version": 41, "requirement_id": "VY-1042", "source_function_id": "FN-123",
   "status": "approved", "previous_status": "reviewed" }
 ```
+
+All four share these fields first: `event`, `event_id`, `occurred_at`, `version`, `requirement_id`, `source_function_id`. Each then adds its own. Only requirements **the Planner sent** are reported; every other requirement queues nothing.
+
+`design_artifact.created`: a design artifact (a node on the application's design) now covers the requirement, whether the design was generated or a person linked the node by hand. Reported once per node and requirement; unlinking and linking again is not a new artifact. The two pipeline milestones, "Testing" and "Deployment", are derived from the requirements and are not design artifacts, so they are not reported.
+
+```
+{ ..., "event": "design_artifact.created", "design_artifact_id": "<node uuid>", "kind": "step", "name": "VY-1042 Pause a subscription" }
+```
+
+`test_case.created`: a test case now verifies the requirement, whether a person drafted it against the requirement or a CI result named it. Reported once per test case and requirement.
+
+```
+{ ..., "event": "test_case.created", "test_case_id": "TC-77", "title": "Pausing stops billing" }
+```
+
+`test_result.recorded`: a result against the requirement. From CI, when it is ingested; from a manual run, when the run is **completed** (not while it is filled in), for every case that has a result, **a blocked one included** (it writes no verification here, but the Planner's documents name it). Reported once per run, test case and requirement. A test case's `test_case.created` always comes before its first result.
+
+```
+{ ..., "event": "test_result.recorded", "test_case_id": "TC-77", "outcome": "pass", "build_reference": "build-2026.10.15-3", "requirement_revision": 4 }
+```
+
+`outcome` is `pass`, `fail` or `blocked`. `build_reference` is the CI build label, or the manual run's build label or, if it has none, its suite name. `requirement_revision` is the revision of the requirement the test was run against, so the Planner can tell a result for an older wording from one for the current.
 
 `requirement_id` is the key people see and the Planner got back when it sent the Function. Statuses are lower case: `draft`, `in_review`, `reviewed`, `needs_revision`, `approved`, `rejected`. `version` is one number that only grows, so the Planner can ignore an older event than one it has already applied (its own rule: an older version never overwrites a newer one). A reason given for a move is **not** sent.
 
@@ -42,7 +64,9 @@ Row VYB-0918 is split. **Built (0918a):** the signed-webhook path, the queue, re
 
 ## What is not built
 
-- The other three events (0918b), and their bodies are not even proposed yet.
+- **A result is reported when it is recorded**, and a test case or design artifact when it first covers the requirement: an event is never taken back when a link is later removed or a result is later superseded (the Planner derives its own `test_status` from the results it has).
+- **A requirement the Planner sends after its designs and tests already exist** is told nothing about them: only what happens from then on is reported.
+- **Defects, risks and releases** are not reported.
 - **No screen lists the events that failed for good.** They are in the table `planner_outbound_event` (state FAILED, with the reason) and the connector's sync log is on Connector health; nothing lets a person re-send one.
 - Nothing is sent for a requirement created here that the Planner did not send, and nothing for a change other than its status (its wording, priority or placement).
 - The Planner's `X-TENANT-ID` and OAuth2 token are for calls *to* this application (see the intake guide); the webhook to the Planner is authenticated by its signature only, as its documents say. If its webhook also wants an API key, the connection's `auth` can list `API_KEY` too.

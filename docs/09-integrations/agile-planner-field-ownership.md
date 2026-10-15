@@ -12,6 +12,6 @@ The field-by-field ownership the Planner's own documents never gave (`agile-plan
 | Type | **This application** | Always FUNCTIONAL on creation. *Default (D50).* |
 | Placement (capability) | **This application** | Unplaced on creation; an administrator places it. *Default (D50): needs the Macro Planner mapping to do better.* |
 | Requirement status | **This application** | Draft on creation. The Planner never sets it. Sent back to the Planner as `requirement.status_changed` (built, VYB-0918a). |
-| Designs, test cases, test results, evidence | **This application** | Sent back as the other three webhooks (not built). The Planner derives its own `Function.test_status` from them. |
+| Designs, test cases, test results, evidence | **This application** | Sent back as `design_artifact.created`, `test_case.created` and `test_result.recorded` (built, VYB-0918b). The Planner derives its own `Function.test_status` from them. |
 | Function status, sprint, team, assignee, story points, board column | **Agile Planner** | Never sent, never stored here. Its board column labels are not mapped to this application's statuses, in either direction. *Default (D50).* |
 | Who may edit a seeded requirement | **This application's normal rules** | A person with the right role edits it as any requirement; an approved one changes only through a change request. |
