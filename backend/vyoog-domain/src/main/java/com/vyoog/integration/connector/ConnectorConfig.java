@@ -18,7 +18,9 @@ import java.util.regex.Pattern;
  *   "baseUrl": "https://planner.example.com/api",      required; https, or http only for localhost
  *   "auth": ["HMAC_SIGNATURE", "API_KEY"],               required; "NONE" to say there is none
  *   "apiKey": "...", "apiKeyHeader": "X-API-Key",        for API_KEY (header optional)
- *   "bearerToken": "..."                                 for BEARER
+ *   "bearerToken": "...",                                for BEARER
+ *   "signatureHeader": "X-ALM-Signature",                for HMAC_SIGNATURE (optional; default X-Vyoog-Signature)
+ *   "signaturePrefix": "hmac-sha256="                    for HMAC_SIGNATURE (optional; default none): put before the hex
  * }
  * integration_connection.webhook_secret                  the HMAC secret, for HMAC_SIGNATURE
  * </pre>
@@ -35,6 +37,11 @@ import java.util.regex.Pattern;
 public final class ConnectorConfig {
 
     private static final Pattern HEADER_NAME = Pattern.compile("[A-Za-z0-9-]{1,60}");
+    /** What a signature may begin with (the Planner's is {@code hmac-sha256=}). */
+    private static final Pattern SIGNATURE_PREFIX = Pattern.compile("[A-Za-z0-9=_.:-]{0,30}");
+    /** Headers the engine sets itself or that carry another scheme: a signature header may not be one of them. */
+    private static final Set<String> RESERVED_HEADERS =
+        Set.of("authorization", "content-type", "content-length", "host", "idempotency-key", "user-agent");
     private static final Set<String> LOOPBACK = Set.of("localhost", "127.0.0.1", "[::1]");
 
     private final String connectionKey;
@@ -44,9 +51,11 @@ public final class ConnectorConfig {
     private final String apiKey;
     private final String bearerToken;
     private final String hmacSecret;
+    private final String signatureHeader;
+    private final String signaturePrefix;
 
     private ConnectorConfig(String connectionKey, URI baseUri, Set<ConnectorAuth> auth, String apiKeyHeader,
-                            String apiKey, String bearerToken, String hmacSecret) {
+                            String apiKey, String bearerToken, String hmacSecret, String signatureHeader, String signaturePrefix) {
         this.connectionKey = connectionKey;
         this.baseUri = baseUri;
         this.auth = auth;
@@ -54,6 +63,8 @@ public final class ConnectorConfig {
         this.apiKey = apiKey;
         this.bearerToken = bearerToken;
         this.hmacSecret = hmacSecret;
+        this.signatureHeader = signatureHeader;
+        this.signaturePrefix = signaturePrefix;
     }
 
     /** @throws ConnectorNotConfiguredException naming what is missing or wrong */
@@ -72,7 +83,9 @@ public final class ConnectorConfig {
         JsonNode node = effective(connection, json, connector);
         return new ConnectorConfig(key, URI.create(text(node, "baseUrl").replaceAll("/+$", "")), authOf(node),
             text(node, "apiKeyHeader") == null ? "X-API-Key" : text(node, "apiKeyHeader"),
-            text(node, "apiKey"), text(node, "bearerToken"), connection.getWebhookSecret());
+            text(node, "apiKey"), text(node, "bearerToken"), connection.getWebhookSecret(),
+            text(node, "signatureHeader") == null ? ConnectorAuth.SIGNATURE_HEADER : text(node, "signatureHeader"),
+            text(node, "signaturePrefix") == null ? "" : text(node, "signaturePrefix"));
     }
 
     /** Why this connection cannot be used, or empty if it can. Used by the health state too. */
@@ -113,6 +126,14 @@ public final class ConnectorConfig {
         if (auth.contains(ConnectorAuth.BEARER) && blank(text(node, "bearerToken"))) return Optional.of("auth BEARER needs bearerToken");
         if (auth.contains(ConnectorAuth.HMAC_SIGNATURE) && blank(connection.getWebhookSecret())) {
             return Optional.of("auth HMAC_SIGNATURE needs the connection's shared secret");
+        }
+        String signatureHeader = text(node, "signatureHeader");
+        if (signatureHeader != null && (!HEADER_NAME.matcher(signatureHeader).matches() || RESERVED_HEADERS.contains(signatureHeader.toLowerCase()))) {
+            return Optional.of("signatureHeader is not a usable header name");
+        }
+        String signaturePrefix = text(node, "signaturePrefix");
+        if (signaturePrefix != null && !SIGNATURE_PREFIX.matcher(signaturePrefix).matches()) {
+            return Optional.of("signaturePrefix may hold only letters, digits and = _ . : - (at most 30)");
         }
         return Optional.empty();
     }
@@ -180,6 +201,8 @@ public final class ConnectorConfig {
     String apiKey() { return apiKey; }
     String bearerToken() { return bearerToken; }
     String hmacSecret() { return hmacSecret; }
+    String signatureHeader() { return signatureHeader; }
+    String signaturePrefix() { return signaturePrefix; }
 
     @Override
     public String toString() {

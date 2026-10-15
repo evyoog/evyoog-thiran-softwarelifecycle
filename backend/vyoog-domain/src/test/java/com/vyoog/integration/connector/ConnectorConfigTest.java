@@ -96,4 +96,30 @@ class ConnectorConfigTest {
         assertThat(loaded.redact("bad key APIKEY-SECRET and secret HMAC-SECRET")).isEqualTo("bad key [redacted] and secret [redacted]");
         assertThat(loaded.redact("nothing here")).isEqualTo("nothing here");
     }
+
+    @Test
+    void VYB0918_AC1_theSignatureHeaderAndPrefixAreConfigurableAndDefaultToTheOldOnes() {
+        ConnectorConfig plain = ConnectorConfig.load(
+            connection("{\"baseUrl\":\"https://x.example.com\",\"auth\":[\"HMAC_SIGNATURE\"]}", "s"), JSON);
+        assertThat(plain.signatureHeader()).isEqualTo("X-Vyoog-Signature");
+        assertThat(plain.signaturePrefix()).isEmpty();
+
+        ConnectorConfig alm = ConnectorConfig.load(connection(
+            "{\"baseUrl\":\"https://x.example.com\",\"auth\":[\"HMAC_SIGNATURE\"],\"signatureHeader\":\"X-ALM-Signature\",\"signaturePrefix\":\"hmac-sha256=\"}", "s"), JSON);
+        assertThat(alm.signatureHeader()).isEqualTo("X-ALM-Signature");
+        assertThat(alm.signaturePrefix()).isEqualTo("hmac-sha256=");
+    }
+
+    @Test
+    void VYB0918_AC1_aSignatureHeaderCannotBeOneTheEngineSetsItselfAndAPrefixCannotHoldWhitespaceOrNewlines() {
+        String base = "{\"baseUrl\":\"https://x.example.com\",\"auth\":[\"HMAC_SIGNATURE\"],";
+        for (String reserved : new String[] {"Authorization", "content-type", "Idempotency-Key", "Host", "Content-Length", "User-Agent"}) {
+            assertThat(problem(base + "\"signatureHeader\":\"" + reserved + "\"}", "s")).as(reserved).contains("signatureHeader");
+        }
+        assertThat(problem(base + "\"signatureHeader\":\"Bad Header\"}", "s")).contains("signatureHeader");
+        assertThat(problem(base + "\"signatureHeader\":\"X-Fine\"}", "s")).isNull();
+        assertThat(problem(base + "\"signaturePrefix\":\"sha256=\\r\\nX-Evil: 1\"}", "s")).contains("signaturePrefix");
+        assertThat(problem(base + "\"signaturePrefix\":\"" + "p".repeat(31) + "\"}", "s")).contains("signaturePrefix");
+        assertThat(problem(base + "\"signaturePrefix\":\"hmac-sha256=\"}", "s")).isNull();
+    }
 }

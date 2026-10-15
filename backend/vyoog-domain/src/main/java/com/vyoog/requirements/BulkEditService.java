@@ -38,11 +38,13 @@ public class BulkEditService {
     private final JdbcTemplate jdbc;
     private final RequirementTransitionAuthorizer authorizer;
     private final NotificationEvents events;
+    private final com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents;
 
     public BulkEditService(RequirementRepository requirements, AcceptanceCriterionRepository criteria,
                             AuditService audit, AuditEventRepository auditEvents, ObjectMapper json,
                             JdbcTemplate jdbc, RequirementTransitionAuthorizer authorizer,
-                            NotificationEvents events) {
+                            NotificationEvents events,
+                            com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents) {
         this.requirements = requirements;
         this.criteria = criteria;
         this.audit = audit;
@@ -51,6 +53,7 @@ public class BulkEditService {
         this.jdbc = jdbc;
         this.authorizer = authorizer;
         this.events = events;
+        this.plannerEvents = plannerEvents;
     }
 
     /**
@@ -126,6 +129,7 @@ public class BulkEditService {
             // VYB-0955: each moved requirement tells whoever it now waits on; chat gets one post for the whole batch.
             for (Moved m : moved) {
                 events.requirementMoved(m.id(), m.from().name(), m.to().name(), changes.reason(), actor, batchId.toString());
+                plannerEvents.requirementStatusChanged(m.id(), m.from().name(), m.to().name()); // VYB-0918a
             }
         }
         return new BulkResult(batchId, outcomes);

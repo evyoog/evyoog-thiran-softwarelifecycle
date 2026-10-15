@@ -36,6 +36,7 @@ public class RequirementService {
     private final RequirementEnrichmentService enrichment;
     private final RequirementTransitionAuthorizer authorizer;
     private final NotificationEvents events;
+    private final com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents;
 
     public RequirementService(RequirementRepository requirements,
                                RequirementRevisionRepository revisions,
@@ -48,7 +49,8 @@ public class RequirementService {
                                JdbcTemplate jdbc,
                                RequirementEnrichmentService enrichment,
                                RequirementTransitionAuthorizer authorizer,
-                               NotificationEvents events) {
+                               NotificationEvents events,
+                               com.vyoog.integration.planner.PlannerOutboundEvents plannerEvents) {
         this.requirements = requirements;
         this.revisions = revisions;
         this.criteria = criteria;
@@ -61,6 +63,7 @@ public class RequirementService {
         this.jdbc = jdbc;
         this.authorizer = authorizer;
         this.events = events;
+        this.plannerEvents = plannerEvents;
     }
 
     /**
@@ -353,6 +356,8 @@ public class RequirementService {
         rescan(r.getId());
         // VYB-0955: whoever it is now waiting on, or the author, is told; in this transaction, so a refused or rolled-back move tells nobody.
         events.requirementMoved(r.getId(), from.name(), target.name(), reason, actorId, null);
+        // VYB-0918a: a requirement the Agile Planner sent is told its new status (queued here, sent later).
+        plannerEvents.requirementStatusChanged(r.getId(), from.name(), target.name());
         return r;
     }
 

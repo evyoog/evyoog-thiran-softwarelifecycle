@@ -31,6 +31,7 @@ class ScheduledJobsTest {
     PurgeService purge = mock(PurgeService.class);
     ReadinessSnapshotService snapshots = mock(ReadinessSnapshotService.class);
     com.vyoog.api.notify.NotificationDeliveryService deliveries = mock(com.vyoog.api.notify.NotificationDeliveryService.class);
+    com.vyoog.integration.planner.PlannerWebhookDelivery plannerWebhooks = mock(com.vyoog.integration.planner.PlannerWebhookDelivery.class);
     ScheduledJobs jobs;
 
     @BeforeEach
@@ -40,7 +41,7 @@ class ScheduledJobsTest {
             ((Runnable) inv.getArgument(3)).run();
             return true;
         });
-        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge, snapshots, deliveries);
+        jobs = new ScheduledJobs(locks, relay, sweep, audit, clarifications, purge, snapshots, deliveries, plannerWebhooks);
     }
 
     @Test
@@ -121,5 +122,15 @@ class ScheduledJobsTest {
     private static Scheduled scheduled(String method) throws Exception {
         Method m = ScheduledJobs.class.getMethod(method);
         return m.getAnnotation(Scheduled.class);
+    }
+
+    @Test
+    void VYB0918_AC4_thePlannerWebhooksRunUnderTheirOwnLeaseAndTheirOldOnesArePurgedNightly() {
+        jobs.plannerWebhooks();
+        jobs.plannerWebhookPurge();
+        verify(locks).runExclusive(eq("planner-webhooks"), any(Duration.class), eq(Duration.ZERO), any());
+        verify(locks).runExclusive(eq("planner-webhooks-purge"), any(Duration.class), eq(ScheduledJobs.NIGHTLY_MIN_HOLD), any());
+        verify(plannerWebhooks).deliver();
+        verify(plannerWebhooks).purgeOld();
     }
 }

@@ -61,7 +61,7 @@ A changed Function is stored as a proposal (`planner_change_proposal`, V061) wit
 
 ## What is not built
 
-- **Telling the Planner back** (`requirement.status_changed`, `design_artifact.created`, `test_case.created`, `test_result.recorded`, signed with `X-ALM-Signature`): the next rows.
+- **Telling the Planner back** is partly built: `requirement.status_changed` goes out signed (see `agile-planner-webhooks.md`); `design_artifact.created`, `test_case.created` and `test_result.recorded` do not yet (VYB-0918b).
 - **Placement from the Planner's capability**: needs the Macro Planner mapping (blocked, D24).
 - **Showing on the screen that a requirement came from the Planner,** other than a waiting proposal. The link exists in the database; nothing else reads it yet.
 - **A proposal for an approved requirement cannot be turned into a change request** from the screen; a person raises one by hand.

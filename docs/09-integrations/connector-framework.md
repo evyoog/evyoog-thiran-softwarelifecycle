@@ -33,7 +33,7 @@ The registry is the existing `integration_connection` table. The framework adds 
 |---|---|
 | `baseUrl` must be https; plain http is accepted only for `localhost`, `127.0.0.1`, `::1`. No credentials, query or fragment in it. | A key or a signature over cleartext is a leak. |
 | `auth` is required. `["NONE"]` says there is none on purpose; an absent list is "not configured". `NONE` cannot be combined. | An unauthenticated connection must be a decision, not an omission. |
-| `API_KEY` needs `apiKey` (header `apiKeyHeader`, default `X-API-Key`). `BEARER` needs `bearerToken`. `HMAC_SIGNATURE` needs the connection's `webhook_secret` and sends `X-Vyoog-Signature`, the hex HMAC-SHA256 of the exact body bytes (the scheme the existing planning push and inbound webhooks already use). | |
+| `API_KEY` needs `apiKey` (header `apiKeyHeader`, default `X-API-Key`). `BEARER` needs `bearerToken`. `HMAC_SIGNATURE` may name its header and a prefix before the hex (`signatureHeader`, default `X-Vyoog-Signature`; `signaturePrefix`, default none): the Agile Planner's is `X-ALM-Signature` and `hmac-sha256=` (VYB-0918a). A header the engine sets itself (Authorization, Content-Type, Idempotency-Key and so on) cannot be the signature header. `HMAC_SIGNATURE` needs the connection's `webhook_secret` and sends `X-Vyoog-Signature`, the hex HMAC-SHA256 of the exact body bytes (the scheme the existing planning push and inbound webhooks already use). | |
 
 A connection that fails these is **not configured**: `execute` throws `ConnectorNotConfiguredException` naming the reason (never a secret), sends nothing, writes no log row and does not count as a failure. Secrets stay where the registry already keeps them; none is ever logged, put in an error message, or stored in the sync log.
 

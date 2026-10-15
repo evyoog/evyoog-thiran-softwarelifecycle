@@ -44,7 +44,7 @@ class RequirementDeleteTest {
         service = new RequirementService(
             requirements, revisions, criteria, keys, audit, detection, briefStaleness,
             new QualityScoreService(), jdbc, enrichment, new RequirementTransitionAuthorizer(grantResolver),
-            mock(com.vyoog.notify.NotificationEvents.class));
+            mock(com.vyoog.notify.NotificationEvents.class), mock(com.vyoog.integration.planner.PlannerOutboundEvents.class));
         actor = UUID.randomUUID();
         id = UUID.randomUUID();
         requirement = new Requirement("VY-1042", "Capture punch events", "The system shall capture punches.", actor);

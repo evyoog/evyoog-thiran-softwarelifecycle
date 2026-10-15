@@ -45,7 +45,7 @@ class BulkEditGuardTest {
     void setUp() {
         service = new BulkEditService(
             requirements, criteria, audit, auditEvents, new ObjectMapper(), jdbc,
-            new RequirementTransitionAuthorizer(grantResolver), events);
+            new RequirementTransitionAuthorizer(grantResolver), events, mock(com.vyoog.integration.planner.PlannerOutboundEvents.class));
         actor = UUID.randomUUID();
         decisionMaker = UUID.randomUUID();
         lenient().when(requirements.save(any())).thenAnswer(inv -> inv.getArgument(0));

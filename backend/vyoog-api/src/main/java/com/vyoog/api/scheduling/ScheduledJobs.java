@@ -39,11 +39,13 @@ public class ScheduledJobs {
     private final PurgeService purge;
     private final ReadinessSnapshotService readinessSnapshots;
     private final NotificationDeliveryService deliveries;
+    private final com.vyoog.integration.planner.PlannerWebhookDelivery plannerWebhooks;
 
     public ScheduledJobs(SchedulerLock locks, NotificationRelayService relay, DetectionSweepService sweep,
                          AuditRetentionService auditRetention, ClarificationService clarifications,
                          PurgeService purge, ReadinessSnapshotService readinessSnapshots,
-                         NotificationDeliveryService deliveries) {
+                         NotificationDeliveryService deliveries,
+                         com.vyoog.integration.planner.PlannerWebhookDelivery plannerWebhooks) {
         this.locks = locks;
         this.relay = relay;
         this.sweep = sweep;
@@ -52,6 +54,7 @@ public class ScheduledJobs {
         this.purge = purge;
         this.readinessSnapshots = readinessSnapshots;
         this.deliveries = deliveries;
+        this.plannerWebhooks = plannerWebhooks;
     }
 
     /** VYB-0791: outbox to live SSE connections, every 2 seconds. */
@@ -88,6 +91,18 @@ public class ScheduledJobs {
     @Scheduled(fixedDelay = 30000, initialDelay = 30000)
     public void notificationDelivery() {
         locks.runExclusive("notification-delivery", Duration.ofMinutes(5), Duration.ZERO, deliveries::deliver);
+    }
+
+    /** VYB-0918a: signed webhooks to the Agile Planner about the requirements it sent, every 30 seconds. */
+    @Scheduled(fixedDelay = 30000, initialDelay = 45000)
+    public void plannerWebhooks() {
+        locks.runExclusive("planner-webhooks", Duration.ofMinutes(5), Duration.ZERO, plannerWebhooks::deliver);
+    }
+
+    /** VYB-0918a: 04:00 removal of sent and failed Planner events older than 30 days. */
+    @Scheduled(cron = "0 0 4 * * *")
+    public void plannerWebhookPurge() {
+        locks.runExclusive("planner-webhooks-purge", Duration.ofHours(1), NIGHTLY_MIN_HOLD, plannerWebhooks::purgeOld);
     }
 
     /** VYB-0955: 03:45 removal of sent and failed notification deliveries older than 30 days. */

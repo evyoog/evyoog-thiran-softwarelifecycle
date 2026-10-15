@@ -15,7 +15,10 @@ public enum ConnectorAuth {
     API_KEY,
     /** {@code Authorization: Bearer <bearerToken>}. */
     BEARER,
-    /** {@code X-Vyoog-Signature}: hex HMAC-SHA256 of the exact body bytes, keyed by the connection's shared secret. */
+    /**
+     * {@code X-Vyoog-Signature} (or the connection's {@code signatureHeader}): hex HMAC-SHA256 of the exact body bytes, keyed by the
+     * connection's shared secret, after the connection's {@code signaturePrefix} (the Agile Planner's is {@code hmac-sha256=}).
+     */
     HMAC_SIGNATURE;
 
     public static final String SIGNATURE_HEADER = "X-Vyoog-Signature";
@@ -25,8 +28,8 @@ public enum ConnectorAuth {
             case NONE -> { }
             case API_KEY -> request.header(config.apiKeyHeader(), config.apiKey());
             case BEARER -> request.header("Authorization", "Bearer " + config.bearerToken());
-            case HMAC_SIGNATURE -> request.header(SIGNATURE_HEADER,
-                com.vyoog.integration.WebhookSignatureVerifier.sign(config.hmacSecret(), body));
+            case HMAC_SIGNATURE -> request.header(config.signatureHeader(),
+                config.signaturePrefix() + com.vyoog.integration.WebhookSignatureVerifier.sign(config.hmacSecret(), body));
         }
     }
 }

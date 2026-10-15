@@ -1191,9 +1191,11 @@ function IntegrationConfigPanel({ connection, onClose }: { connection: Integrati
           <button className="btn" disabled={!secret.trim() || saveSecret.isPending} onClick={() => saveSecret.mutate()}>Save</button>
         </div>
         <p className="hint muted" style={{ fontSize: 10.5 }}>
-          {direction === 'INBOUND'
-            ? 'Verifies this system\'s signed webhook deliveries — it needs the same secret.'
-            : 'Signs every push with HMAC-SHA256 (X-Vyoog-Signature header) — the receiving side needs the same secret to verify it.'}
+          {connection.key === 'agile-planner'
+            ? 'Signs every webhook to the Agile Planner with HMAC-SHA256 (X-ALM-Signature: hmac-sha256=…) — the Planner needs the same secret to verify it. The configuration above needs only {"baseUrl": "https://…"}.'
+            : direction === 'INBOUND'
+              ? 'Verifies this system\'s signed webhook deliveries — it needs the same secret.'
+              : 'Signs every push with HMAC-SHA256 (X-Vyoog-Signature header) — the receiving side needs the same secret to verify it.'}
         </p>
       </div>
       <button className="btn" onClick={onClose}>Close</button>
