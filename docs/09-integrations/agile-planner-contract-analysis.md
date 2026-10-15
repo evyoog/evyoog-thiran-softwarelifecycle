@@ -93,3 +93,12 @@ Items 1 to 3 are questions *to this application's team*, so the answers are owed
 A. **Which side's vocabulary and direction wins?** (a) Follow the Planner's documented contract: this application receives `POST /v1/requirements` from the Planner and sends the four webhooks back. Rows 0914 to 0921 are then rewritten around that. (b) Keep the register's `function.upserted` model and ask the Planner team to adopt it. (c) Both, in a stated order.
 B. **The seven unstated rules in section 4**, at least 1 and 2, which decide who may edit which field.
 C. **The Planner's open questions 1 to 3.**
+
+## 8. Answers given by the product owner (2026-10-15, recorded in D24)
+
+A. **Follow the Planner's documented contract** (option a): receive `POST /v1/requirements`, send the four webhooks. The register's `function.upserted`, `backlog_item.status_changed` and `sprint.reassigned` rows are to be rewritten, not built as written.
+B1. **Later Planner changes are proposals** that a person here accepts or rejects; they never overwrite.
+B2. **A person here may edit** a Planner-created requirement under the normal rules.
+C1. **One Function is one Requirement** for now, linked by `source_function_id`; the link is stored per requirement so this can be relaxed.
+
+**Still open** (not asked, not inferred): priority mapping (B3), acceptance-criteria handling (B4), the Planner Feature with no counterpart here (B5), status vocabulary mapping (B6), the Planner's questions 2 and 3 (idempotency, OAuth2 client-credentials), and a test instance. A session that builds the receiving endpoint will need B3, B4 and C2/C3 first, or will have to propose defaults for approval.
