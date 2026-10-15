@@ -118,7 +118,7 @@ class PlannerIntakeIT extends IntegrationTestBase {
     }
 
     @Test
-    void VYB0915_AC3_theSameFunctionAgainIsARepeatWhenUnchangedAndRefusedWhenChanged() throws Exception {
+    void VYB0915_AC3_theSameFunctionAgainIsARepeatWhenUnchangedAndAProposalWhenChanged() throws Exception {
         var token = planner();
         String fn = unique("FN");
         String key = json.readTree(send(token, fn + "-2026-10-01", push(fn)).andExpect(status().isCreated()).andReturn()
@@ -130,12 +130,12 @@ class PlannerIntakeIT extends IntegrationTestBase {
         send(token, fn + "-2026-10-02", push(fn)).andExpect(status().isOk()).andExpect(jsonPath("$.requirement_id").value(key));
         assertThat(jdbc.queryForObject("SELECT title FROM requirement WHERE id = ?", String.class, id)).isEqualTo("Edited here by a person");
 
-        // a changed Function is not applied behind anyone's back
+        // a changed Function is not applied behind anyone's back: it waits as a proposal (VYB-0919)
         Map<String, Object> changed = push(fn);
         changed.put("title", "Customers can pause or cancel a subscription");
         changed.put("acceptance_criteria", List.of("Something else entirely"));
-        send(token, fn + "-2026-10-03", changed).andExpect(status().isConflict())
-            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString(key)));
+        send(token, fn + "-2026-10-03", changed).andExpect(status().isAccepted())
+            .andExpect(jsonPath("$.requirement_id").value(key)).andExpect(jsonPath("$.proposal.state").value("pending"));
         assertThat(jdbc.queryForObject("SELECT title FROM requirement WHERE id = ?", String.class, id)).isEqualTo("Edited here by a person");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM acceptance_criterion WHERE requirement_id = ?", Integer.class, id)).isEqualTo(2);
         assertThat(requirementsFor(fn)).isEqualTo(1);

@@ -5,9 +5,9 @@ The field-by-field ownership the Planner's own documents never gave (`agile-plan
 | Field | Owner after the Function is first sent | What this application does |
 |---|---|---|
 | Function id, Feature id, Capability id, Goal id | **Agile Planner / Macro Planner** | Stored as text in `planner_function_link`; never edited here; never used to place the requirement yet. |
-| Title (the Function's name) | **This application** once created | Seeded from the Planner once. A later Planner change is a **proposal** (D24), refused with 409 until proposals exist. |
+| Title (the Function's name) | **This application** once created | Seeded from the Planner once. A later Planner change is a **proposal** (D24, D51) that a person accepts or rejects; accepting is an edit by that person. |
 | Description (becomes the statement) | **This application** | As the title. |
-| Acceptance criteria | **This application** | Seeded as one criterion per string; own lifecycle after that. |
+| Acceptance criteria | **This application** | Seeded as one criterion per string; own lifecycle after that. Accepting a proposal adds criteria the requirement lacks and **never removes one**. |
 | Priority | **This application** | Seeded by name (`critical`, `high`, `low`; anything else MEDIUM). *Default (D50).* |
 | Type | **This application** | Always FUNCTIONAL on creation. *Default (D50).* |
 | Placement (capability) | **This application** | Unplaced on creation; an administrator places it. *Default (D50): needs the Macro Planner mapping to do better.* |

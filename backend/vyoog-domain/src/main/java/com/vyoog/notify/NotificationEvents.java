@@ -1,6 +1,7 @@
 package com.vyoog.notify;
 
 import com.vyoog.identity.AccessRole;
+import com.vyoog.identity.AccessRule;
 import com.vyoog.identity.ScopeRef;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -126,6 +127,22 @@ public class NotificationEvents {
         announce(NotificationKind.TEST_FAILED, minus(recipients.active(r.authors()), Set.of(), actor),
             "Test failed against " + r.key(), testName + " in " + where, "Tests failed in " + where + " (first seen against " + r.key() + ")",
             "/requirements/" + r.id(), runId == null ? null : "test-failed:" + runId);
+    }
+
+    /**
+     * VYB-0919: the Agile Planner changed a Function whose requirement already exists here, and the change waits as a proposal. Told: the
+     * people who may edit the requirement where it sits (and so may accept the change), any administrator, and its owner. Nobody is the
+     * actor: the Planner sent it.
+     */
+    @Transactional
+    public void plannerChangeProposed(UUID requirementId) {
+        Req r = requirement(requirementId);
+        if (r == null) return;
+        Set<UUID> who = new TreeSet<>(recipients.active(r.authors()));
+        for (AccessRole role : AccessRule.CREATE_EDIT_REQ.roles()) who.addAll(recipients.holders(role, r.place()));
+        who.addAll(recipients.holders(AccessRole.ADMINISTRATOR, r.place()));
+        announce(NotificationKind.PLANNER_CHANGE_PROPOSED, who, "Planner change proposed: " + r.key(), r.title(), r.title(),
+            "/requirements/" + r.id(), null);
     }
 
     /** People were mentioned in a comment on a requirement. */

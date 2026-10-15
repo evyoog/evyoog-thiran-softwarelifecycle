@@ -1369,6 +1369,27 @@ export interface RequirementVersions {
 
 export interface ForkedFor { fork: VersionRef; original: VersionRef }
 
+/**
+ * VYB-0919 (D24, D51): a change the Agile Planner proposed to a requirement it created. The words are the Planner's, not yet this
+ * requirement's: a person accepts them (a new revision made by that person) or rejects them. PENDING waits; ACCEPTED and REJECTED are
+ * decided; SUPERSEDED (replaced by a newer proposal) is never listed.
+ */
+export type PlannerProposalState = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUPERSEDED'
+export interface PlannerProposal {
+  id: string
+  state: PlannerProposalState
+  receivedAt: string
+  sourceFunctionId: string
+  title: string
+  statement: string
+  priority: RequirementPriority
+  criteria: string[]
+  decidedBy?: string | null
+  decidedAt?: string | null
+  decisionNote?: string | null
+  appliedRevision?: number | null
+}
+
 export interface ChangeImpactRequirement { id: string; key: string; title: string; status: RequirementStatus; inScope: boolean }
 export interface ChangeImpactTest { id: string; key: string; title: string }
 export interface ChangeImpactApplication { id: string; name: string; productName: string }
@@ -2202,6 +2223,13 @@ export const api = {
   requirementVersions: (requirementId: string) => request<RequirementVersions>(`/requirements/${requirementId}/versions`),
   forkRequirement: (requirementId: string, changeRequestId: string) =>
     request<Requirement>(`/requirements/${requirementId}/fork`, { method: 'POST', body: JSON.stringify({ changeRequestId }) }),
+  plannerProposals: (requirementId: string) => request<PlannerProposal[]>(`/requirements/${requirementId}/planner-proposals`),
+  acceptPlannerProposal: (requirementId: string, proposalId: string) =>
+    request<PlannerProposal>(`/requirements/${requirementId}/planner-proposals/${proposalId}/accept`, { method: 'POST' }),
+  rejectPlannerProposal: (requirementId: string, proposalId: string, note?: string) =>
+    request<PlannerProposal>(`/requirements/${requirementId}/planner-proposals/${proposalId}/reject`, {
+      method: 'POST', body: JSON.stringify({ note: note?.trim() || undefined }),
+    }),
   requirementLinked: (requirementId: string) => request<LinkedWork>(`/requirements/${requirementId}/linked`),
   /** VYB-0943: links a defect that has no requirement yet; one that already has one is refused (409). */
   linkDefectToRequirement: (defectId: string, requirementId: string) =>

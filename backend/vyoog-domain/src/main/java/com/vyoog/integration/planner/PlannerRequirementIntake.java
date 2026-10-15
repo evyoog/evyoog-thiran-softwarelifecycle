@@ -1,6 +1,8 @@
 package com.vyoog.integration.planner;
 
+import com.vyoog.notify.NotificationEvents;
 import com.vyoog.platform.IdempotencyService;
+import com.vyoog.platform.audit.AuditService;
 import com.vyoog.requirements.AcceptanceCriterionService;
 import com.vyoog.requirements.Placement;
 import com.vyoog.requirements.Requirement;
@@ -33,11 +35,13 @@ import org.springframework.transaction.support.TransactionTemplate;
  *   <li>One Function is one requirement, linked by {@code source_function_id}. The requirement is a draft, of type FUNCTIONAL, placed
  *       nowhere (the Planner's capability id belongs to a system this one cannot map yet), with one acceptance criterion per string sent.
  *       From then on it is ours: nothing the Planner sends again overwrites it.</li>
- *   <li>The same {@code Idempotency-Key} answers with the requirement it first made. The same Function sent again under another key with
- *       the same content answers with the requirement it already has. The same Function with changed content is refused (409) until
- *       change proposals exist: nothing is applied behind a person's back, and nothing is lost, because the Planner still holds it.</li>
- *   <li>Two sends of one Function at the same moment create one requirement (a unique index decides; the loser answers as a repeat).</li>
- *   <li>The creation is audited as done by a service account.</li>
+ *   <li>The same {@code Idempotency-Key} answers with what it first did. The same Function sent again under another key with the same
+ *       content answers with the requirement it already has. The same Function with changed content becomes a <b>proposal</b> on its
+ *       requirement (VYB-0919): nothing is applied behind a person's back; a person accepts or rejects it ({@link PlannerProposalService}).
+ *       A newer change supersedes an older undecided one, and the requirement's own current words sent again close it.</li>
+ *   <li>Two sends of one Function at the same moment create one requirement (a unique index decides; the loser answers as a repeat),
+ *       and changes to one Function are decided one at a time under a lock on its link.</li>
+ *   <li>The creation and each proposal are audited as done by a service account.</li>
  * </ul>
  */
 @Service
@@ -58,15 +62,14 @@ public class PlannerRequirementIntake {
     public record Push(String sourceSystem, String sourceFunctionId, String sourceFeatureId, String sourceCapabilityId,
                        String sourceGoalId, String title, String description, String priority, List<String> acceptanceCriteria) {}
 
-    /** What happened: the requirement, and whether this call made it. */
-    public record Outcome(UUID requirementId, String key, String status, Instant createdAt, boolean created) {}
-
-    /** The Function was received before with different content; applying it is a later row (a proposal for a person to decide). */
-    public static class FunctionChangedException extends IllegalStateException {
-        public FunctionChangedException(String key, String functionId) {
-            super("Function " + functionId + " already created " + key + " here and has changed since. A change to a Function the Planner "
-                + "has sent is not applied automatically; it will arrive as a proposal for a person to accept once that exists. "
-                + "Nothing was changed.");
+    /**
+     * What happened: the requirement, whether this call made it, and, when the Function had changed, the proposal that holds the change
+     * (with the state it is in now).
+     */
+    public record Outcome(UUID requirementId, String key, String status, Instant createdAt, boolean created,
+                          UUID proposalId, String proposalState) {
+        public boolean proposed() {
+            return proposalId != null;
         }
     }
 
@@ -76,16 +79,20 @@ public class PlannerRequirementIntake {
     private final RequirementService requirementService;
     private final AcceptanceCriterionService criteria;
     private final RequirementRepository requirements;
+    private final AuditService audit;
+    private final NotificationEvents events;
 
     public PlannerRequirementIntake(JdbcTemplate jdbc, PlatformTransactionManager transactions, IdempotencyService idempotency,
                                     RequirementService requirementService, AcceptanceCriterionService criteria,
-                                    RequirementRepository requirements) {
+                                    RequirementRepository requirements, AuditService audit, NotificationEvents events) {
         this.jdbc = jdbc;
         this.tx = new TransactionTemplate(transactions);
         this.idempotency = idempotency;
         this.requirementService = requirementService;
         this.criteria = criteria;
         this.requirements = requirements;
+        this.audit = audit;
+        this.events = events;
     }
 
     /** Not transactional itself: each attempt is its own transaction, so a lost race rolls back cleanly and is retried as a repeat. */
@@ -95,20 +102,15 @@ public class PlannerRequirementIntake {
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             var replay = idempotency.find(idempotencyKey, IDEMPOTENCY_ENDPOINT);
             if (replay.isPresent()) {
-                return outcomeOf(replay.get(), false);
+                return replayOutcome(replay.get(), idempotencyKey);
             }
             Map<String, Object> link = findLink(push.sourceFunctionId());
             if (link != null) {
-                UUID requirementId = (UUID) link.get("requirement_id");
-                if (!hash.equals(link.get("content_hash"))) {
-                    throw new FunctionChangedException(requirements.findById(requirementId).orElseThrow().getKey(), push.sourceFunctionId());
-                }
-                idempotency.record(idempotencyKey, IDEMPOTENCY_ENDPOINT, requirementId); // best effort: a later repeat is then quick
-                return outcomeOf(requirementId, false);
+                return tx.execute(status -> receiveKnown((UUID) link.get("id"), idempotencyKey, push, hash));
             }
             try {
                 UUID id = tx.execute(status -> createAll(idempotencyKey, push, hash));
-                return outcomeOf(id, true);
+                return outcomeOf(id, true, null);
             } catch (DataIntegrityViolationException | RaceLostException lost) {
                 log.debug("[planner] another send of {} won; answering as a repeat (attempt {})", push.sourceFunctionId(), attempt);
             }
@@ -142,14 +144,81 @@ public class PlannerRequirementIntake {
 
     private Map<String, Object> findLink(String functionId) {
         var rows = jdbc.queryForList(
-            "SELECT requirement_id, content_hash FROM planner_function_link WHERE source_system = ? AND source_function_id = ?",
+            "SELECT id, requirement_id, content_hash FROM planner_function_link WHERE source_system = ? AND source_function_id = ?",
             SOURCE_SYSTEM, functionId.strip());
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    private Outcome outcomeOf(UUID requirementId, boolean created) {
+    /**
+     * A Function this application already has a requirement for, sent again. Runs in a transaction that holds a lock on the Function's
+     * link, so two sends of one Function are decided one after the other, each against what the first left.
+     */
+    private Outcome receiveKnown(UUID linkId, String idempotencyKey, Push push, String hash) {
+        Map<String, Object> link = jdbc.queryForMap(
+            "SELECT requirement_id, content_hash, source_function_id FROM planner_function_link WHERE id = ? FOR UPDATE", linkId);
+        UUID requirementId = (UUID) link.get("requirement_id");
+        if (hash.equals(link.get("content_hash"))) {
+            // the same words as the last send: a repeat, or the proposal that send made, still waiting
+            rememberKey(idempotencyKey, requirementId);
+            return pendingOutcome(linkId, requirementId);
+        }
+        if (hash.equals(currentContentHash(requirementId))) {
+            // the Planner sent the requirement's own words again: whatever it offered before no longer differs, so nothing is left to decide
+            supersedePending(linkId);
+            jdbc.update("UPDATE planner_function_link SET content_hash = ? WHERE id = ?", hash, linkId);
+            rememberKey(idempotencyKey, requirementId);
+            return outcomeOf(requirementId, false, null);
+        }
+        supersedePending(linkId);
+        UUID proposalId = jdbc.queryForObject("""
+            INSERT INTO planner_change_proposal (link_id, requirement_id, title, statement, priority, criteria, content_hash, idempotency_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""", UUID.class,
+            linkId, requirementId, push.title().strip(), statementOf(push), priorityOf(push.priority()),
+            cleanCriteria(push.acceptanceCriteria()).toArray(new String[0]), hash, idempotencyKey);
+        jdbc.update("UPDATE planner_function_link SET content_hash = ? WHERE id = ?", hash, linkId);
+        rememberKey(idempotencyKey, requirementId);
+        audit.recordService("planner.change_proposed", "REQUIREMENT", requirementId,
+            Map.of("proposalId", proposalId.toString(), "sourceFunctionId", String.valueOf(link.get("source_function_id"))));
+        events.plannerChangeProposed(requirementId);
+        return outcomeOf(requirementId, false, proposalId);
+    }
+
+    /** Inside the link's lock, so a find then a record cannot race another send of the same Function. */
+    private void rememberKey(String idempotencyKey, UUID requirementId) {
+        if (idempotency.find(idempotencyKey, IDEMPOTENCY_ENDPOINT).isEmpty()) {
+            idempotency.record(idempotencyKey, IDEMPOTENCY_ENDPOINT, requirementId);
+        }
+    }
+
+    private void supersedePending(UUID linkId) {
+        jdbc.update("UPDATE planner_change_proposal SET state = 'SUPERSEDED' WHERE link_id = ? AND state = 'PENDING'", linkId);
+    }
+
+    /** The hash of what the requirement says now, in the same terms as a push, so the two can be compared. */
+    private String currentContentHash(UUID requirementId) {
+        Map<String, Object> r = jdbc.queryForMap("SELECT title, statement, priority FROM requirement WHERE id = ?", requirementId);
+        List<String> texts = jdbc.queryForList(
+            "SELECT text FROM acceptance_criterion WHERE requirement_id = ? ORDER BY ordinal", String.class, requirementId);
+        return contentHash(new Push(SOURCE_SYSTEM, null, null, null, null, (String) r.get("title"), (String) r.get("statement"),
+            (String) r.get("priority"), texts));
+    }
+
+    private Outcome pendingOutcome(UUID linkId, UUID requirementId) {
+        var rows = jdbc.queryForList("SELECT id, state FROM planner_change_proposal WHERE link_id = ? AND state = 'PENDING'", linkId);
+        return rows.isEmpty() ? outcomeOf(requirementId, false, null) : outcomeOf(requirementId, false, (UUID) rows.get(0).get("id"));
+    }
+
+    /** A key seen before: the proposal it made if it made one, else the requirement. */
+    private Outcome replayOutcome(UUID requirementId, String idempotencyKey) {
+        var rows = jdbc.queryForList("SELECT id FROM planner_change_proposal WHERE idempotency_key = ?", idempotencyKey);
+        return outcomeOf(requirementId, false, rows.isEmpty() ? null : (UUID) rows.get(0).get("id"));
+    }
+
+    private Outcome outcomeOf(UUID requirementId, boolean created, UUID proposalId) {
         Requirement r = requirements.findById(requirementId).orElseThrow(NoSuchElementException::new);
-        return new Outcome(r.getId(), r.getKey(), r.getStatus().name(), r.getCreatedAt(), created);
+        String state = proposalId == null ? null
+            : jdbc.queryForObject("SELECT state FROM planner_change_proposal WHERE id = ?", String.class, proposalId);
+        return new Outcome(r.getId(), r.getKey(), r.getStatus().name(), r.getCreatedAt(), created, proposalId, state);
     }
 
     // ------------------------------------------------------------------ rules (static so they can be tested without a database)

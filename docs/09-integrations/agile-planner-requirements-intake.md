@@ -19,8 +19,9 @@ Content-Type: application/json
 The path is this application's (`/api/v1/...`, not the contract's `/v1/requirements`, which would collide with the screens' own requirement endpoint); point the Planner's ALM base URL here. The names and the response are the contract's:
 
 ```
-201 Created (this call made it)  or  200 OK (a repeat)
-{ "requirement_id": "VY-1042", "status": "draft", "created_at": "...", "traceability": { "source_function_id": "FN-123" } }
+201 Created (this call made it), 200 OK (a repeat), or 202 Accepted (the Function had changed: held as a proposal)
+{ "requirement_id": "VY-1042", "status": "draft", "created_at": "...", "traceability": { "source_function_id": "FN-123" },
+  "proposal": { "proposal_id": "...", "state": "pending" } }   // proposal only on a 202
 ```
 
 `requirement_id` is the requirement's key as people see it. `X-TENANT-ID`, which the contract names, is not read: this application has one customer (D3).
@@ -39,17 +40,31 @@ A **registered service account holding the scope `planner:requirements`** (Admin
 | `priority`: `critical`, `high`, `low` map to the same name, whatever the case; anything else, or nothing, is **MEDIUM**. | The Planner sends "high"; this application has four named levels. |
 | The same `Idempotency-Key` answers with the requirement it first made (200). | The contract's own header. |
 | The same Function again under another key, **same content**: 200, the requirement it already has, nothing changed. | The key includes a timestamp, so an unchanged Function can arrive under a new key. It never undoes an edit made here. |
-| The same Function again with **changed content**: **409**, naming the requirement. Nothing is changed. | D24: a later change is a proposal for a person to accept, never an overwrite. Proposals are the next row; until then the change is refused, not lost: the Planner still holds it. |
+| The same Function again with **changed content**: **202**, and the change is held as a **proposal** on the requirement (below). The requirement is not touched; the response's `status` is its own current one. | D24: a later change is a proposal for a person to accept, never an overwrite (VYB-0919, D51). |
 | The same Function sent at the same moment, even under different keys, becomes **one** requirement. | A unique index decides; the loser answers as a repeat. |
 | After creation the requirement is ours: a person may edit it under the normal revision and approval rules. | D24 answer 3. |
 
 Limits (a 400 with the reason): `Idempotency-Key` required (at most 200 characters), `source_system` must be `agile_planner`, `source_function_id` and `title` required (title at most 300, an id at most 200), `description` at most 20,000, at most 50 criteria of at most 2,000 characters each.
 
+## Later changes: proposals (VYB-0919, D51)
+
+A changed Function is stored as a proposal (`planner_change_proposal`, V061) with the words the Planner sent. People see it on the requirement ("The Agile Planner changed Function FN-123": now against proposed, hatched and marked as the Planner's) and are told (notification kind "Planner change proposed", urgent, to those who may edit the requirement where it sits, any administrator, and its owner).
+
+| Rule | Why |
+|---|---|
+| At most one proposal per Function is waiting. A newer change replaces the one nobody has decided; the Planner sending the requirement's **own current words** again closes it. The same changed words again (any key) are the same proposal. | The Planner may send many times; a person should face one question, the latest. |
+| **Accept** (`POST /api/v1/requirements/{id}/planner-proposals/{proposalId}/accept`) is an edit of the requirement by the person who accepts, under the normal rules: the title, statement and priority become the proposal's, as a new revision made by that person; type and placement are kept; the criteria the requirement lacks (same words exactly) are added at the end and **none is removed**. | D24 answer 3 (the requirement is ours, edited under normal rules). A criterion may already be linked to tests, so nothing the Planner stops sending is deleted. |
+| An **approved** requirement cannot take an accept (409, saying so): it changes only through a change request. The proposal keeps waiting. | The normal rule for approved content (VYB-0390); connecting a proposal to a change request is not built. |
+| **Reject** (`.../reject`, optional note up to 500 characters) changes nothing and records who decided and when. The same words sent again are not asked again; different words are a new proposal. | |
+| Deciding needs the role that edits requirements, where the requirement sits (administrators always); never a service account. Reading is for any signed-in person. | The same rule as editing (AccessPolicyTest). |
+| Two people deciding at once: one wins, the other gets 409. A decided proposal is kept. | |
+
 ## What is not built
 
 - **Telling the Planner back** (`requirement.status_changed`, `design_artifact.created`, `test_case.created`, `test_result.recorded`, signed with `X-ALM-Signature`): the next rows.
-- **Later changes as proposals** a person accepts or rejects: a later row. Until then a changed Function answers 409.
 - **Placement from the Planner's capability**: needs the Macro Planner mapping (blocked, D24).
-- **Showing on the screen that a requirement came from the Planner.** The link exists in the database; no screen reads it yet.
+- **Showing on the screen that a requirement came from the Planner,** other than a waiting proposal. The link exists in the database; nothing else reads it yet.
+- **A proposal for an approved requirement cannot be turned into a change request** from the screen; a person raises one by hand.
+- **No derived task** in My Work for a waiting proposal; a notification (bell, and email if the person chose it) is the only prompt.
 - The Planner's Feature has no counterpart here; its id is kept in the link only.
 - OAuth2 token validation is the application's normal Keycloak resource-server check; whether the Planner's real client-credentials flow and `Idempotency-Key` handling work against it is unconfirmed (the Planner's open questions 2 and 3).

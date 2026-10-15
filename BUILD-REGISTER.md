@@ -322,7 +322,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0916 | 6 | Connector framework and Agile Planner, outbound | Replace the generic planning push with the connector; keep the signed-payload format for compatibility [S; F16, F40] | DONE on dev (27 new tests; commit only, no PR yet) | S3 |
 | VYB-0917 | 6 | Connector framework and Agile Planner, outbound | Connector health screen under Administration [S; F40] | DONE on dev (33 new tests; checked in a browser against mocked data; commit only, no PR yet) | S3 |
 | VYB-0918 | 6 | Agile Planner inbound and reconciliation | Tell the Planner back: signed `requirement.status_changed`, `design_artifact.created`, `test_case.created`, `test_result.recorded` webhooks (`X-ALM-Signature`, its OAuth2 token and `X-TENANT-ID`, retries and sync log through the connector framework) [L; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `backlog_item.status_changed`) | TODO | S4 |
-| VYB-0919 | 6 | Agile Planner inbound and reconciliation | A later change to a Function arrives as a proposal on its requirement that a person accepts or rejects; the 409 of VYB-0915 becomes a proposal [M; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `sprint.reassigned`) | TODO | S4 |
+| VYB-0919 | 6 | Agile Planner inbound and reconciliation | A later change to a Function arrives as a proposal on its requirement that a person accepts or rejects; the 409 of VYB-0915 becomes a proposal [M; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `sprint.reassigned`) | DONE on dev, started ahead of Sprint 11 at the product owner's request (15 new tests; one migration, V061; D51): a changed Function is held as a proposal (202) on its requirement, and a person who may edit it accepts or rejects it from the requirement detail; people who can decide are notified. **Not exercised against the real Planner.** See `docs/09-integrations/agile-planner-requirements-intake.md` | S4 |
 | VYB-0920 | 6 | Agile Planner inbound and reconciliation | Version-based discard of an older Function, "deprecate, never delete", and an unlinked report for a Planner requirement id this application does not know [M; F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: orphan and conflict queue) | TODO | S4 |
 | VYB-0921 | 6 | Agile Planner inbound and reconciliation | Hardening of the Planner endpoints: rate limit, body size, replay window, and the signed-payload format against the contract's [S; F08] Rewritten 2026-10-15 around the Planner's documented contract (D24). | TODO | S4 |
 | VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
@@ -5929,6 +5929,25 @@ Phase 6 Sprint 12, **started ahead of Sprint 11 at the product owner's request**
 - **No screen shows that a requirement came from the Planner**, and an unplaced seeded requirement shows only as the existing "not placed" gap.
 - Creating the Keycloak client and the service account is a human step.
 - The Planner's one-to-many question is answered "one to one for now" only.
+- Testcontainers and the GitHub CI run are unchecked.
+
+---
+
+## Session 113 — VYB-0919: a later change to a Function arrives as a proposal
+
+Phase 6 Sprint 12, **started ahead of Sprint 11 at the product owner's request**. Branch `dev`. **15 new tests** (`PlannerProposalIT` 9, `plannerProposals.test.ts` 6; `PlannerIntakeIT` AC3 now expects the proposal instead of the 409); one migration (`V061`); D51. "Session 56" followed my recommendation in the last report (row 0919, the next unblocked one); the rules were already set by the product owner's D24 answers.
+
+**What I built.** `planner_change_proposal` and `PlannerProposalService`: a changed Function is stored as a proposal (the send answers 202 with `proposal.proposal_id`); a newer change supersedes the waiting one; the requirement's own current words closed it; decisions are serialised under a lock on the Function's link. `GET /api/v1/requirements/{id}/planner-proposals`, `POST .../{proposalId}/accept` and `/reject` (`@RequiresAccess(CREATE_EDIT_REQ, REQUIREMENT)`, entries in `AccessPolicyTest`). A new notification kind, "Planner change proposed" (urgent), to people who can edit it where it sits, administrators and the owner. The requirement detail shows a panel with now-against-proposed (hatched, marked as the Planner's), Accept and Reject with a confirmation, and earlier decisions. OpenAPI and frontend types regenerated; intake and ownership docs, D51.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) Accepting is all-or-nothing: no picking fields. (2) Accepting adds criteria the requirement lacks (same words exactly) and **never removes** one: a criterion may already be linked to tests. (3) An approved requirement cannot take an accept (409, saying why): it needs a change request; rejecting stays open to them. (4) The Planner sending the requirement's own current words again closes the waiting proposal and answers 200. (5) A rejected proposal's words are not asked again; different words are a new proposal. (6) The notification is urgent (email on by default) and not chat-eligible. (7) 202 is mine: the Planner's contract names only 201 and 200.
+
+**Evidence.** Mutations, each caught and restored: no supersede of the waiting proposal (2 tests failed); the "own words again" check removed; viewers also notified; accepting also removing criteria; and the approved-requirement guard removed (caught only after I strengthened the test: the edit path also refuses an approved requirement, so the first test could not tell which check fired). **Not caught:** removing the row lock on a proposal did not fail the two-people-at-once test, because the requirement's own version check also makes the second accept fail; the lock is kept as the explicit guarantee but nothing proves it alone. Browser check against a stubbed API (not a real backend): panel and confirmation dialog pass axe in both themes, Accept is disabled for an approved requirement and sends the right request. Full verify below.
+
+**Not done / to know**
+- **Never run against the real Planner;** the tests play it. Its handling of a 202 is unknown (the contract names only 201 and 200).
+- A proposal for an approved requirement cannot be turned into a change request from the screen. No derived task in My Work: the notification is the only prompt.
+- No partial accept, and no way to tell the Planner the outcome (VYB-0918 is the webhooks back).
+- Dates on the panel use the viewer's local time and format.
 - Testcontainers and the GitHub CI run are unchecked.
 
 ---

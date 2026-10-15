@@ -28,6 +28,8 @@ public enum NotificationKind {
         "A release that holds requirements in your scope changed state (opened, frozen, released).", "info", false, true),
     TEST_FAILED("test-failed", "Test failed", "Quality",
         "A test recorded a failure against a requirement you own or created.", "warn", false, true),
+    PLANNER_CHANGE_PROPOSED("planner-change-proposed", "Planner change proposed", "Reviews and decisions",
+        "The Agile Planner changed a Function whose requirement you can edit; a person decides whether to accept the change.", "warn", true, false),
     MENTIONED("mentioned", "You were mentioned", "Conversations",
         "Someone mentioned you in a comment.", "info", true, false),
     CLARIFICATION_RAISED("clarification-raised", "Clarification asked of you", "Conversations",

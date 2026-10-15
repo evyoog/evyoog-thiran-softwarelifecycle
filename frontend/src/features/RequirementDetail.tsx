@@ -13,6 +13,7 @@ import { NEXT_STATES, moveLabel, reasonRequired } from './requirements/lifecycle
 import { UserPicker } from '@/shared/ui/UserPicker'
 import { HistorySection } from './requirements/HistorySection'
 import { VersionsPanel } from './requirements/VersionsPanel'
+import { PlannerProposalsPanel } from './requirements/PlannerProposalsPanel'
 import { LinkedWorkPanel } from './trace/LinkedWorkPanel'
 
 const TYPES: RequirementType[] = [
@@ -349,6 +350,9 @@ export function RequirementDetail() {
 
       {/* VYB-0942: the versions of this requirement, and forking a new one from an approved requirement */}
       <VersionsPanel requirementId={id} status={req.status} />
+
+      {/* VYB-0919: changes the Agile Planner proposed to this requirement, for a person to accept or reject */}
+      <PlannerProposalsPanel requirement={req} criteria={criteria} />
 
       {/* Main Grid */}
       <div className="grid lg:grid-cols-3 gap-8 mt-6">

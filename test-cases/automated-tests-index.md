@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1323 tests cover 80 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1338 tests cover 81 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -682,7 +682,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 
 - `AC1` aPushCreatesADraftRequirementWithItsCriteriaAndABackReference (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
 - `AC2` theSameIdempotencyKeyAnswersWithTheRequirementItMade (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
-- `AC3` theSameFunctionAgainIsARepeatWhenUnchangedAndRefusedWhenChanged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
+- `AC3` theSameFunctionAgainIsARepeatWhenUnchangedAndAProposalWhenChanged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
 - `AC3` theSameWordsHashAlikeWhateverTheSpacingAndPriorityCaseAndDifferentWordsDoNot (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerRequirementIntakeTest.java`)
 - `AC4` aMissingDescriptionIsStatedByTheTitle (`backend/vyoog-domain/src/test/java/com/vyoog/integration/planner/PlannerRequirementIntakeTest.java`)
 - `AC4` priorityIsMappedAndADescriptionlessFunctionIsStatedByItsTitle (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerIntakeIT.java`)
@@ -758,6 +758,24 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` oneConnectionIsSingularAndNoneSaysSo (`frontend/src/features/admin/connectorHealth.test.ts`)
 - `AC6` sortingDoesNotChangeTheListItWasGiven (`frontend/src/features/admin/connectorHealth.test.ts`)
 - `AC6` syncStatusesSaySuccessRetriedSuccessAndFailureAfterHowManyAttempts (`frontend/src/features/admin/connectorHealth.test.ts`)
+
+## VYB-0919: A later change to a Function arrives as a proposal on its requirement that a person accepts or rejects; the 409 of VYB-0915 becomes a proposal [M; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `sprint.reassigned`)
+
+- `AC1` aChangedFunctionWaitsAsAProposalAndTheRequirementIsUntouched (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC10` aProposalThatSaysWhatTheRequirementAlreadySaysChangesNothing (`frontend/src/features/requirements/plannerProposals.test.ts`)
+- `AC10` criteriaAreAddedNeverRemovedAndTheOnesNotSentAreSaidToStay (`frontend/src/features/requirements/plannerProposals.test.ts`)
+- `AC10` saysWhichOfTheFieldsWouldChangeAndIgnoresSpacing (`frontend/src/features/requirements/plannerProposals.test.ts`)
+- `AC11` onlyAnApprovedRequirementCannotAcceptAndTheReasonSaysWhatToDo (`frontend/src/features/requirements/plannerProposals.test.ts`)
+- `AC12` everyStateIsAGlyphAndWordsNotColourAlone (`frontend/src/features/requirements/plannerProposals.test.ts`)
+- `AC12` waitingProposalsAreSeparatedFromDecidedOnesAndAReplacedOneIsNotShown (`frontend/src/features/requirements/plannerProposals.test.ts`)
+- `AC2` theSameChangeSentAgainIsTheSameProposal (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC3` aNewerChangeReplacesTheOneNobodyHasDecidedAndSendingTheCurrentWordsClosesIt (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC4` acceptingMakesItARevisionByThePersonAddsCriteriaAndRemovesNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC5` rejectingChangesNothingAndTheSameWordsDoNotComeBack (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC6` anApprovedRequirementCannotAcceptItAndTheProposalKeepsWaiting (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC7` onlyAPersonWhoCanEditItDecidesAndAnyoneSignedInMayRead (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC8` changesSentAtTheSameMomentLeaveOnePendingAndNoFailure (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+- `AC9` twoPeopleDecidingTheSameProposalAtTheSameMomentOneWins (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
 
 ## VYB-0923: Test plan, suite and run entities; structured steps and expected results [L; F14]
 

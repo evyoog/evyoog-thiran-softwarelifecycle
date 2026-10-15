@@ -1,5 +1,6 @@
 package com.vyoog.api.web;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vyoog.api.config.PrincipalGuard;
 import com.vyoog.identity.KnownServiceScopes;
@@ -49,13 +50,23 @@ public class PlannerRequirementController {
 
     public record Traceability(@JsonProperty("source_function_id") String sourceFunctionId) {}
 
+    /** A change the Planner sent to a Function that already has a requirement: held for a person to accept or reject. */
+    public record ProposalRef(
+        @JsonProperty("proposal_id") String proposalId,
+        @JsonProperty("state") String state) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PushResponse(
         @JsonProperty("requirement_id") String requirementId,
         @JsonProperty("status") String status,
         @JsonProperty("created_at") Instant createdAt,
-        @JsonProperty("traceability") Traceability traceability) {}
+        @JsonProperty("traceability") Traceability traceability,
+        @JsonProperty("proposal") ProposalRef proposal) {}
 
-    /** 201 when this call created the requirement; 200 when it is a repeat of one already received. */
+    /**
+     * 201 when this call created the requirement; 200 when it is a repeat of one already received; 202 when the Function had changed
+     * and the change is held as a proposal (the requirement itself is untouched; its {@code status} is its current one).
+     */
     @PostMapping
     public ResponseEntity<PushResponse> receive(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
@@ -65,7 +76,9 @@ public class PlannerRequirementController {
             body.sourceSystem(), body.sourceFunctionId(), body.sourceFeatureId(), body.sourceCapabilityId(),
             body.sourceGoalId(), body.title(), body.description(), body.priority(), body.acceptanceCriteria()));
         var response = new PushResponse(outcome.key(), outcome.status().toLowerCase(java.util.Locale.ROOT), outcome.createdAt(),
-            new Traceability(body.sourceFunctionId().strip()));
-        return ResponseEntity.status(outcome.created() ? HttpStatus.CREATED : HttpStatus.OK).body(response);
+            new Traceability(body.sourceFunctionId().strip()),
+            outcome.proposed() ? new ProposalRef(outcome.proposalId().toString(), outcome.proposalState().toLowerCase(java.util.Locale.ROOT)) : null);
+        HttpStatus code = outcome.created() ? HttpStatus.CREATED : outcome.proposed() ? HttpStatus.ACCEPTED : HttpStatus.OK;
+        return ResponseEntity.status(code).body(response);
     }
 }
