@@ -26,8 +26,16 @@ class DuplicateScanOneIT extends IntegrationTestBase {
         return b.append(']').toString();
     }
 
+    /**
+     * A new requirement is embedded a moment after it is saved, on another thread, with the real (hashing) embedding of its text. That
+     * would collide with, or overwrite, a vector set here, so wait until it has been and then set the vector the test wants.
+     */
     private void embed(Requirement r, String vector) {
-        jdbc.update("INSERT INTO requirement_embedding (requirement_id, revision, model, embedding) VALUES (?, 1, 'local-hashing-v1', ?::vector)", r.getId(), vector);
+        awaitEnrichment(List.of(r.getId()));
+        jdbc.update("""
+            INSERT INTO requirement_embedding (requirement_id, revision, model, embedding) VALUES (?, 1, 'local-hashing-v1', ?::vector)
+            ON CONFLICT (requirement_id) DO UPDATE SET embedding = EXCLUDED.embedding, embedded_at = clock_timestamp()
+            """, r.getId(), vector);
     }
 
     /** The pairs reported for {@code self} whose other side is one of {@code others}: other tests' requirements share this database. */
