@@ -39,7 +39,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * webhook; nothing is sent for any other requirement, a failed send waits and is tried again, and one requirement's changes go out in
  * the order they happened.
  *
- * <p>The scheduled job runs in this application too, so these tests assert on what ends up in the database, never on a pass's own count.
+ * <p>The scheduled job runs in this application too; each test takes its lease so that only the passes the test asks for happen, and
+ * asserts on what ends up in the database.
  */
 class PlannerWebhookIT extends IntegrationTestBase {
 
@@ -64,6 +65,11 @@ class PlannerWebhookIT extends IntegrationTestBase {
     @BeforeEach
     void startStub() throws IOException {
         jdbc.update("DELETE FROM planner_outbound_event"); // the queue is global: another test's waiting events must not be sent (or counted) here
+        // The application's own 30-second job runs in this context too. Hold its lease for ten minutes so that only the passes these
+        // tests ask for happen: a pass of its own between a test's pass and its assertions would change what they count.
+        jdbc.update("""
+            INSERT INTO scheduler_lock (name, locked_by, locked_at, locked_until) VALUES ('planner-webhooks', 'PlannerWebhookIT', now(), now() + interval '10 minutes')
+            ON CONFLICT (name) DO UPDATE SET locked_by = EXCLUDED.locked_by, locked_at = EXCLUDED.locked_at, locked_until = EXCLUDED.locked_until""");
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", this::handle);
         server.setExecutor(Executors.newFixedThreadPool(4));
