@@ -29,7 +29,8 @@ import org.springframework.stereotype.Service;
  *       ignores an older version, but there is no reason to rely on that).</li>
  *   <li>While the connection is not set up (no URL or secret), events wait rather than fail, so they are sent once it is; one still
  *       waiting after 14 days is marked FAILED. Sent and failed events are removed after 30 days.</li>
- *   <li>One pass sends at most 25 events and stops after about 25 seconds.</li>
+ *   <li>One pass sends at most 25 events and stops after about 25 seconds, or after three sends fail in a row (the Planner is evidently
+ *       down: the rest stay due for the next pass rather than each spending its own retries on a receiver that is not answering).</li>
  * </ul>
  */
 @Service
@@ -40,6 +41,7 @@ public class PlannerWebhookDelivery {
     static final int BATCH = 25;
     static final Duration BUDGET = Duration.ofSeconds(25);
     static final int MAX_ATTEMPTS = 5;
+    static final int STOP_AFTER_FAILURES_IN_A_ROW = 3;
     static final Duration WAIT_FOR_SETUP = Duration.ofDays(14);
     static final Duration KEEP = Duration.ofDays(30);
 
@@ -78,9 +80,10 @@ public class PlannerWebhookDelivery {
         int sent = 0;
         int failed = 0;
         int gaveUp = 0;
+        int inARow = 0;
         Set<UUID> blocked = new HashSet<>(); // a requirement whose earlier event just failed: its later ones wait for the next pass
         for (Map<String, Object> row : due()) {
-            if (System.nanoTime() > deadline) break;
+            if (System.nanoTime() > deadline || inARow >= STOP_AFTER_FAILURES_IN_A_ROW) break;
             UUID requirementId = (UUID) row.get("requirement_id");
             if (blocked.contains(requirementId)) continue;
             UUID id = (UUID) row.get("id");
@@ -90,16 +93,19 @@ public class PlannerWebhookDelivery {
                 if (result.succeeded()) {
                     jdbc.update("UPDATE planner_outbound_event SET state = 'SENT', sent_at = now(), attempts = ?, last_error = NULL WHERE id = ?", attempts + 1, id);
                     sent++;
+                    inARow = 0;
                 } else if (result.outcome() == ConnectorResult.Outcome.IN_PROGRESS_ELSEWHERE) {
                     blocked.add(requirementId); // another instance has it; leave it
                 } else if (attempts + 1 >= MAX_ATTEMPTS) {
                     jdbc.update("UPDATE planner_outbound_event SET state = 'FAILED', attempts = ?, last_error = ? WHERE id = ?", attempts + 1, result.error(), id);
                     gaveUp++;
+                    inARow++;
                     blocked.add(requirementId);
                 } else {
                     jdbc.update("UPDATE planner_outbound_event SET attempts = ?, last_error = ?, next_attempt_at = ? WHERE id = ?",
                         attempts + 1, result.error(), java.sql.Timestamp.from(Instant.now().plus(backoffAfter(attempts + 1))), id);
                     failed++;
+                    inARow++;
                     blocked.add(requirementId);
                 }
             } catch (ConnectorNotConfiguredException notReady) {

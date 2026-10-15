@@ -60,6 +60,7 @@ class PlannerWebhookIT extends IntegrationTestBase {
 
     @BeforeEach
     void startStub() throws IOException {
+        jdbc.update("DELETE FROM planner_outbound_event"); // the queue is global: another test's waiting events must not be sent (or counted) here
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", this::handle);
         server.setExecutor(Executors.newFixedThreadPool(4));
@@ -283,5 +284,27 @@ class PlannerWebhookIT extends IntegrationTestBase {
         jdbc.update("UPDATE planner_outbound_event SET created_at = now() - interval '31 days', state = 'SENT' WHERE requirement_id = ? AND state = 'FAILED'", r.getId());
         assertThat(delivery.purgeOld()).isGreaterThanOrEqualTo(1);
         assertThat(events(r)).as("the waiting one is never purged").hasSize(1);
+    }
+
+    @Test
+    void VYB0918_AC9_aPassStopsAfterThreeFailuresInARowBecauseThePlannerIsEvidentlyDown() {
+        UUID author = newUser("author");
+        List<Requirement> five = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Requirement r = fromPlanner(newPortfolio(), author);
+            submit(r, author);
+            five.add(r);
+        }
+        answer = 500;
+        connect();
+        delivery.deliver();
+
+        long tried = five.stream().filter(r -> (Integer) events(r).get(0).get("attempts") > 0).count();
+        assertThat(tried).as("three were tried; the other two wait for the next pass").isEqualTo(3);
+
+        answer = 200;
+        jdbc.update("UPDATE planner_outbound_event SET next_attempt_at = now()");
+        delivery.deliver();
+        assertThat(five.stream().map(r -> events(r).get(0).get("state"))).containsOnly("SENT");
     }
 }

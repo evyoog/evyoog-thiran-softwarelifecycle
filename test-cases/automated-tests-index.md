@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1353 tests cover 82 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1354 tests cover 82 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -776,6 +776,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC6` afterFiveFailedAttemptsTheEventIsLeftFailedWithItsReason (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
 - `AC7` whileTheConnectionIsNotSetUpEventsWaitAndGoOutOnceItIs (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
 - `AC8` anEventThatWaitedFourteenDaysForASetupThatNeverCameIsFailedAndOldDoneOnesArePurged (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
+- `AC9` aPassStopsAfterThreeFailuresInARowBecauseThePlannerIsEvidentlyDown (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
 
 ## VYB-0919: A later change to a Function arrives as a proposal on its requirement that a person accepts or rejects; the 409 of VYB-0915 becomes a proposal [M; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `sprint.reassigned`)
 

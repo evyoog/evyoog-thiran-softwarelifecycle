@@ -34,7 +34,7 @@ Row VYB-0918 is split. **Built (0918a):** the signed-webhook path, the queue, re
 | Rule | Why |
 |---|---|
 | The event is written in the same transaction as the change; a change that is refused or rolled back sends nothing. | The Planner is never told something that did not happen. |
-| A job sends queued events every 30 seconds (at most 25 a pass). | A Planner that is down never slows or fails a change. |
+| A job sends queued events every 30 seconds (at most 25 a pass). A pass stops after three sends fail in a row: the Planner is evidently down, and the rest wait for the next pass. | A Planner that is down never slows or fails a change, and is not hammered. |
 | A failed send is tried again after 1, 2, 4 and 8 minutes, then left **FAILED** with its reason. (Each send also retries inside itself, as every connector does.) | |
 | A later event about a requirement waits for an earlier one of the same requirement that is still waiting. | The Planner sees one requirement's changes in the order they happened. |
 | While the connection is not set up, events wait; they go out once it is. One still waiting after 14 days is marked FAILED. Sent and failed events are removed after 30 days. | Setting it up late loses nothing recent; the queue cannot grow forever. |
