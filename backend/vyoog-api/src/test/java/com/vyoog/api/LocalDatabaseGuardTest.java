@@ -15,8 +15,8 @@ class LocalDatabaseGuardTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public",
-        "jdbc:postgresql://LOCALHOST/vygmicroservice",
+        "jdbc:postgresql://localhost:5432/sandbox?currentSchema=vyg_requirement,public",
+        "jdbc:postgresql://LOCALHOST/sandbox",
         "jdbc:postgresql://127.0.0.1:5433/x",
         "jdbc:postgresql://127.1.2.3/x",
         "jdbc:postgresql://[::1]:5432/x",
@@ -27,7 +27,7 @@ class LocalDatabaseGuardTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "jdbc:postgresql://vyg-batch-1.example.ap-south-1.rds.amazonaws.com:5432/vygmicroservice",
+        "jdbc:postgresql://vyg-batch-1.example.ap-south-1.rds.amazonaws.com:5432/sandbox",
         "jdbc:postgresql://db.internal:5432/x",
         "jdbc:postgresql://10.0.0.5:5432/x",
         "jdbc:postgresql://localhost.evil.example:5432/x",
@@ -55,8 +55,8 @@ class LocalDatabaseGuardTest {
     @Test
     void VYB0903_AC1_aSetLocalDbUrlIsUsedAsIsWithItsCredentials() {
         var db = LocalDatabase.resolve(Map.of(
-            "DB_URL", "jdbc:postgresql://localhost:5432/vygmicroservice", "DB_USER", "u", "DB_PASSWORD", "p"));
-        assertThat(db.url()).isEqualTo("jdbc:postgresql://localhost:5432/vygmicroservice");
+            "DB_URL", "jdbc:postgresql://localhost:5432/sandbox", "DB_USER", "u", "DB_PASSWORD", "p"));
+        assertThat(db.url()).isEqualTo("jdbc:postgresql://localhost:5432/sandbox");
         assertThat(db.user()).isEqualTo("u");
         assertThat(db.password()).isEqualTo("p");
     }

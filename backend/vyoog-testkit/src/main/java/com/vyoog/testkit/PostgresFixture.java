@@ -51,9 +51,9 @@ public abstract class PostgresFixture {
         new PostgreSQLContainer<>(
                 DockerImageName.parse("pgvector/pgvector:pg16")
                                .asCompatibleSubstituteFor("postgres"))
-            .withDatabaseName("vygmicroservice")
-            .withUsername("postgres")
-            .withPassword("test");
+            .withDatabaseName("sandbox")
+            .withUsername("sandboxadmin")
+            .withPassword("vyg@2011");
 
     @BeforeAll
     static void createSchema() throws Exception {

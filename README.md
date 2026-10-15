@@ -72,7 +72,7 @@ from the secrets manager.
 
 | Variable | What it is |
 |---|---|
-| `DB_URL` | JDBC URL, e.g. `jdbc:postgresql://localhost:5432/vygmicroservice?currentSchema=vyg_requirement,public` |
+| `DB_URL` | JDBC URL, e.g. `jdbc:postgresql://localhost:5432/sandbox?currentSchema=vyg_requirement,public` |
 | `DB_USER`, `DB_PASSWORD` | database login (`DB_PASSWORD` is also the docker-compose Postgres password) |
 | `KEYCLOAK_ROPC_CLIENT_SECRET` | secret of the `vyg-devops-ui` client (username and password sign-in) |
 | `KEYCLOAK_IMPERSONATION_CLIENT_SECRET` | secret of the `eVyoog` client (cross-app SSO) |

@@ -7,15 +7,15 @@ services:
     image: pgvector/pgvector:pg16
     container_name: vyoog-db
     environment:
-      POSTGRES_DB: vygmicroservice
-      POSTGRES_USER: postgres
+      POSTGRES_DB: sandbox
+      POSTGRES_USER: sandboxadmin
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env (copy .env.example)}
-    ports: ["5432:5432"]
+    ports: ["5433:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d vygmicroservice"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sandbox"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -31,7 +31,7 @@ services:
     ports: ["6379:6379"]
 
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio
     container_name: vyoog-minio
     command: server /data --console-address ":9001"
     environment:
