@@ -462,13 +462,20 @@ class ModelGatewayWiringIT extends IntegrationTestBase {
     @Test
     void VYB0939_AC19_theReportTotalsMatchTheLedgerAndTheBudgetShownBesideThem() throws Exception {
         budget.invalidate();
-        long inLedger = jdbc.queryForObject("SELECT COALESCE(SUM(total_tokens), 0) FROM ai_call WHERE called_at >= date_trunc('month', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'", Long.class);
+        String monthSql = "SELECT COALESCE(SUM(total_tokens), 0) FROM ai_call WHERE called_at >= date_trunc('month', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'";
+        long before = jdbc.queryForObject(monthSql, Long.class);
         try {
             budget.setLimits(123456L, 7654321L, newAdministrator());
 
-            mvc.perform(get("/api/v1/ai/usage/summary").with(anOrdinaryUser())).andExpect(status().isOk())
-                .andExpect(jsonPath("$.usedThisMonth").value(inLedger)).andExpect(jsonPath("$.limits.daily").value(123456))
-                .andExpect(jsonPath("$.limits.monthly").value(7654321)).andExpect(jsonPath("$.byDay.length()").value(30));
+            String body = mvc.perform(get("/api/v1/ai/usage/summary").with(anOrdinaryUser())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.limits.daily").value(123456))
+                .andExpect(jsonPath("$.limits.monthly").value(7654321)).andExpect(jsonPath("$.byDay.length()").value(30))
+                .andReturn().getResponse().getContentAsString();
+            long after = jdbc.queryForObject(monthSql, Long.class);
+            // Another test's requirement may still be embedding in the background and writing to the ledger while this runs, so the
+            // total is compared with the ledger as it stood before and after the call, not with one reading taken before it.
+            long used = new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).get("usedThisMonth").asLong();
+            org.assertj.core.api.Assertions.assertThat(used).isBetween(before, after);
         } finally {
             budget.setLimits(null, null, newAdministrator());
         }
