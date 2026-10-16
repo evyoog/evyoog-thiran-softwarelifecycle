@@ -5803,6 +5803,7 @@ export interface components {
             toType?: string;
         };
         GraphNodeView: {
+            href?: string;
             id?: string;
             label?: string;
             root?: boolean;

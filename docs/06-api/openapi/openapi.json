@@ -2841,6 +2841,9 @@
       },
       "GraphNodeView" : {
         "properties" : {
+          "href" : {
+            "type" : "string"
+          },
           "id" : {
             "type" : "string"
           },

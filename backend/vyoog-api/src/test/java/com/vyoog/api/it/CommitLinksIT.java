@@ -98,6 +98,26 @@ class CommitLinksIT extends IntegrationTestBase {
     }
 
     @Test
+    void VYB0922_AC5_theTraceGraphEndpointCarriesTheLinkToTheScreenAndLeavesItOutWhenThereIsNone() throws Exception {
+        integrations.setConfig("git", "{\"repoUrl\":\"" + REPO + "\"}");
+        String sha = sha();
+        Requirement r = committedTo(sha, "Seen over HTTP");
+
+        JsonNode withRepo = json.readTree(mvc.perform(get("/api/v1/trace/REQUIREMENT/" + r.getId() + "/graph").with(admin()))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        JsonNode code = null;
+        for (JsonNode n : withRepo.get("nodes")) if (n.get("type").asText().equals("CODE")) code = n;
+        assertThat(code).isNotNull();
+        assertThat(code.get("href").asText()).isEqualTo(REPO + "/commit/" + sha);
+        assertThat(code.get("label").asText()).startsWith("Commit " + sha.substring(0, 7));
+
+        integrations.setConfig("git", "{}");
+        JsonNode without = json.readTree(mvc.perform(get("/api/v1/trace/REQUIREMENT/" + r.getId() + "/graph").with(admin()))
+            .andReturn().getResponse().getContentAsString());
+        for (JsonNode n : without.get("nodes")) if (n.get("type").asText().equals("CODE")) assertThat(n.get("href") == null || n.get("href").isNull()).isTrue();
+    }
+
+    @Test
     void VYB0922_AC6_withNoRepositoryAddressTheCommitIsStillNamedAndHasNoLinkNeverABrokenOne() {
         String sha = sha();
         Requirement r = committedTo(sha, "No repository set");

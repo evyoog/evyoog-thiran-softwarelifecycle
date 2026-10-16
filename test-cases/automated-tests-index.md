@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1374 tests cover 83 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1375 tests cover 83 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -814,6 +814,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC3` aCommitPageIsTheBasePlusCommitAndTheShaInLowerCaseAndASillyShaMakesNoLink (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
 - `AC4` aCommitIsNamedByItsShortShaAndTheFirstLineOfItsMessage (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
 - `AC5` aCommitInTheTraceGraphIsNamedByItsShaAndSubjectAndLinksToTheConfiguredRepository (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+- `AC5` theTraceGraphEndpointCarriesTheLinkToTheScreenAndLeavesItOutWhenThereIsNone (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
 - `AC6` withNoRepositoryAddressTheCommitIsStillNamedAndHasNoLinkNeverABrokenOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
 - `AC7` aRequirementsLinkedWorkListsItsCommitsNewestFirstWithTheirLinks (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
 - `AC8` anAddressThatIsNotSafeToLinkToIsRefusedWhenItIsSavedAndTheStoredOneStays (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)

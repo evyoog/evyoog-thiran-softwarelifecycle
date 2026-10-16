@@ -123,7 +123,8 @@ public class TraceLinkController {
         return trace.upstream(type, id, depth).stream().map(TraceLinkController::toView).toList();
     }
 
-    public record GraphNodeView(String type, String id, String label, boolean root) {}
+    /** {@code href}: where the object lives outside this application (a commit in the configured repository), or null (VYB-0922). */
+    public record GraphNodeView(String type, String id, String label, boolean root, String href) {}
     public record GraphEdgeView(String fromType, String fromId, String toType, String toId, String linkType) {}
     public record GraphView(List<GraphNodeView> nodes, List<GraphEdgeView> edges) {}
 
@@ -137,7 +138,7 @@ public class TraceLinkController {
                            @RequestParam(defaultValue = "6") int depth) {
         var g = graphAssembly.graphFor(type, id, depth);
         return new GraphView(
-            g.nodes().stream().map(n -> new GraphNodeView(n.type(), n.id(), n.label(), n.root())).toList(),
+            g.nodes().stream().map(n -> new GraphNodeView(n.type(), n.id(), n.label(), n.root(), n.href())).toList(),
             g.edges().stream().map(e -> new GraphEdgeView(e.fromType(), e.fromId(), e.toType(), e.toId(), e.linkType())).toList());
     }
 
