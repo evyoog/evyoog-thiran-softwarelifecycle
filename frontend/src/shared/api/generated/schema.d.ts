@@ -5945,6 +5945,16 @@ export interface components {
             toId?: string;
             toType?: string;
         };
+        LinkedCommit: {
+            href?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            ingestedAt?: string;
+            sha?: string;
+            shortSha?: string;
+            subject?: string;
+        };
         LinkedDefect: {
             /** Format: uuid */
             id?: string;
@@ -5986,6 +5996,7 @@ export interface components {
         LinkedWork: {
             /** Format: uuid */
             applicationId?: string;
+            commits?: components["schemas"]["LinkedCommit"][];
             defects?: components["schemas"]["LinkedDefect"][];
             designNodes?: components["schemas"]["LinkedDesignNode"][];
             releases?: components["schemas"]["LinkedRelease"][];

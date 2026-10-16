@@ -59,9 +59,19 @@ export function releaseChoice(r: Pick<VyoogRelease, 'name' | 'state'>): { label:
   }
 }
 
-export interface Group { kind: Exclude<LinkKind, 'requirement'> | 'risk'; title: string; empty: string; items: { id: string; label: string; detail?: string; href?: string }[] }
+export interface Group {
+  kind: Exclude<LinkKind, 'requirement'> | 'risk' | 'commit'
+  title: string
+  empty: string
+  /** Whose words these are, when they are another system's: the group is hatched and says so (borrowed data looks borrowed). */
+  source?: string
+  /** Something to say about the whole group, such as why a link is missing. */
+  note?: string
+  /** {@code href} is a page in this application; {@code url} is a page elsewhere (opened in a new tab, without sending the referrer). */
+  items: { id: string; label: string; detail?: string; href?: string; url?: string }[]
+}
 
-/** The linked work as five groups, each with words for when it is empty, never a blank. */
+/** The linked work as six groups, each with words for when it is empty, never a blank. */
 export function groupsOf(w: LinkedWork | undefined): Group[] {
   if (!w) return []
   return [
@@ -86,10 +96,23 @@ export function groupsOf(w: LinkedWork | undefined): Group[] {
       kind: 'risk', title: 'Risks', empty: 'No open risk names this requirement.',
       items: (w.risks ?? []).map((r) => ({ id: r.id, label: `${r.key} — ${r.title}`, detail: `${r.band.toLowerCase()} (${r.rating}), ${r.status.toLowerCase()}`, href: `/compliance?tab=risks&risk=${r.id}` })),
     },
+    commitGroup(w),
   ]
 }
 
 /** A one-line summary for the group header: how many, in words. */
 export function countText(g: Pick<Group, 'items'>): string {
   return g.items.length === 0 ? 'none' : String(g.items.length)
+}
+
+/** VYB-0922: the commits from git. Another system's words, so hatched and marked; a link only where a repository address is set. */
+function commitGroup(w: LinkedWork): Group {
+  const commits = w.commits ?? []
+  const noLinks = commits.length > 0 && commits.every((c) => !c.href)
+  return {
+    kind: 'commit', title: 'Commits', source: 'git',
+    empty: 'No commit names this requirement. A commit does by a "Requirement: KEY" line in its message.',
+    note: noLinks ? 'These have no link: no repository address is set (Administration, Connected systems, git).' : undefined,
+    items: commits.map((c) => ({ id: c.id, label: c.shortSha, detail: c.subject, url: c.href ?? undefined })),
+  }
 }

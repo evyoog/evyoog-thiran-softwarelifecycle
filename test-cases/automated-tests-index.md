@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1360 tests cover 82 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1374 tests cover 83 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -802,6 +802,23 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC8` changesSentAtTheSameMomentLeaveOnePendingAndNoFailure (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
 - `AC9` twoPeopleDecidingTheSameProposalAtTheSameMomentOneWins (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
 
+## VYB-0922: Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16]
+
+- `AC1` aRepositoryAddressBecomesABaseWithoutATrailingSlashOrDotGitAndWithALowerCaseHost (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
+- `AC10` aRefusedCallRecordsNothingOnTheConnection (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+- `AC11` aCommitShowsItsShortShaAndSubjectAndLinksOutWhenARepositoryIsSet (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC11` aRequirementWithNoCommitsSaysHowACommitNamesIt (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC11` withNoRepositoryAddressTheCommitsHaveNoLinkAndTheGroupSaysWhy (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC2` aGitConfigurationWithNoAddressOrNotJsonIsNotAProblemAndABadAddressIs (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
+- `AC2` anAddressThatIsNotSafeToLinkToIsRefusedWithAReason (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
+- `AC3` aCommitPageIsTheBasePlusCommitAndTheShaInLowerCaseAndASillyShaMakesNoLink (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
+- `AC4` aCommitIsNamedByItsShortShaAndTheFirstLineOfItsMessage (`backend/vyoog-domain/src/test/java/com/vyoog/integration/git/CommitLinksTest.java`)
+- `AC5` aCommitInTheTraceGraphIsNamedByItsShaAndSubjectAndLinksToTheConfiguredRepository (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+- `AC6` withNoRepositoryAddressTheCommitIsStillNamedAndHasNoLinkNeverABrokenOne (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+- `AC7` aRequirementsLinkedWorkListsItsCommitsNewestFirstWithTheirLinks (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+- `AC8` anAddressThatIsNotSafeToLinkToIsRefusedWhenItIsSavedAndTheStoredOneStays (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+- `AC9` aCommitArrivingThroughTheCiEndpointShowsTheGitConnectionInUseAndATestRunShowsCi (`backend/vyoog-api/src/test/java/com/vyoog/api/it/CommitLinksIT.java`)
+
 ## VYB-0923: Test plan, suite and run entities; structured steps and expected results [L; F14]
 
 - `AC1` aPlanBelongsToAnApplicationGetsAKeyAndMayHaveARelease (`backend/vyoog-api/src/test/java/com/vyoog/api/it/TestManagementIT.java`)
@@ -1271,7 +1288,7 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC13` nothingCanBeSavedUntilSomethingIsChosenAndTheMessageNamesWhat (`frontend/src/features/trace/linkWork.test.ts`)
 - `AC14` onlyAReleaseWhoseScopeCanStillChangeIsOffered (`frontend/src/features/trace/linkWork.test.ts`)
 - `AC15` anEmptyGroupSaysSoInWordsAndNothingIsShownBeforeItLoads (`frontend/src/features/trace/linkWork.test.ts`)
-- `AC15` theFourGroupsNameWhatIsLinked (`frontend/src/features/trace/linkWork.test.ts`)
+- `AC15` theGroupsNameWhatIsLinked (`frontend/src/features/trace/linkWork.test.ts`)
 - `AC16` aGapIsAnApprovedRequirementInNoReleaseThatHasNotBeenReplaced (`frontend/src/features/trace/matrices.test.ts`)
 - `AC16` gapsOnlyKeepsJustThoseAndTheDefaultKeepsEveryRow (`frontend/src/features/trace/matrices.test.ts`)
 - `AC17` theTotalsAddUpAndTheSummaryIsInWords (`frontend/src/features/trace/matrices.test.ts`)

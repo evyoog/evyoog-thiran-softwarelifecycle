@@ -60,6 +60,22 @@ public class IntegrationService {
         return true;
     }
 
+    /**
+     * VYB-0922 (D53): something was accepted through a service-account endpoint on behalf of this connection (a commit for {@code git}, a
+     * test run or deployment for {@code ci}). Records when, and marks the connection connected and healthy: data arriving is the proof.
+     * A connection that is not registered is ignored, and this never throws, so a record about ingestion can never fail the ingestion.
+     */
+    public void recordInbound(String integrationKey) {
+        try {
+            jdbc.update("""
+                UPDATE integration_connection
+                   SET last_inbound_at = clock_timestamp(), connected = true, failure_count = 0, degraded = false, last_error = NULL
+                 WHERE key = ?""", integrationKey);
+        } catch (RuntimeException e) {
+            // never let a note about ingestion fail it
+        }
+    }
+
     /** VYB-0743: a failure is recorded and surfaced; after DEGRADE_AFTER_FAILURES it's marked degraded rather than retried silently forever. */
     @Transactional
     public void recordFailure(String integrationKey, String error) {
@@ -80,6 +96,10 @@ public class IntegrationService {
     @Transactional
     public IntegrationConnection setConfig(String key, String configJson) {
         IntegrationConnection conn = get(key);
+        if (key.equals(com.vyoog.integration.git.CommitLinks.CONNECTION_KEY)) {
+            // VYB-0922: the repository address becomes a link people click, so what is stored must be one that is safe to link to
+            com.vyoog.integration.git.CommitLinks.problemWith(configJson).ifPresent(problem -> { throw new IllegalArgumentException(problem); });
+        }
         conn.setConfig(configJson);
         return connections.save(conn);
     }

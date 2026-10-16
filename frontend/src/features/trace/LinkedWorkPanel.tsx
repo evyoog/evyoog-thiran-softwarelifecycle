@@ -28,12 +28,18 @@ export function LinkedWorkPanel({ requirementId }: { requirementId: string }) {
           <div key={g.kind} className="bg-panel-2 border border-line rounded-lg p-3">
             <div className="flex justify-between text-xs text-tx-3 mb-1"><span className="font-semibold uppercase tracking-wide">{g.title}</span><span>{countText(g)}</span></div>
             {g.items.length === 0 && <p className="text-sm text-tx-3">{g.empty}</p>}
-            {g.items.map((i) => (
-              <div key={i.id} className="text-sm py-0.5 flex flex-wrap gap-x-2 items-baseline">
-                {i.href ? <button className="underline text-brand text-left" onClick={() => navigate(i.href!)}>{i.label}</button> : <span>{i.label}</span>}
-                {i.detail && <span className="text-xs text-tx-3">{i.detail}</span>}
-              </div>
-            ))}
+            <div className={g.source && g.items.length > 0 ? 'cn-borrowed' : undefined}>
+              {g.source && g.items.length > 0 && <div className="cn-src">from {g.source}</div>}
+              {g.items.map((i) => (
+                <div key={i.id} className="text-sm py-0.5 flex flex-wrap gap-x-2 items-baseline">
+                  {i.href ? <button className="underline text-brand text-left" onClick={() => navigate(i.href!)}>{i.label}</button>
+                    : i.url ? <a className="underline text-brand mono" href={i.url} target="_blank" rel="noopener noreferrer" aria-label={`${i.label}, opens in the repository`}>{i.label}</a>
+                    : <span className={g.source ? 'mono' : undefined}>{i.label}</span>}
+                  {i.detail && <span className="text-xs text-tx-3">{i.detail}</span>}
+                </div>
+              ))}
+            </div>
+            {g.note && <p className="text-xs text-tx-3 mt-1" role="note">{g.note}</p>}
           </div>
         ))}
       </div>

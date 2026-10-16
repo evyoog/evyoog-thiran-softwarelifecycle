@@ -3242,6 +3242,31 @@
         },
         "type" : "object"
       },
+      "LinkedCommit" : {
+        "properties" : {
+          "href" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "ingestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "sha" : {
+            "type" : "string"
+          },
+          "shortSha" : {
+            "type" : "string"
+          },
+          "subject" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "LinkedDefect" : {
         "properties" : {
           "id" : {
@@ -3342,6 +3367,12 @@
           "applicationId" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "commits" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LinkedCommit"
+            },
+            "type" : "array"
           },
           "defects" : {
             "items" : {

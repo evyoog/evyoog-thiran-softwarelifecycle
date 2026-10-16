@@ -8,6 +8,7 @@ import com.vyoog.evidence.TestRun;
 import com.vyoog.evidence.VerificationResult;
 import com.vyoog.evidence.VerificationService;
 import com.vyoog.identity.KnownServiceScopes;
+import com.vyoog.integration.IntegrationService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
@@ -31,13 +32,15 @@ public class CiIngestController {
     private final CommitIngestService commits;
     private final DeploymentService deployment;
     private final PrincipalGuard guard;
+    private final IntegrationService integrations;
 
     public CiIngestController(VerificationService verification, CommitIngestService commits,
-                               DeploymentService deployment, PrincipalGuard guard) {
+                               DeploymentService deployment, PrincipalGuard guard, IntegrationService integrations) {
         this.verification = verification;
         this.commits = commits;
         this.deployment = deployment;
         this.guard = guard;
+        this.integrations = integrations;
     }
 
     public record ResultBody(@NotBlank String testKey, String title, @NotBlank String result, List<String> requirementKeys) {}
@@ -55,6 +58,7 @@ public class CiIngestController {
                 r.testKey(), r.title(), VerificationResult.valueOf(r.result()), r.requirementKeys())))
             .map(o -> new IngestOutcomeView(o.testKey(), o.testCaseWasUnknown(), o.verifiedRequirementKeys()))
             .toList();
+        integrations.recordInbound("ci"); // VYB-0922: the CI connection shows it is in use
         return new TestRunResponse(run.getId().toString(), outcomes);
     }
 
@@ -66,6 +70,7 @@ public class CiIngestController {
     public CommitResponse ingestCommit(@RequestBody CommitBody body, @AuthenticationPrincipal Jwt jwt) {
         guard.requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST);
         var result = commits.ingest(body.sha(), body.message(), body.authorEmail());
+        integrations.recordInbound("git"); // VYB-0922: the git connection shows it is in use
         return new CommitResponse(result.alreadyIngested(), result.linkedKeys(), result.unknownKeys());
     }
 
@@ -80,6 +85,7 @@ public class CiIngestController {
         guard.requireServiceAccountScope(jwt, KnownServiceScopes.CI_INGEST);
         Deployment d = deployment.recordDeployment(
             UUID.fromString(body.environmentId()), body.buildLabel(), body.succeeded(), body.commitShas());
+        integrations.recordInbound("ci"); // VYB-0922
         return new DeploymentResponse(d.getId().toString());
     }
 }

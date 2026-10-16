@@ -496,6 +496,8 @@ export interface GraphNode {
   id: string
   label: string
   root: boolean
+  /** VYB-0922: where the object lives outside this application (a commit in the configured repository); absent when unknown. */
+  href?: string | null
 }
 
 export interface GraphEdge {
@@ -1429,7 +1431,12 @@ export interface LinkedWork {
   releases: LinkedRelease[]
   defects: LinkedDefect[]
   risks: LinkedRisk[]
+  /** VYB-0922: commits that name the requirement in a "Requirement: KEY" line, newest first (at most 20). */
+  commits?: LinkedCommit[]
 }
+
+/** VYB-0922: a commit from git. `href` is its page in the repository the git connection names; absent when no repository address is set. */
+export interface LinkedCommit { id: string; sha: string; shortSha: string; subject: string; ingestedAt: string; href?: string | null }
 
 export interface ReleaseMatrixColumn { id: string; name: string; state: ReleaseState; requirements: number }
 export interface ReleaseMatrixRow { requirementId: string; key: string; title: string; status: RequirementStatus; supersededById?: string | null; releaseId?: string | null }

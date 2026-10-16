@@ -50,6 +50,10 @@ public class IntegrationConnection {
     @Column(name = "last_error_at")
     private Instant lastErrorAt;
 
+    /** VYB-0922: when something last arrived through a service-account endpoint (commits, test runs, deployments); see V064. */
+    @Column(name = "last_inbound_at")
+    private Instant lastInboundAt;
+
     @Column(nullable = false)
     private boolean degraded;
 
@@ -86,6 +90,7 @@ public class IntegrationConnection {
     public String getLastError() { return lastError; }
     public Instant getLastErrorAt() { return lastErrorAt; }
     public boolean isDegraded() { return degraded; }
+    public Instant getLastInboundAt() { return lastInboundAt; }
 
     /** VYB-0743: a failure is recorded and surfaced, never silently retried forever. */
     public void recordFailure(String error) {

@@ -325,7 +325,7 @@ A commit without a `Requirement:` trailer fails CI.
 | VYB-0919 | 6 | Agile Planner inbound and reconciliation | A later change to a Function arrives as a proposal on its requirement that a person accepts or rejects; the 409 of VYB-0915 becomes a proposal [M; F16, F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: inbound `sprint.reassigned`) | DONE on dev, started ahead of Sprint 11 at the product owner's request (15 new tests; one migration, V061; D51): a changed Function is held as a proposal (202) on its requirement, and a person who may edit it accepts or rejects it from the requirement detail; people who can decide are notified. **Not exercised against the real Planner.** See `docs/09-integrations/agile-planner-requirements-intake.md` | S4 |
 | VYB-0920 | 6 | Agile Planner inbound and reconciliation | Version-based discard of an older Function, "deprecate, never delete", and an unlinked report for a Planner requirement id this application does not know [M; F40] Rewritten 2026-10-15 around the Planner's documented contract (D24). (was: orphan and conflict queue) | TODO | S4 |
 | VYB-0921 | 6 | Agile Planner inbound and reconciliation | Hardening of the Planner endpoints: rate limit, body size, replay window, and the signed-payload format against the contract's [S; F08] Rewritten 2026-10-15 around the Planner's documented contract (D24). | TODO | S4 |
-| VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | TODO | S4 |
+| VYB-0922 | 6 | Agile Planner inbound and reconciliation | Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16] | DONE on dev, started ahead of Sprint 11 at the product owner's request (14 new tests; one migration, V064; D53): the `git` repository address makes commit links in a requirement's Linked work (a Commits group) and in the trace graph (commit nodes now named by sha and first line); the `git` and `ci` connections show they are live when data arrives through the CI endpoints; CI adapters documented. **Never tried against a real CI system, git host or Keycloak.** See `docs/09-integrations/ci-and-git.md` | S4 |
 | VYB-0923 | 6 | Manual test execution | Test plan, suite and run entities; structured steps and expected results [L; F14] | DONE on dev (16 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0924 | 6 | Manual test execution | Execute a run: per-step result, actual result, evidence attachment, retest [L; F14] | DONE on dev, in two sessions (0924a execute, 0924b evidence and retest; 25 new tests; backend only, no screen; commit only, no PR yet) | S5 |
 | VYB-0925 | 6 | Manual test execution | Verification records created from manual runs, bound to the requirement revision [M; F14] | DONE on dev (9 new tests; backend only, no screen; commit only, no PR yet) | S5 |
@@ -5985,6 +5985,27 @@ Phase 6 Sprint 12, **started ahead of Sprint 11 at the product owner's request**
 - **Never run against the real Planner;** every event body is this application's proposal.
 - Designs and tests that existed before the Planner sent a requirement are not announced, and nothing is taken back when a link is removed. Defects, risks and releases are not reported.
 - No screen lists events that failed for good or lets a person re-send one (unchanged from 0918a).
+- Testcontainers and the GitHub CI run are unchecked.
+
+---
+
+## Session 116 — VYB-0922: git and CI made live, commit links, CI adapters documented
+
+Phase 6 Sprint 12, **started ahead of Sprint 11 at the product owner's request**. Branch `dev`. **14 new tests** (`CommitLinksTest` 5, `CommitLinksIT` 6, `linkWork.test.ts` +3; the existing linked-work test and `Vyb0901OpenDoorsTest` changed only for the new group and constructor argument); one migration (`V064`); D53. "Session 59" followed my last report (row 0922, a buildable row needing no decision). The row has two parts and I built both as written.
+
+**What I found first.** The Administration screen already let an administrator type a repository address for the `git` connection, and nothing read it. No screen showed a commit at all, and the trace graph named a commit by its record id ("Commit 3f2a… (no record)") although a commit record does exist. The `git` and `ci` connections could never look live: commits and test results arrive through the service-account endpoints, and "last success" only counted the signed-webhook route, which records a delivery and reads nothing from it.
+
+**What I built.** `CommitLinks`: the address, checked when saved (https only, no credentials, query or fragment, 400 with the reason, stored one unchanged) and again when used; a commit's page is `<repoUrl>/commit/<sha>`. A **Commits** group in a requirement's Linked work (newest first, at most 20; hatched and marked "from git"; a note saying why when there is no link) and trace graph commit nodes named by short sha and first line, which open in the repository on a click. `IntegrationService.recordInbound` (V064 `last_inbound_at`): the commit, test run and deployment endpoints note that data arrived, which marks the connection connected and healthy and gives Connector health its last success. `docs/09-integrations/ci-and-git.md`: the three endpoints, the service account and scope, example GitHub Actions and JUnit steps, what is and is not live; the integrations README brought up to date.
+
+**Rules I chose (not in the specification; change any you disagree with).** (1) The link path is `/commit/<sha>`: GitHub, Gitea and GitLab; Bitbucket and Azure DevOps get no link rather than a wrong one. (2) The first data accepted marks the connection **connected** (an administrator's toggle still works): data arriving is the proof, and otherwise a working CI would read "not connected" until someone remembered to toggle it. (3) A refused call (wrong scope, a person's token) records nothing. (4) The signed webhook route still does not read payloads, and the doc says so plainly: making a git host's own push webhook feed commits in would need a stated format per host.
+
+**Evidence.** Eight mutations, each caught and restored: a commit not marking `git` in use; the trailing `.git` kept; an unsafe address accepted on save; the graph node never linking out; commits listed oldest first; http accepted; health ignoring when data last arrived; data not marking the connection connected. Browser check against a stubbed API (not a real backend): the Commits group in both themes, with and without a repository address, passes axe; links open in a new tab with `noopener noreferrer`. Full verify below.
+
+**Not done / to know**
+- **Never run against a real CI system, git host or Keycloak.** The snippets in the doc are examples, not tested scripts.
+- A git host's push webhook cannot feed commits in; only a CI step calling the endpoints can.
+- A connection that has gone quiet shows an older last success, not an error: nothing pings the CI system or the host.
+- The trace graph's click-through was not exercised in a browser against a real graph.
 - Testcontainers and the GitHub CI run are unchecked.
 
 ---

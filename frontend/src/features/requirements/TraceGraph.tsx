@@ -365,7 +365,10 @@ function TraceCluster({
               const textCls = req && !req.hasTest ? 'g-bad-t' : style.textCls
               return (
                 <g key={`${n.type}:${n.id}`}
-                   onClick={() => n.type === 'REQUIREMENT' && onOpen(n.id)}
+                   onClick={() => {
+                     if (n.type === 'REQUIREMENT') onOpen(n.id)
+                     else if (n.href) window.open(n.href, '_blank', 'noopener,noreferrer') // VYB-0922: a commit opens in its repository
+                   }}
                    onMouseEnter={(e) => {
                      const rect = svgRef.current!.getBoundingClientRect()
                      setHover({ node: n, x: e.clientX - rect.left, y: e.clientY - rect.top })
@@ -395,6 +398,7 @@ function TraceCluster({
           <div className="tg-hover" style={{ left: hover.x + 14, top: hover.y + 14 }}>
             <span className={`tg-hover-k tg-hover-${hover.node.type.toLowerCase()}`}>{hover.node.type.replace('_', ' ')}</span>
             <p className="tg-hover-l">{hover.node.label}</p>
+            {hover.node.href && <p className="tg-hover-s">Click to open it in the repository.</p>}
             {(() => {
               const req = requirementById.get(hover.node.id)
               return req ? (

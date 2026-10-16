@@ -66,7 +66,7 @@ class Vyb0901OpenDoorsTest {
 
     private CiIngestController ci() {
         return new CiIngestController(mock(VerificationService.class), mock(CommitIngestService.class),
-            mock(DeploymentService.class), guard);
+            mock(DeploymentService.class), guard, mock(com.vyoog.integration.IntegrationService.class));
     }
 
     @Test
@@ -100,7 +100,7 @@ class Vyb0901OpenDoorsTest {
         register("ci-bot", KnownServiceScopes.CI_INGEST);
         CommitIngestService commits = mock(CommitIngestService.class);
         when(commits.ingest(any(), any(), any())).thenReturn(new CommitIngestService.IngestResult(false, List.of(), List.of()));
-        var c = new CiIngestController(mock(VerificationService.class), commits, mock(DeploymentService.class), guard);
+        var c = new CiIngestController(mock(VerificationService.class), commits, mock(DeploymentService.class), guard, mock(com.vyoog.integration.IntegrationService.class));
         assertThatCode(() -> c.ingestCommit(new CiIngestController.CommitBody("abc", "m", null), jwt("ci-bot", null)))
             .doesNotThrowAnyException();
         verify(commits).ingest(any(), any(), any());

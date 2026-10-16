@@ -21,16 +21,24 @@ public class RequirementLinkedWorkService {
     public record LinkedRelease(UUID id, String name, String state) {}
     /** VYB-0949: a risk that is not closed and names this requirement; rating and band as the risk register reads them. */
     public record LinkedRisk(UUID id, String key, String title, int rating, String band, String status) {}
+    /**
+     * VYB-0922: a commit that names this requirement in a {@code Requirement: KEY} line. {@code href} is the commit's page in the configured
+     * repository, or null when none is set. Words from git: shown as borrowed, with the commit's own first line.
+     */
+    public record LinkedCommit(UUID id, String sha, String shortSha, String subject, java.time.Instant ingestedAt, String href) {}
     public record LinkedDefect(UUID id, String key, String title, String severity, String state) {}
 
     /** {@code applicationId} is the application the requirement sits in (via its capability, or directly); null if it is unplaced or sits on a product. */
     public record LinkedWork(UUID requirementId, UUID applicationId, List<LinkedTest> tests, List<LinkedDesignNode> designNodes,
-                             List<LinkedRelease> releases, List<LinkedDefect> defects, List<LinkedRisk> risks) {}
+                             List<LinkedRelease> releases, List<LinkedDefect> defects, List<LinkedRisk> risks,
+                             List<LinkedCommit> commits) {}
 
     private final JdbcTemplate jdbc;
+    private final com.vyoog.integration.git.CommitLinks commitLinks;
 
-    public RequirementLinkedWorkService(JdbcTemplate jdbc) {
+    public RequirementLinkedWorkService(JdbcTemplate jdbc, com.vyoog.integration.git.CommitLinks commitLinks) {
         this.jdbc = jdbc;
+        this.commitLinks = commitLinks;
     }
 
     public LinkedWork of(UUID requirementId) {
@@ -66,6 +74,17 @@ public class RequirementLinkedWorkService {
             WHERE rr.requirement_id = ? AND k.status <> 'CLOSED' ORDER BY k.likelihood * k.impact DESC, k.key
             """, (rs, n) -> new LinkedRisk(UUID.fromString(rs.getString("id")), rs.getString("key"), rs.getString("title"), rs.getInt("rating"),
                 com.vyoog.risk.RiskScale.band(rs.getInt("rating")), rs.getString("status")), requirementId);
-        return new LinkedWork(requirementId, applicationId, tests, nodes, releases, defects, risks);
+        java.util.Optional<String> repo = commitLinks.baseUrl();
+        List<LinkedCommit> commits = jdbc.query("""
+            SELECT c.id, c.sha, c.message, c.ingested_at FROM trace_link tl JOIN ingested_commit c ON c.id = tl.from_id
+            WHERE tl.from_type = 'CODE' AND tl.to_type = 'REQUIREMENT' AND tl.to_id = ? AND tl.link_type = 'IMPLEMENTS'
+            ORDER BY c.ingested_at DESC LIMIT 20
+            """, (rs, n) -> {
+                String sha = rs.getString("sha");
+                return new LinkedCommit(UUID.fromString(rs.getString("id")), sha, com.vyoog.integration.git.CommitLinks.shortSha(sha),
+                    com.vyoog.integration.git.CommitLinks.subjectOf(rs.getString("message")), rs.getTimestamp("ingested_at").toInstant(),
+                    repo.flatMap(b -> com.vyoog.integration.git.CommitLinks.urlFor(b, sha)).orElse(null));
+            }, requirementId);
+        return new LinkedWork(requirementId, applicationId, tests, nodes, releases, defects, risks, commits);
     }
 }

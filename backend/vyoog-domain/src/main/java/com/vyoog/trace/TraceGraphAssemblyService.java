@@ -1,5 +1,6 @@
 package com.vyoog.trace;
 
+import com.vyoog.integration.git.CommitLinks;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -33,13 +34,16 @@ public class TraceGraphAssemblyService {
 
     private final TraceGraphService trace;
     private final JdbcTemplate jdbc;
+    private final CommitLinks commitLinks;
 
-    public TraceGraphAssemblyService(TraceGraphService trace, JdbcTemplate jdbc) {
+    public TraceGraphAssemblyService(TraceGraphService trace, JdbcTemplate jdbc, CommitLinks commitLinks) {
         this.trace = trace;
         this.jdbc = jdbc;
+        this.commitLinks = commitLinks;
     }
 
-    public record GraphNode(String type, String id, String label, boolean root) {}
+    /** {@code href} is where the object lives outside this application, if it does and that is known (a commit in the configured repository); else null. */
+    public record GraphNode(String type, String id, String label, boolean root, String href) {}
     public record GraphEdge(String fromType, String fromId, String toType, String toId, String linkType) {}
     public record Graph(List<GraphNode> nodes, List<GraphEdge> edges) {}
 
@@ -78,7 +82,7 @@ public class TraceGraphAssemblyService {
             .map(k -> {
                 TraceObjectType t = nodeTypes.get(k);
                 UUID id = nodeIds.get(k);
-                return new GraphNode(t.name(), id.toString(), label(t, id), t == rootType && id.equals(rootId));
+                return new GraphNode(t.name(), id.toString(), label(t, id), t == rootType && id.equals(rootId), hrefOf(t, id));
             })
             .toList();
         return new Graph(nodes, edges);
@@ -146,7 +150,18 @@ public class TraceGraphAssemblyService {
             // NEED/CODE genuinely have no backing table (TraceObjectType.backingTable() is
             // empty for both) — labeling them with anything but this would be inventing data.
             case NEED -> "Need " + id + " (no record — conceptual only)";
-            case CODE -> "Commit " + id + " (no record — inferred from commit trailers)";
+            // VYB-0922: a commit does have a record (ingested_commit): name it by its short sha and its first line, not its id
+            case CODE -> jdbc.query("SELECT sha, message FROM ingested_commit WHERE id = ?", (rs, n) -> {
+                    String subject = CommitLinks.subjectOf(rs.getString("message"));
+                    return "Commit " + CommitLinks.shortSha(rs.getString("sha")) + (subject.isEmpty() ? "" : " — " + subject);
+                }, id).stream().findFirst().orElse("Commit " + id + " (no record)");
         };
+    }
+
+    /** Where this node lives outside the application: only a commit does, and only when a repository address is set. */
+    private String hrefOf(TraceObjectType type, UUID id) {
+        if (type != TraceObjectType.CODE) return null;
+        return jdbc.query("SELECT sha FROM ingested_commit WHERE id = ?", (rs, n) -> rs.getString("sha"), id).stream().findFirst()
+            .flatMap(commitLinks::urlFor).orElse(null);
     }
 }

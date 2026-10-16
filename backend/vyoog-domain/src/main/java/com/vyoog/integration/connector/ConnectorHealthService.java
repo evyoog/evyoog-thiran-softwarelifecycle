@@ -78,6 +78,9 @@ public class ConnectorHealthService {
         if (receives) {
             java.time.Instant delivery = syncLog.lastDelivery(conn.getKey()).orElse(null);
             if (delivery != null && (lastSuccess == null || delivery.isAfter(lastSuccess))) lastSuccess = delivery;
+            // VYB-0922: data that arrived through a service-account endpoint (commits, test runs) counts as a success too
+            java.time.Instant inbound = conn.getLastInboundAt();
+            if (inbound != null && (lastSuccess == null || inbound.isAfter(lastSuccess))) lastSuccess = inbound;
         }
         return new ConnectorHealth(conn.getKey(), state, problem, conn.getFailureCount(), conn.getLastError(),
             conn.getLastErrorAt(), lastSuccess);
