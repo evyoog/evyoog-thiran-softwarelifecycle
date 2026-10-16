@@ -230,6 +230,10 @@ public class PlannerRequirementIntake {
         if (idempotencyKey.length() > MAX_ID) {
             throw new IllegalArgumentException("The Idempotency-Key is longer than " + MAX_ID + " characters");
         }
+        // printable ASCII only (the Planner's own key is a Function id and a timestamp): nothing that could be a control character in a log
+        if (!idempotencyKey.chars().allMatch(c -> c >= 0x21 && c <= 0x7E)) {
+            throw new IllegalArgumentException("The Idempotency-Key may hold only printable ASCII characters without spaces");
+        }
         if (p == null) {
             throw new IllegalArgumentException("A body is required");
         }

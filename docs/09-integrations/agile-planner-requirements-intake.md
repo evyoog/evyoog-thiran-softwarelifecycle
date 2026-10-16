@@ -59,6 +59,19 @@ A changed Function is stored as a proposal (`planner_change_proposal`, V061) wit
 | Deciding needs the role that edits requirements, where the requirement sits (administrators always); never a service account. Reading is for any signed-in person. | The same rule as editing (AccessPolicyTest). |
 | Two people deciding at once: one wins, the other gets 409. A decided proposal is kept. | |
 
+## Limits on what the Planner may send (VYB-0921, D54)
+
+| Limit | Default | What the caller gets | Setting |
+|---|---|---|---|
+| **Body size**: a request body larger than this is refused before anything reads it (by its declared length if it has one, and by reading at most one byte past the limit if it has none, so a body cannot get past by not declaring its size). Whatever the fields hold. | 262,144 bytes (256 KiB) | **413** with a problem body; nothing read or changed | `PLANNER_MAX_BODY_BYTES` |
+| **Pushes per minute**, per service account: a counted limit in fixed one-minute windows, shared by every instance. A burst is fine; a flood is not. Only a caller that is already a registered service account with the scope is counted, so a stranger cannot use up the real Planner's allowance. | 600 | **429** with `Retry-After` (seconds until the window ends); nothing done | `PLANNER_PUSHES_PER_MINUTE` |
+| **Token age**: a token issued longer ago than this is refused, and so is one with no issue time (`iat`) or issued more than two minutes in the future. A captured token is then useful for minutes, not for its whole lifetime. Keycloak's own access tokens last 5 minutes by default; a client that caches one for longer must fetch a new one. | 15 minutes; 0 turns it off | **401** `token-too-old` with `WWW-Authenticate` | `PLANNER_MAX_TOKEN_AGE_MINUTES` |
+| **`Idempotency-Key`**: printable ASCII without spaces, at most 200 characters (the contract's own key, a Function id and a timestamp, fits). | | **400** with the reason | |
+
+A Planner that gets a **429** should wait the `Retry-After` and send again (the same `Idempotency-Key`, so a push that did get through is not made twice); a **401** `token-too-old` should fetch a new token; a **413** will not succeed if sent again.
+
+There is no timestamp window on the push itself: the call is authenticated by a bearer token (so the token's age is what bounds a replay), and a repeated push is harmless by design (the same `Idempotency-Key`, or the same unchanged Function, answers with what already exists).
+
 ## What is not built
 
 - **Telling the Planner back** is built (VYB-0918): the four signed webhooks are in `agile-planner-webhooks.md`. It has not been tried against the real Planner.

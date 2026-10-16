@@ -2,9 +2,12 @@ package com.vyoog.api.web;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vyoog.api.config.PlannerLimits;
 import com.vyoog.api.config.PrincipalGuard;
+import com.vyoog.api.config.StaleTokenException;
 import com.vyoog.identity.KnownServiceScopes;
 import com.vyoog.integration.planner.PlannerRequirementIntake;
+import com.vyoog.platform.RateLimiter;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -31,10 +34,14 @@ public class PlannerRequirementController {
 
     private final PlannerRequirementIntake intake;
     private final PrincipalGuard guard;
+    private final PlannerLimits limits;
+    private final RateLimiter rateLimiter;
 
-    public PlannerRequirementController(PlannerRequirementIntake intake, PrincipalGuard guard) {
+    public PlannerRequirementController(PlannerRequirementIntake intake, PrincipalGuard guard, PlannerLimits limits, RateLimiter rateLimiter) {
         this.intake = intake;
         this.guard = guard;
+        this.limits = limits;
+        this.rateLimiter = rateLimiter;
     }
 
     public record PushBody(
@@ -72,6 +79,9 @@ public class PlannerRequirementController {
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody PushBody body, @AuthenticationPrincipal Jwt jwt) {
         guard.requireServiceAccountScope(jwt, KnownServiceScopes.PLANNER_REQUIREMENTS);
+        requireFreshToken(jwt);
+        // counted per service account, after the caller is known to be one (a refused call does not use a registered account's allowance)
+        rateLimiter.requireWithinWindow("planner.requirements:" + jwt.getClaimAsString("azp"), limits.pushesPerMinute(), java.time.Duration.ofMinutes(1));
         var outcome = intake.receive(idempotencyKey, new PlannerRequirementIntake.Push(
             body.sourceSystem(), body.sourceFunctionId(), body.sourceFeatureId(), body.sourceCapabilityId(),
             body.sourceGoalId(), body.title(), body.description(), body.priority(), body.acceptanceCriteria()));
@@ -80,5 +90,25 @@ public class PlannerRequirementController {
             outcome.proposed() ? new ProposalRef(outcome.proposalId().toString(), outcome.proposalState().toLowerCase(java.util.Locale.ROOT)) : null);
         HttpStatus code = outcome.created() ? HttpStatus.CREATED : outcome.proposed() ? HttpStatus.ACCEPTED : HttpStatus.OK;
         return ResponseEntity.status(code).body(response);
+    }
+
+    /**
+     * A token older than {@code vyoog.planner.max-token-age-minutes} is refused, and so is one with no issue time or one issued in the
+     * future (more than two minutes ahead, which is clock skew). A captured token is then useful for minutes, not for its whole lifetime.
+     */
+    private void requireFreshToken(Jwt jwt) {
+        int maxMinutes = limits.maxTokenAgeMinutes();
+        if (maxMinutes == 0) return;
+        Instant issued = jwt.getIssuedAt();
+        if (issued == null) {
+            throw new StaleTokenException("The token has no issue time (iat), so its age cannot be checked; request a new one");
+        }
+        Instant now = Instant.now();
+        if (issued.isAfter(now.plusSeconds(120))) {
+            throw new StaleTokenException("The token was issued in the future; check the clocks and request a new one");
+        }
+        if (issued.isBefore(now.minus(java.time.Duration.ofMinutes(maxMinutes)))) {
+            throw new StaleTokenException("The token is older than " + maxMinutes + " minutes; request a new one");
+        }
     }
 }

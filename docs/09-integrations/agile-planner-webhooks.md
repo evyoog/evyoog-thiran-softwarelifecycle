@@ -51,6 +51,12 @@ All four share these fields first: `event`, `event_id`, `occurred_at`, `version`
 
 `requirement_id` is the key people see and the Planner got back when it sent the Function. Statuses are lower case: `draft`, `in_review`, `reviewed`, `needs_revision`, `approved`, `rejected`. `version` is one number that only grows, so the Planner can ignore an older event than one it has already applied (its own rule: an older version never overwrites a newer one). A reason given for a move is **not** sent.
 
+## How the Planner should verify a webhook (and what it can rely on)
+
+The signature is the Planner's own scheme (`X-ALM-Signature: hmac-sha256=<hex>`). To verify: take the **exact bytes of the request body as received** (do not parse and re-serialise), compute HMAC-SHA256 with the shared secret, write it as lower-case hex, check the header starts with `hmac-sha256=` and compare the rest **in constant time**. Reject anything else. This is tested here with an independent implementation of exactly these steps, including a body with non-ASCII text (the bytes are UTF-8) and a body or secret that differs by one byte.
+
+Replay: **there is no timestamp header**, and the body's `occurred_at` is covered by the signature but must not be used as a short freshness window: an event is retried for up to about 15 minutes after a failure, and one written while the connection was not set up waits up to 14 days. The identity to rely on is **`event_id`** (the same on every retry: keep the ones seen and ignore a repeat) together with **`version`** (only grows: ignore an event older than one already applied for the same requirement), which is the Planner's own documented rule.
+
 ## Delivery
 
 | Rule | Why |

@@ -346,4 +346,49 @@ class PlannerWebhookIT extends IntegrationTestBase {
         }
         assertThat(types).containsExactly("requirement.status_changed", "design_artifact.created", "test_case.created", "test_result.recorded");
     }
+
+    /**
+     * What the Planner's side would do to check a webhook, written here from its documented scheme and with nothing from this application's
+     * own signing code: the header is {@code hmac-sha256=} and then the lower-case hex of the HMAC-SHA256 of the exact bytes received, keyed
+     * by the shared secret, compared in constant time.
+     */
+    private static boolean plannerWouldAccept(String secret, String header, byte[] receivedBytes) throws Exception {
+        if (header == null || !header.startsWith("hmac-sha256=")) return false;
+        String hex = header.substring("hmac-sha256=".length());
+        if (!hex.matches("[0-9a-f]{64}")) return false;
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] expected = mac.doFinal(receivedBytes);
+        byte[] presented = java.util.HexFormat.of().parseHex(hex);
+        return java.security.MessageDigest.isEqual(expected, presented);
+    }
+
+    @Test
+    void VYB0921_AC11_aSignatureVerifiesTheWayTheContractDescribesEvenForNonAsciiTextAndFailsForAnyChange() throws Exception {
+        UUID author = newUser("author");
+        Portfolio p = newPortfolio();
+        Requirement r = submit(fromPlanner(p, author), author);
+        var flow = design.createFlow(p.applicationId(), author);
+        var node = design.addNode(flow.getId(), com.vyoog.design.NodeKind.step, "P\u00e0us\u00e9 \u2713 \u505c\u6b62", null, author);
+        design.linkRequirement(node.getId(), r.getId(), author);
+        connect();
+        delivery.deliver();
+
+        List<Received> sent;
+        synchronized (received) {
+            sent = List.copyOf(received);
+        }
+        assertThat(sent).hasSizeGreaterThanOrEqualTo(2);
+        boolean sawNonAscii = false;
+        for (Received call : sent) {
+            byte[] bytes = call.body().getBytes(StandardCharsets.UTF_8);
+            assertThat(plannerWouldAccept(SECRET, call.header("X-ALM-Signature"), bytes)).as(call.body()).isTrue();
+            assertThat(plannerWouldAccept(SECRET + "x", call.header("X-ALM-Signature"), bytes)).as("a different secret").isFalse();
+            assertThat(plannerWouldAccept(SECRET, call.header("X-ALM-Signature"), (call.body() + " ").getBytes(StandardCharsets.UTF_8)))
+                .as("a body changed by one byte").isFalse();
+            assertThat(plannerWouldAccept(SECRET, call.header("X-ALM-Signature").replace("hmac-sha256=", ""), bytes)).as("no prefix").isFalse();
+            if (call.body().contains("\u505c\u6b62")) sawNonAscii = true;
+        }
+        assertThat(sawNonAscii).as("one of the events carried non-ASCII text").isTrue();
+    }
 }

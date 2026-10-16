@@ -198,6 +198,17 @@ public class ApiExceptionHandler {
         return pd;
     }
 
+    /** VYB-0921: a token too old for an endpoint that checks its age; the caller gets a new one and tries again. */
+    @ExceptionHandler(com.vyoog.api.config.StaleTokenException.class)
+    public ResponseEntity<ProblemDetail> onStaleToken(com.vyoog.api.config.StaleTokenException e) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, e.getMessage());
+        pd.setType(URI.create("https://vyoog.dev/problems/token-too-old"));
+        pd.setTitle("Token too old");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"invalid_token\", error_description=\"the token is too old\"")
+            .body(pd);
+    }
+
     /** VYB-0305: a service-account token on an endpoint only a person may call. */
     @ExceptionHandler(ServiceAccountRefusedException.class)
     public ProblemDetail onServiceAccountRefused(ServiceAccountRefusedException e) {

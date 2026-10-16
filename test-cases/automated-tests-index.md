@@ -2,7 +2,7 @@
 
 # Automated tests, by requirement
 
-Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1375 tests cover 83 requirements.
+Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_shortDescription`), grouped by requirement. These are the executable test cases; the manual and UAT cases are in the other folders here. 1391 tests cover 84 requirements.
 
 ## VYB-0048b: Username/password sign-in screen, server-mediated ROPC, no secret in the frontend
 
@@ -801,6 +801,25 @@ Every automated test whose name starts with a requirement id (`VYBnnnn_ACn_short
 - `AC7` onlyAPersonWhoCanEditItDecidesAndAnyoneSignedInMayRead (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
 - `AC8` changesSentAtTheSameMomentLeaveOnePendingAndNoFailure (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
 - `AC9` twoPeopleDecidingTheSameProposalAtTheSameMomentOneWins (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerProposalIT.java`)
+
+## VYB-0921: Hardening of the Planner endpoints: rate limit, body size, replay window, and the signed-payload format against the contract's [S; F08] Rewritten 2026-10-15 around the Planner's documented contract (D24).
+
+- `AC1` aKeyMayCallExactlyTheLimitThenIsToldHowLongToWaitAndOtherKeysAreUnaffected (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterWindowIT.java`)
+- `AC10` anIdempotencyKeyThatIsNotPrintableAsciiIsRefused (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerHardeningIT.java`)
+- `AC11` aSignatureVerifiesTheWayTheContractDescribesEvenForNonAsciiTextAndFailsForAnyChange (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerWebhookIT.java`)
+- `AC2` theCountStartsAgainWhenTheWindowEnds (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterWindowIT.java`)
+- `AC3` manyThreadsAtOnceCannotGetMoreThroughThanTheLimit (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterWindowIT.java`)
+- `AC4` pruneRemovesWindowsNothingCanStillBeCounting (`backend/vyoog-api/src/test/java/com/vyoog/api/it/RateLimiterWindowIT.java`)
+- `AC5` aBodyOverTheLimitIsRefusedAndNeverReachesTheHandlerWhetherOrNotItDeclaresItsLength (`backend/vyoog-api/src/test/java/com/vyoog/api/config/PlannerRequestLimitsFilterTest.java`)
+- `AC5` aBodyWithinTheLimitReachesTheHandlerUnchangedIncludingExactlyTheLimit (`backend/vyoog-api/src/test/java/com/vyoog/api/config/PlannerRequestLimitsFilterTest.java`)
+- `AC5` aDeclaredLengthIsEnoughToRefuseWithoutReadingTheBody (`backend/vyoog-api/src/test/java/com/vyoog/api/config/PlannerRequestLimitsFilterTest.java`)
+- `AC5` nonsenseLimitsAreRefusedAtStartup (`backend/vyoog-api/src/test/java/com/vyoog/api/config/PlannerRequestLimitsFilterTest.java`)
+- `AC5` onlyAPostToThePushEndpointIsLimited (`backend/vyoog-api/src/test/java/com/vyoog/api/config/PlannerRequestLimitsFilterTest.java`)
+- `AC5` theLimitIsReadOnEveryRequestSoItCanBeChanged (`backend/vyoog-api/src/test/java/com/vyoog/api/config/PlannerRequestLimitsFilterTest.java`)
+- `AC6` aBodyOverTheLimitIsRefusedWithoutBeingReadAndOneWithinItIsAccepted (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerHardeningIT.java`)
+- `AC7` aServiceAccountOverItsPushesPerMinuteIsToldToWaitAndAnotherIsNotAffected (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerHardeningIT.java`)
+- `AC8` aRefusedCallerDoesNotUseARegisteredAccountsAllowance (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerHardeningIT.java`)
+- `AC9` aTokenTooOldWithNoIssueTimeOrIssuedInTheFutureIsRefusedAndAFreshOneIsNot (`backend/vyoog-api/src/test/java/com/vyoog/api/it/PlannerHardeningIT.java`)
 
 ## VYB-0922: Make the git and ci connections live: repo URL used for commit links, CI adapters documented [S; F16]
 

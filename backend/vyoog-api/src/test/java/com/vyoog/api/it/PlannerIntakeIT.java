@@ -45,7 +45,7 @@ class PlannerIntakeIT extends IntegrationTestBase {
     private JwtRequestPostProcessor planner() {
         String clientId = unique("planner-client");
         serviceAccounts.create(unique("planner"), "Agile Planner (test)", clientId, List.of(KnownServiceScopes.PLANNER_REQUIREMENTS), null);
-        return jwt().jwt(j -> j.subject("svc-" + clientId).claim("azp", clientId));
+        return jwt().jwt(j -> j.subject("svc-" + clientId).claim("azp", clientId).issuedAt(java.time.Instant.now()));
     }
 
     private static Map<String, Object> push(String functionId) {

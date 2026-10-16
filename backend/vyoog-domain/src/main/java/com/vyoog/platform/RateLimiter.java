@@ -77,9 +77,41 @@ public class RateLimiter {
         }
     }
 
-    /** Deletes rows no cooldown can still be waiting on. Returns how many. Also runs occasionally by itself. */
+    /**
+     * VYB-0921 (D54): a counted limit: at most {@code limit} calls per {@code window} for this key, in fixed windows that start on a multiple
+     * of the window's length. Every call counts, refused ones too, in one atomic statement (so instances and threads agree), in its own
+     * transaction (so a call that later fails still counted).
+     *
+     * @return null if the call may proceed; otherwise how long until the window ends and the count starts again
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Duration checkWindow(String key, int limit, Duration window) {
+        long seconds = Math.max(1, window.toSeconds());
+        List<long[]> rows = jdbc.query("""
+            INSERT INTO rate_limit_window (key, window_start, hits)
+            VALUES (?, to_timestamp(floor(extract(epoch FROM clock_timestamp()) / ?) * ?), 1)
+            ON CONFLICT (key, window_start) DO UPDATE SET hits = rate_limit_window.hits + 1
+            RETURNING hits, ceil(extract(epoch FROM (window_start + make_interval(secs => ?) - clock_timestamp())))::bigint AS remaining
+            """, (rs, n) -> new long[] {rs.getLong("hits"), rs.getLong("remaining")}, key, seconds, seconds, (double) seconds);
+        long[] row = rows.get(0);
+        if (ThreadLocalRandom.current().nextInt(PRUNE_ONE_IN) == 0) prune();
+        return row[0] <= limit ? null : Duration.ofSeconds(Math.max(1, row[1]));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void requireWithinWindow(String key, int limit, Duration window) {
+        Duration retryAfter = checkWindow(key, limit, window);
+        if (retryAfter != null) {
+            throw new RateLimitExceededException(retryAfter);
+        }
+    }
+
+    /** Deletes rows no cooldown or window can still be counting. Returns how many. Also runs occasionally by itself. */
     public int prune() {
-        return jdbc.update("DELETE FROM rate_limit_hit WHERE last_call < clock_timestamp() - (? * interval '1 millisecond')",
+        int cooldowns = jdbc.update("DELETE FROM rate_limit_hit WHERE last_call < clock_timestamp() - (? * interval '1 millisecond')",
             RETENTION.toMillis());
+        int windows = jdbc.update("DELETE FROM rate_limit_window WHERE window_start < clock_timestamp() - (? * interval '1 millisecond')",
+            RETENTION.toMillis());
+        return cooldowns + windows;
     }
 }

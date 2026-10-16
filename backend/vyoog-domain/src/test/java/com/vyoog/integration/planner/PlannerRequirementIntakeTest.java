@@ -51,6 +51,10 @@ class PlannerRequirementIntakeTest {
         assertThatThrownBy(() -> PlannerRequirementIntake.validate(null, ok)).hasMessageContaining("Idempotency-Key");
         assertThatThrownBy(() -> PlannerRequirementIntake.validate(" ", ok)).hasMessageContaining("Idempotency-Key");
         assertThatThrownBy(() -> PlannerRequirementIntake.validate("k".repeat(201), ok)).hasMessageContaining("Idempotency-Key");
+        assertThatThrownBy(() -> PlannerRequirementIntake.validate("has space", ok)).hasMessageContaining("printable ASCII");
+        assertThatThrownBy(() -> PlannerRequirementIntake.validate("tab\there", ok)).hasMessageContaining("printable ASCII");
+        assertThatThrownBy(() -> PlannerRequirementIntake.validate("caf\u00e9", ok)).hasMessageContaining("printable ASCII");
+        PlannerRequirementIntake.validate("FN-123-2026-10-16T09:00:00Z", ok); // the contract's own shape: a Function id and a timestamp
         assertThatThrownBy(() -> PlannerRequirementIntake.validate("key", null)).hasMessageContaining("body");
         assertThatThrownBy(() -> PlannerRequirementIntake.validate("key",
             new Push("jira", "FN", null, null, null, "T", "B", null, null))).hasMessageContaining("source_system");
